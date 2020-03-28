@@ -2,6 +2,7 @@
 #include <glew.h>
 #include <GLFW/glfw3.h>
 
+#include "header.h"
 #include "shaders.h"
 #include <iostream>
 #include <fstream>

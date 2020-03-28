@@ -11,6 +11,7 @@ extern NSWE targetNSWE;
 extern movingTarget viewNSWE;
 extern RECTDIMENSION windowDimensions;
 extern WORLDCOORD longlatMouse;
+extern BackgroundInfo bgInfo;
 
 MouseActions mouseDrag;
 
@@ -47,8 +48,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		viewNSWE.target.nudgevertical(-step);
 	}
 
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+		UpdateHeatmapTexture(&viewNSWE.target, &bgInfo);
+		//glfwSetWindowShouldClose(window, GLFW_TRUE);
+	}
 
 	if (key == GLFW_KEY_KP_ADD) {
 		viewNSWE.target.zoom(0.9, viewNSWE.target.centre());

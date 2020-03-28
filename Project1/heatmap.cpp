@@ -1,9 +1,11 @@
 #include "header.h"
 #include "nswe.h"
 #include "heatmap.h"
+#include "shaders.h"
 #include <vector>
 #include <stdio.h>
 #include <iostream>
+
 
 
 void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
@@ -66,10 +68,12 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 
 	}
 
-	printf("Max %f\n", heatmap->maxPixel);
+	printf("Max before log: %f\n", heatmap->maxPixel);
 
+
+
+	//this takes the logarithm
 	heatmap->maxPixel = 0;
-
 	for (int y = 0; y < heatmap->height; y++) {
 		for (int x = 0; x < heatmap->width; x++) {
 			p = heatmap->pixel[y * heatmap->width + x];
@@ -84,7 +88,7 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 		}
 		//+printf("\n");
 	}
-	printf("Max %f\n", heatmap->maxPixel);
+	printf("Max after log: %f\n", heatmap->maxPixel);
 	return;
 }
 
@@ -92,15 +96,36 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 Heatmap::Heatmap()
 {
 	height=width = 4096;
+	
 
 	//width = height = 100;
 
 	nswe = new NSWE;
 	maxPixel = 0;
+	activeheatmap = 0;
 }
 
 Heatmap::~Heatmap()
 {
 	delete nswe;
 	return;
+}
+
+BackgroundInfo::BackgroundInfo()
+{
+	vao = 0;
+	vbo = 0;
+	
+	shader = new Shader;
+	
+	worldTexture = 0;
+	heatmapTexture = 0;
+
+	worldTextureLocation = 0;
+	heatmapTextureLocation = 0;
+}
+
+BackgroundInfo::~BackgroundInfo()
+{
+	delete shader;
 }

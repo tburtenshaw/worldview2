@@ -12,7 +12,8 @@
 class NSWE;
 struct LOCATION;
 class Heatmap;
-
+class Shader;
+class BackgroundInfo;
 
 //typedef struct sLocation ;
 
@@ -64,6 +65,8 @@ struct LOCATION {
 };
 
 
+
+
 class LocationHistory {
 public:
 	std::string filename;
@@ -75,5 +78,13 @@ public:
 	void CreateHeatmap(NSWE *nswe, int n);
 };
 
+void MakeGUI();
 
+void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
+void LoadBackgroundImageToTexture(unsigned int* texture);
+void LoadHeatmapToTexture(NSWE* nswe, unsigned int* texture);
+void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 
+void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
+
+void DrawBackgroundAndHeatmap(BackgroundInfo* backgroundInfo);

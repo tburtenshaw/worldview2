@@ -79,13 +79,13 @@
     <None Include="backgroundFS.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="mappointsVS.glsl">
+    <None Include="mappathsGS.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="mappointsFS.glsl">
+    <None Include="mappathsVS.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="mappointsGS.glsl">
+    <None Include="mappathsFS.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

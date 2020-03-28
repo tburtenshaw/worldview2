@@ -7,6 +7,7 @@
 #include <tchar.h>
 #include <Windows.h>
 #include <vector>
+#include <thread>
 
 
 #define GLEW_STATIC
@@ -17,10 +18,11 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 
+#include "shaders.h"
 #include "header.h"
 #include "nswe.h"
 #include "loadjson.h"
-#include "shaders.h"
+//#include "shaders.h"
 #include "input.h"
 #include "heatmap.h"
 
@@ -29,7 +31,6 @@
 
 using namespace std;
 
-//vector<LOCATION> locations;
 WORLDCOORD longlatMouse;
 NSWE targetNSWE;
 movingTarget viewNSWE;
@@ -42,7 +43,7 @@ bool showPaths;
 
 LocationHistory lh;
 
-
+BackgroundInfo bgInfo;
 
 int OpenAndReadJSON()
 {
@@ -94,7 +95,7 @@ int OpenGLTrial3()
 		return 1;
 	}
 
-	showPaths = true;
+	showPaths = false;
 
 
 	windowDimensions.width = 900;
@@ -131,7 +132,7 @@ int OpenGLTrial3()
 	ImGuiIO& io = ImGui::GetIO();
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	const char* glsl_version = "#version 130";
+	const char* glsl_version = "#version 330";
 	ImGui_ImplOpenGL3_Init(glsl_version);
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -153,64 +154,18 @@ int OpenGLTrial3()
 
 	//Set some app parameters
 	//viewNSWE.target.setvalues(90, -90, -180, 180);
-	viewNSWE.target.setvalues(-36.5, -37.5, 174, 175);
+	viewNSWE.target.setvalues(-36.83, -37.11, 174.677, 174.961);
 	viewNSWE.movetowards(1000000000000);
 	linewidth = 2;
 	cycle = 3600;
 
+
 	
-	//trying to do a background
-	static const GLfloat g_vertex_buffer_data[] = {
-   -1.0f, -1.0f, 
-   1.0f, -1.0f, 
-   -1.0f, 1.0f,
-   1.0f, 1.0f
-	};
-	
-	GLuint backgroundVao, backgroundVbo;
-	glGenVertexArrays(1, &backgroundVao);
-	glBindVertexArray(backgroundVao);
-
-	glGenBuffers(1, &backgroundVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, backgroundVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, backgroundVbo);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0	);
-	glEnableVertexAttribArray(0);
-
-	Shader bg;
-
-	bg.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/backgroundVS.glsl", GL_VERTEX_SHADER);
-	bg.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/backgroundFS.glsl", GL_FRAGMENT_SHADER);
-	bg.CreateProgram();
-	
-	//Load background texture
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("D:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
-	unsigned int worldtexture;
-	glGenTextures(1, &worldtexture);
-	glBindTexture(GL_TEXTURE_2D, worldtexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	stbi_image_free(data);
-
-	//try to load another
-	lh.CreateHeatmap(&viewNSWE, 0);
-	unsigned int heatmaptexture;
-	glGenTextures(1, &heatmaptexture);
-	glBindTexture(GL_TEXTURE_2D, heatmaptexture);
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lh.heatmap->width, lh.heatmap->height, 0, GL_RED, GL_FLOAT, lh.heatmap->pixel);
-	
-
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	//set up the background and heatmap
+	SetupBackgroundVertices(&bgInfo);
+	LoadBackgroundImageToTexture(&bgInfo.worldTexture);
+	LoadHeatmapToTexture(&viewNSWE, &bgInfo.heatmapTexture);
+	SetupBackgroundShaders(&bgInfo);
 
 
 
@@ -224,41 +179,32 @@ int OpenGLTrial3()
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	
+	//lat,long
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
+	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
 	glEnableVertexAttribArray(1);
 
+	//detail level
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
 	glEnableVertexAttribArray(2);
 
 
-	Shader mappoints;
+	Shader mappaths;
 
-	mappoints.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappointsVS.glsl", GL_VERTEX_SHADER);
-	mappoints.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappointsFS.glsl", GL_FRAGMENT_SHADER);
-	mappoints.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappointsGS.glsl", GL_GEOMETRY_SHADER);
-	mappoints.CreateProgram();
+	mappaths.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsVS.glsl", GL_VERTEX_SHADER);
+	mappaths.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsFS.glsl", GL_FRAGMENT_SHADER);
+	mappaths.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsGS.glsl", GL_GEOMETRY_SHADER);
+	mappaths.CreateProgram();
 
-
-
-	unsigned int worldTextureLocation, heatmapTextureLocation;
-	worldTextureLocation = glGetUniformLocation(bg.program, "worldTexture");
-	heatmapTextureLocation = glGetUniformLocation(bg.program, "heatmapTexture");
-
-	// Then bind the uniform samplers to texture units:
-	bg.UseMe();
-	glUniform1i(worldTextureLocation, 0);
-	glUniform1i(heatmapTextureLocation, 1);
-
-	float c;
-	c = 1;
 
 	while (!glfwWindowShouldClose(window)) {
 
 		float seconds = glfwGetTime();
 
+		//get the view moving towards the target
 		viewNSWE.movetowards(seconds);
 
 		// wipe the drawing surface clear
@@ -268,36 +214,17 @@ int OpenGLTrial3()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		glBindBuffer(GL_ARRAY_BUFFER, backgroundVbo);
-		
-		bg.UseMe();
-		bg.SetUniformFromFloats("seconds", seconds);
-		bg.SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
-		bg.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-		bg.SetUniformFromFloats("heatmapnswe", lh.heatmap->nswe->north, lh.heatmap->nswe->south, lh.heatmap->nswe->west, lh.heatmap->nswe->east);
-		
-		bg.SetUniformFromFloats("maxheatmapvalue", lh.heatmap->maxPixel);
-		bg.SetUniformFromFloats("linewidth", linewidth);
-		bg.SetUniformFromFloats("c", c);
-
-
-		glActiveTexture(GL_TEXTURE0 + 0);
-		glBindTexture(GL_TEXTURE_2D, worldtexture);
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, heatmaptexture);
-
-		glBindVertexArray(backgroundVao);		
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		
+		//This draws the heatmap
+		DrawBackgroundAndHeatmap(&bgInfo);
 	
 		if (showPaths) {
 			//update uniform shader variables
-			mappoints.UseMe();
-			mappoints.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-			mappoints.SetUniformFromFloats("seconds", seconds);
-			mappoints.SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
-			mappoints.SetUniformFromFloats("linewidth", linewidth);
-			mappoints.SetUniformFromFloats("cycle", cycle);
+			mappaths.UseMe();
+			mappaths.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+			mappaths.SetUniformFromFloats("seconds", seconds);
+			mappaths.SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
+			mappaths.SetUniformFromFloats("linewidth", linewidth);
+			mappaths.SetUniformFromFloats("cycle", cycle);
 
 			glBindBuffer(GL_ARRAY_BUFFER, vbo);
 			glBindVertexArray(vao);
@@ -306,29 +233,8 @@ int OpenGLTrial3()
 
 		// update other events like input handling 
 
-			// render your GUI
-		ImGui::Begin("Map information");
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Text("Long: %.3f, Lat: %.3f", longlatMouse.longitude, longlatMouse.latitude);
-		ImGui::Text("Number of points: %i", lh.locations.size());
 
-		ImGui::Text("N:%.2f, S:%.3f, W:%f, E:%f", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-		ImGui::End();
-		
-		ImGui::Begin("Path drawing");
-		
-
-		ImGui::Checkbox("Show paths", &showPaths);
-
-		ImGui::SliderFloat("Line thickness", &linewidth, 0.0f, 20.0f, "%.2f");
-
-		ImGui::SliderFloat("Cycle", &cycle, 1.0f, 3600.0f * 7.0 * 24, "%.0f");
-		
-		ImGui::End();
-
-		ImGui::Begin("Heatmap");
-		
-		ImGui::End();
+		MakeGUI();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -347,6 +253,162 @@ int OpenGLTrial3()
 	return 0;
 }
 
+void MakeGUI()
+{
+	ImGui::Begin("Map information");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Long: %.3f, Lat: %.3f", longlatMouse.longitude, longlatMouse.latitude);
+	ImGui::Text("Number of points: %i", lh.locations.size());
+
+	ImGui::Text("N:%.2f, S:%.3f, W:%f, E:%f", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	ImGui::End();
+
+	ImGui::Begin("Path drawing");
+
+
+	ImGui::Checkbox("Show paths", &showPaths);
+
+	ImGui::SliderFloat("Line thickness", &linewidth, 0.0f, 20.0f, "%.2f");
+
+	ImGui::SliderFloat("Cycle", &cycle, 1.0f, 3600.0f * 7.0 * 24, "%.0f");
+
+	ImGui::End();
+
+	ImGui::Begin("Heatmap");
+
+	ImGui::End();
+
+	return;
+}
+
+
+void SetupBackgroundVertices(BackgroundInfo* backgroundInfo)
+{
+	//This is just a square that covers the viewpoint.
+	static const GLfloat g_vertex_buffer_data[] = {
+	-1.0f, -1.0f,
+	1.0f, -1.0f,
+	-1.0f, 1.0f,
+	1.0f, 1.0f
+	};
+
+
+	glGenVertexArrays(1, &backgroundInfo->vao);
+	glBindVertexArray(backgroundInfo->vao);
+
+	glGenBuffers(1, &backgroundInfo->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vao);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	return;
+}
+
+
+void LoadBackgroundImageToTexture(unsigned int* texture)
+{
+	//Load background texture
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("D:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
+
+	glGenTextures(1, texture);
+	glBindTexture(GL_TEXTURE_2D, *texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	stbi_image_free(data);
+
+	return;
+}
+
+void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
+{
+
+	//Create Heatmap and load it into a texture
+	
+	lh.CreateHeatmap(nswe, 0);
+	
+	//unsigned int heatmaptexture;
+	printf("Generating texture");
+	glGenTextures(1, texture);
+	glBindTexture(GL_TEXTURE_2D, *texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lh.heatmap->width, lh.heatmap->height, 0, GL_RED, GL_FLOAT, lh.heatmap->pixel);
+
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return;
+}
+
+void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
+{
+	printf("Creating heatmap.\n");
+	lh.CreateHeatmap(nswe, 0);
+
+	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lh.heatmap->width, lh.heatmap->height, GL_RED, GL_FLOAT, lh.heatmap->pixel);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return;
+}
+
+void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
+{
+	//Create the shader program
+	backgroundInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/backgroundVS.glsl", GL_VERTEX_SHADER);
+	backgroundInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/backgroundFS.glsl", GL_FRAGMENT_SHADER);
+	backgroundInfo->shader->CreateProgram();
+
+	//unsigned int worldTextureLocation, heatmapTextureLocation;
+	backgroundInfo->worldTextureLocation = glGetUniformLocation(backgroundInfo->shader->program, "worldTexture");
+	backgroundInfo->heatmapTextureLocation = glGetUniformLocation(backgroundInfo->shader->program, "heatmapTexture");
+
+	// Then bind the uniform samplers to texture units:
+	backgroundInfo->shader->UseMe();
+	glUniform1i(backgroundInfo->worldTextureLocation, 0);
+	glUniform1i(backgroundInfo->heatmapTextureLocation, 1);
+	
+	return;
+}
+
+
+void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
+
+	backgroundInfo->shader->UseMe();
+	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
+	backgroundInfo->shader->SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
+	backgroundInfo->shader->SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", lh.heatmap->nswe->north, lh.heatmap->nswe->south, lh.heatmap->nswe->west, lh.heatmap->nswe->east);
+
+	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", lh.heatmap->maxPixel);
+	//backgroundInfo->shader.SetUniformFromFloats("linewidth", linewidth);
+	//backgroundInfo->shader.SetUniformFromFloats("c", c);
+
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, backgroundInfo->worldTexture);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
+
+	glBindVertexArray(backgroundInfo->vao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	return;
+}
 
 int main(int argc, char** argv)
 {
@@ -354,7 +416,6 @@ int main(int argc, char** argv)
 
 	OpenAndReadJSON();
 	OptimiseDetail(lh.locations);
-	//PrintfSomePoints();
 
 	OpenGLTrial3();
 
