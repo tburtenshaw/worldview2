@@ -20,19 +20,3 @@ public:
 	~Heatmap();
 };
 
-class BackgroundInfo {
-public:
-	BackgroundInfo();
-	~BackgroundInfo();
-
-	unsigned int vao;
-	unsigned int vbo;
-
-	Shader* shader;
-	unsigned int worldTexture;	//the background NASA map
-	unsigned int heatmapTexture;
-
-	unsigned int worldTextureLocation;	//the location of this uniform
-	unsigned int heatmapTextureLocation;
-
-};

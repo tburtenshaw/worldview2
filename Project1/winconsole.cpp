@@ -36,14 +36,15 @@ NSWE targetNSWE;
 movingTarget viewNSWE;
 RECTDIMENSION windowDimensions;
 
-//options
-float linewidth;
-float cycle;
-bool showPaths;
-
 LocationHistory lh;
 
+
 BackgroundInfo bgInfo;
+MapPathInfo pathInfo;
+MapPointsInfo pointsInfo;
+
+
+GlobalOptions globalOptions;
 
 int OpenAndReadJSON()
 {
@@ -95,7 +96,7 @@ int OpenGLTrial3()
 		return 1;
 	}
 
-	showPaths = false;
+	globalOptions.showPaths = false;
 
 
 	windowDimensions.width = 900;
@@ -153,12 +154,12 @@ int OpenGLTrial3()
 	int params = -1;
 
 	//Set some app parameters
-	//viewNSWE.target.setvalues(90, -90, -180, 180);
-	viewNSWE.target.setvalues(-36.83, -37.11, 174.677, 174.961);
+	viewNSWE.target.setvalues(-36.83, -37.11, 174.677-1, 174.961-1);
 	viewNSWE.movetowards(1000000000000);
-	linewidth = 2;
-	cycle = 3600;
+	globalOptions.linewidth = 2;
+	globalOptions.cycle = 3600;
 
+	globalOptions.pointradius = 30;
 
 	
 	//set up the background and heatmap
@@ -167,45 +168,20 @@ int OpenGLTrial3()
 	LoadHeatmapToTexture(&viewNSWE, &bgInfo.heatmapTexture);
 	SetupBackgroundShaders(&bgInfo);
 
-
-
 	//this does the lines of the map
-	GLuint vao, vbo;
+	SetupPathsBufferDataAndVertexAttribArrays(&pathInfo);
+	SetupPathsShaders(&pathInfo);
 
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, lh.locations.size() * sizeof(LOCATION), &lh.locations.front(), GL_STATIC_DRAW);
-
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	
-	//lat,long
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
-	glEnableVertexAttribArray(0);
-
-	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
-	glEnableVertexAttribArray(1);
-
-	//detail level
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
-	glEnableVertexAttribArray(2);
-
-
-	Shader mappaths;
-
-	mappaths.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsVS.glsl", GL_VERTEX_SHADER);
-	mappaths.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsFS.glsl", GL_FRAGMENT_SHADER);
-	mappaths.LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsGS.glsl", GL_GEOMETRY_SHADER);
-	mappaths.CreateProgram();
-
+	//and I'll do one that does points (this will be round points, that can be selectable and maybe deletable
+	SetupPointsBufferDataAndVertexAttribArrays(&pointsInfo);
+	SetupPointsShaders(&pointsInfo);
 
 	while (!glfwWindowShouldClose(window)) {
 
-		float seconds = glfwGetTime();
+		globalOptions.seconds = glfwGetTime();
 
 		//get the view moving towards the target
-		viewNSWE.movetowards(seconds);
+		viewNSWE.movetowards(globalOptions.seconds);
 
 		// wipe the drawing surface clear
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -217,24 +193,18 @@ int OpenGLTrial3()
 		//This draws the heatmap
 		DrawBackgroundAndHeatmap(&bgInfo);
 	
-		if (showPaths) {
-			//update uniform shader variables
-			mappaths.UseMe();
-			mappaths.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-			mappaths.SetUniformFromFloats("seconds", seconds);
-			mappaths.SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
-			mappaths.SetUniformFromFloats("linewidth", linewidth);
-			mappaths.SetUniformFromFloats("cycle", cycle);
+		if (globalOptions.showPaths) {
+			DrawPaths(&pathInfo);
+		}
 
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBindVertexArray(vao);
-			glDrawArrays(GL_LINE_STRIP, 0, lh.locations.size());
+		if (globalOptions.showPoints) {
+			DrawPoints(&pointsInfo);
 		}
 
 		// update other events like input handling 
 
 
-		MakeGUI();
+		MakeGUI();	//make the ImGui stuff
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -243,7 +213,7 @@ int OpenGLTrial3()
 		glfwSwapBuffers(window);
 	}
 
-	//ImGui stuff
+	//ImGui close
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
@@ -259,23 +229,22 @@ void MakeGUI()
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Text("Long: %.3f, Lat: %.3f", longlatMouse.longitude, longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh.locations.size());
-
 	ImGui::Text("N:%.2f, S:%.3f, W:%f, E:%f", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
 	ImGui::End();
 
 	ImGui::Begin("Path drawing");
-
-
-	ImGui::Checkbox("Show paths", &showPaths);
-
-	ImGui::SliderFloat("Line thickness", &linewidth, 0.0f, 20.0f, "%.2f");
-
-	ImGui::SliderFloat("Cycle", &cycle, 1.0f, 3600.0f * 7.0 * 24, "%.0f");
-
+	ImGui::Checkbox("Show paths", &globalOptions.showPaths);
+	ImGui::SliderFloat("Line thickness", &globalOptions.linewidth, 0.0f, 20.0f, "%.2f");
+	ImGui::SliderFloat("Cycle", &globalOptions.cycle, 1.0f, 3600.0f * 7.0 * 24, "%.0f");
 	ImGui::End();
 
 	ImGui::Begin("Heatmap");
 
+	ImGui::End();
+
+	ImGui::Begin("Selected");
+	ImGui::Checkbox("Show points", &globalOptions.showPoints);
+	ImGui::SliderFloat("Point radius", &globalOptions.pointradius,0,100,"%.1f");
 	ImGui::End();
 
 	return;
@@ -310,7 +279,6 @@ void SetupBackgroundVertices(BackgroundInfo* backgroundInfo)
 
 void LoadBackgroundImageToTexture(unsigned int* texture)
 {
-	//Load background texture
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load("D:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
 
@@ -318,7 +286,7 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 	glBindTexture(GL_TEXTURE_2D, *texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	stbi_image_free(data);
 
@@ -326,14 +294,9 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 }
 
 void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
-{
-
-	//Create Heatmap and load it into a texture
-	
+{	
 	lh.CreateHeatmap(nswe, 0);
 	
-	//unsigned int heatmaptexture;
-	printf("Generating texture");
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
 
@@ -353,8 +316,9 @@ void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {
-	printf("Creating heatmap.\n");
+	printf("Creating heatmap... ");
 	lh.CreateHeatmap(nswe, 0);
+	printf("Done.\n");
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lh.heatmap->width, lh.heatmap->height, GL_RED, GL_FLOAT, lh.heatmap->pixel);
@@ -395,8 +359,6 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", lh.heatmap->nswe->north, lh.heatmap->nswe->south, lh.heatmap->nswe->west, lh.heatmap->nswe->east);
 
 	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", lh.heatmap->maxPixel);
-	//backgroundInfo->shader.SetUniformFromFloats("linewidth", linewidth);
-	//backgroundInfo->shader.SetUniformFromFloats("c", c);
 
 
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -407,8 +369,153 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 	glBindVertexArray(backgroundInfo->vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+
+	glBindVertexArray(0);
 	return;
 }
+
+void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
+{
+	glGenBuffers(1, &mapPathInfo->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
+	glBufferData(GL_ARRAY_BUFFER, lh.locations.size() * sizeof(LOCATION), &lh.locations.front(), GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &mapPathInfo->vao);
+	glBindVertexArray(mapPathInfo->vao);
+
+	//lat,long
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
+	glEnableVertexAttribArray(0);
+
+	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
+	glEnableVertexAttribArray(1);
+
+	//detail level
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
+	glEnableVertexAttribArray(2);
+	
+	return;
+}
+
+void SetupPathsShaders(MapPathInfo* mapPathInfo)
+{
+	mapPathInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsVS.glsl", GL_VERTEX_SHADER);
+	mapPathInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsFS.glsl", GL_FRAGMENT_SHADER);
+	mapPathInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsGS.glsl", GL_GEOMETRY_SHADER);
+	mapPathInfo->shader->CreateProgram();
+}
+
+void DrawPaths(MapPathInfo* mapPathInfo)
+{
+	//update uniform shader variables
+	mapPathInfo->shader->UseMe();
+	mapPathInfo->shader->SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	mapPathInfo->shader->SetUniformFromFloats("seconds", globalOptions.seconds);
+	mapPathInfo->shader->SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
+	mapPathInfo->shader->SetUniformFromFloats("linewidth", globalOptions.linewidth);
+	mapPathInfo->shader->SetUniformFromFloats("cycle", globalOptions.cycle);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
+	glBindVertexArray(mapPathInfo->vao);
+	glDrawArrays(GL_LINE_STRIP, 0, lh.locations.size());
+	
+	return;
+}
+
+void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //currently just straight copy from paths
+{
+	glGenBuffers(1, &mapPointsInfo->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
+	glBufferData(GL_ARRAY_BUFFER, lh.locations.size() * sizeof(LOCATION), &lh.locations.front(), GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &mapPointsInfo->vao);
+	glBindVertexArray(mapPointsInfo->vao);
+
+	//lat,long
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
+	glEnableVertexAttribArray(0);
+
+	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
+	glEnableVertexAttribArray(1);
+
+	//detail level
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
+	glEnableVertexAttribArray(2);
+
+	return;
+}
+
+void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
+{
+	mapPointsInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/pointsVS.glsl", GL_VERTEX_SHADER);
+	mapPointsInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/pointsGS.glsl", GL_GEOMETRY_SHADER);
+	mapPointsInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/pointsFS.glsl", GL_FRAGMENT_SHADER);
+	mapPointsInfo->shader->CreateProgram();
+}
+
+void DrawPoints(MapPointsInfo* mapPointsInfo)
+{
+	//update uniform shader variables
+	mapPointsInfo->shader->UseMe();
+	mapPointsInfo->shader->SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	mapPointsInfo->shader->SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
+	mapPointsInfo->shader->SetUniformFromFloats("pointradius", globalOptions.pointradius);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
+	glBindVertexArray(mapPointsInfo->vao);
+	glDrawArrays(GL_POINTS, 0, lh.locations.size());
+
+	return;
+}
+
+BackgroundInfo::BackgroundInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+
+	worldTexture = 0;
+	heatmapTexture = 0;
+
+	worldTextureLocation = 0;
+	heatmapTextureLocation = 0;
+}
+
+BackgroundInfo::~BackgroundInfo()
+{
+	delete shader;
+}
+
+MapPathInfo::MapPathInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+}
+MapPathInfo::~MapPathInfo()
+{
+	delete shader;
+}
+
+MapPointsInfo::MapPointsInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+}
+MapPointsInfo::~MapPointsInfo()
+{
+	delete shader;
+}
+
+
+
 
 int main(int argc, char** argv)
 {
@@ -422,3 +529,4 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+

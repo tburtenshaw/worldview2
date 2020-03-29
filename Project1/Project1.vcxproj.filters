@@ -88,5 +88,14 @@
     <None Include="mappathsFS.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="pointsFS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pointsGS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pointsVS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

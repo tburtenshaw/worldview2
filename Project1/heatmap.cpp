@@ -111,21 +111,3 @@ Heatmap::~Heatmap()
 	return;
 }
 
-BackgroundInfo::BackgroundInfo()
-{
-	vao = 0;
-	vbo = 0;
-	
-	shader = new Shader;
-	
-	worldTexture = 0;
-	heatmapTexture = 0;
-
-	worldTextureLocation = 0;
-	heatmapTextureLocation = 0;
-}
-
-BackgroundInfo::~BackgroundInfo()
-{
-	delete shader;
-}

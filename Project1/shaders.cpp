@@ -42,14 +42,16 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 	strStream << file.rdbuf(); //read the file
 	std::string data = strStream.str(); //str holds the content of the file
 
-	//printf("\nShader: %i %s", shader, data.c_str());
+	
 
 	const char* c_str = data.c_str();
 
 	glShaderSource(shader, 1, &c_str, NULL);
 	glCompileShader(shader);
 
-	CheckForErrors(shader, GL_COMPILE_STATUS);
+	if (CheckForErrors(shader, GL_COMPILE_STATUS)) {
+		printf("\nShader: %i %s", shader, data.c_str());
+	}
 
 	return shader;
 }
@@ -111,7 +113,7 @@ GLboolean Shader::CheckForErrors(GLuint shader, GLuint type) {
 		if (type == GL_COMPILE_STATUS)	glGetShaderInfoLog(shader, max_length, &actual_length, shader_log);
 		if (type == GL_LINK_STATUS)	glGetProgramInfoLog(shader, max_length, &actual_length, shader_log);
 		printf("shader info log for GL index %u:\n%s\n", shader, shader_log);
-		
+		return GL_TRUE;
 
 		//return false; // or exit or something
 	}

@@ -48,6 +48,7 @@ void main() {
 	float res;
 	vs_out.dontdraw=1.0;
 	
+	//workout the resolution, then if the detail is needed, flag this as a line to draw
 	res = (nswe.w-nswe.z)/resolution.x;
 
 	if (detail>res)	{

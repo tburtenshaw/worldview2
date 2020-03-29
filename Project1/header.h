@@ -65,6 +65,18 @@ struct LOCATION {
 };
 
 
+class GlobalOptions {
+public:
+	bool showPaths;
+	bool showPoints;
+	float seconds;
+
+	float linewidth;
+	float cycle;
+
+	float pointradius;
+
+};
 
 
 class LocationHistory {
@@ -78,6 +90,50 @@ public:
 	void CreateHeatmap(NSWE *nswe, int n);
 };
 
+class BackgroundInfo {
+public:
+	BackgroundInfo();
+	~BackgroundInfo();
+
+	unsigned int vao;
+	unsigned int vbo;
+
+	Shader* shader;
+	unsigned int worldTexture;	//the background NASA map
+	unsigned int heatmapTexture;
+
+	unsigned int worldTextureLocation;	//the location of this uniform
+	unsigned int heatmapTextureLocation;
+
+};
+
+class MapPathInfo {
+public:
+	MapPathInfo();
+	~MapPathInfo();
+	
+	unsigned int vao;
+	unsigned int vbo;
+
+	Shader* shader;
+
+};
+
+
+class MapPointsInfo {
+public:
+	MapPointsInfo();
+	~MapPointsInfo();
+
+	unsigned int vao;
+	unsigned int vbo;
+
+	Shader* shader;
+
+};
+
+
+
 void MakeGUI();
 
 void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
@@ -88,3 +144,13 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 
 void DrawBackgroundAndHeatmap(BackgroundInfo* backgroundInfo);
+
+//paths
+void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);
+void SetupPathsShaders(MapPathInfo* mapPathInfo);
+void DrawPaths(MapPathInfo* mapPathInfo);
+
+//points
+void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
+void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
+void DrawPoints(MapPointsInfo* mapPointsInfo);

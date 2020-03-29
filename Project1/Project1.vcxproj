@@ -185,6 +185,9 @@
     <None Include="mappathsFS.glsl" />
     <None Include="mappathsGS.glsl" />
     <None Include="mappathsVS.glsl" />
+    <None Include="pointsFS.glsl" />
+    <None Include="pointsGS.glsl" />
+    <None Include="pointsVS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

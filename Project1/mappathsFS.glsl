@@ -31,15 +31,12 @@ void main() {
 	vec2 uv;
 	
 	uv=gl_FragCoord.xy/resolution*2;
-
-	//uv=((gl_FragCoord.xy-resolution/2)/resolution/2);
 	uv+=vec2(-1,-1);
 
 	
 	float uvwidth =linewidth/resolution.x;
     float blur=min(3.0,linewidth)/resolution.x;
 
-    // Time varying pixel color
     vec3 col = vec3(smoothstep(uvwidth+blur,uvwidth,dline( uv, pointa, pointb )));
 
     // Output to screen
