@@ -98,7 +98,6 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 	
 			originalNSWE = viewNSWE;
 
-			//printf("Start:x:%f, y:%f\t%f %f\n", xpos, ypos, mouseDrag.dragStartXY.x, mouseDrag.dragStartXY.y);
 		}
 		else {	//if we're dragging
 			XY delta;

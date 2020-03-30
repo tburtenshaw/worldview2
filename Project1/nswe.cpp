@@ -11,6 +11,22 @@ NSWE::NSWE(float n, float s, float w, float e) {
 	setvalues(n, s, w, e);
 }
 
+void NSWE::operator=(const NSWE sourceNSWE)
+{
+	north = sourceNSWE.north;
+	south = sourceNSWE.south;
+	west = sourceNSWE.west;
+	east = sourceNSWE.east;
+}
+
+void NSWE::operator=(const movingTarget sourceMT)
+{
+	north = sourceMT.north;
+	south = sourceMT.south;
+	west = sourceMT.west;
+	east = sourceMT.east;
+}
+
 void NSWE::constrainvalues() {
 	if (west > 180) { west -= 360; east -= 360; }
 	if (east < -180) { east += 360; west += 360; }
@@ -140,22 +156,48 @@ void NSWE::setto(NSWE *setthis) {
 
 		float targetheight = width * ratio;
 
-		//printf("Width %f, Height %f, TargetHeight %f.\n", width, height, targetheight);
-		//printf("N:%f, S:%f", north, south);
-
 		north += (targetheight - height) / 2;
 		south -= (targetheight - height) / 2;
-		//printf("N:%f, S:%f", north, south);
+		
+	}
+
+	bool NSWE::containspoint(float latitude, float longitude)
+	{
+		if (latitude>north)
+			return false;
+		if (latitude <south)
+			return false;
+		if (longitude < west)
+			return false;
+		if (longitude > east)
+			return false;
+
+		return true;
 	}
 
 
 
 	void movingTarget::movetowards(double currenttime) {
-		if (currenttime > targettime) {
+
+		if (currenttime >= targettime) {
 			north = target.north;
 			south = target.south;
 			west = target.west;
 			east = target.east;
+
+			moving = false;
+			
+			if (!dirty) {
+				if ((oldnorth != north) || (oldsouth != south) || (oldwest != west) || (oldeast != east)) {
+					dirty = true;
+					oldnorth = north; oldsouth = south; oldwest = west; oldeast = east;
+				}
+			}
+			else
+			{
+				dirty = false;
+			}
+
 			return;
 		}
 
@@ -164,9 +206,12 @@ void NSWE::setto(NSWE *setthis) {
 
 		float normalisedtime = 1 - (tdiff / duration);
 
+		int sidesright = 0;
+
 		//check if close enough (within 0.1%)
 		if (abs(north - target.north) / target.height() < 0.001) {
 			north = target.north;
+			sidesright++;
 		}
 		else {
 			north = north * (1 - normalisedtime) + (target.north * normalisedtime);
@@ -174,6 +219,7 @@ void NSWE::setto(NSWE *setthis) {
 
 		if (abs(south - target.south) / target.height() < 0.001) {
 			south = target.south;
+			sidesright++;
 		}
 		else {
 			south = south * (1 - normalisedtime) + (target.south * normalisedtime);
@@ -181,19 +227,36 @@ void NSWE::setto(NSWE *setthis) {
 
 		if (abs(west - target.west) / target.width() < 0.001) {
 			west = target.west;
+			sidesright++;
 		}
 		else {
 			west = west * (1 - normalisedtime) + (target.west * normalisedtime);
+			//printf("w: %.9f %.9f", east, abs(west - target.west));
 		}
 
 		if (abs(east - target.east) / target.width() < 0.001) {
 			east = target.east;
+			sidesright++;
 		}
 		else {
 			east = east * (1 - normalisedtime) + (target.east * normalisedtime);
+			//printf("e: %.9f %.9f", east, abs(east - target.east));
 		}
-
-
+		
+		if (sidesright==4) {
+			north = target.north;
+			south = target.south;
+			west = target.west;
+			east = target.east;
+			targettime = 0;
+			moving = false;
+			dirty = true;
+			return;
+		}
+			
+		//printf("moving %.6f %.6f %.6f %.6f %i\n", north, south, west, east,sidesright);
+		moving = true;
+		return;
 	}
 
 	void movingTarget::settarget(NSWE nsweTarget, double stime, double ttime) {
@@ -203,6 +266,25 @@ void NSWE::setto(NSWE *setthis) {
 		target.east = nsweTarget.east;
 		starttime = stime;
 		targettime = ttime;
+		
+		dirty = true;
+	}
+
+	void movingTarget::makeDirty()
+	{
+		dirty = true;
+	}
+
+	bool movingTarget::isDirty()
+	{
+		if (dirty) return true;
+		return false;
+	}
+
+	bool movingTarget::isMoving()
+	{
+		if (moving)	return true;
+		return false;
 	}
 
 	float movingTarget::abs(float f)

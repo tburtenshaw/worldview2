@@ -25,6 +25,7 @@
 //#include "shaders.h"
 #include "input.h"
 #include "heatmap.h"
+#include "regions.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <STB/stb_image.h>
@@ -37,6 +38,7 @@ movingTarget viewNSWE;
 RECTDIMENSION windowDimensions;
 
 LocationHistory lh;
+Region* testRegion;
 
 
 BackgroundInfo bgInfo;
@@ -158,8 +160,15 @@ int OpenGLTrial3()
 	viewNSWE.movetowards(1000000000000);
 	globalOptions.linewidth = 2;
 	globalOptions.cycle = 3600;
+	globalOptions.pointradius = 20;
 
-	globalOptions.pointradius = 30;
+
+	//try out regions
+	//Region * testRegion =new Region(30,-30,-180,180);
+
+	testRegion = new Region(-37.01, -37.072, 174.88, 174.943);
+
+	testRegion->Populate(&lh);
 
 	
 	//set up the background and heatmap
@@ -179,9 +188,16 @@ int OpenGLTrial3()
 	while (!glfwWindowShouldClose(window)) {
 
 		globalOptions.seconds = glfwGetTime();
-
+				
 		//get the view moving towards the target
 		viewNSWE.movetowards(globalOptions.seconds);
+
+		if (!viewNSWE.isMoving() && viewNSWE.isDirty()) {
+			testRegion->SetNSWE(&viewNSWE.target);
+			testRegion->Populate(&lh);
+			printf("d");
+		}
+
 
 		// wipe the drawing surface clear
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -230,6 +246,18 @@ void MakeGUI()
 	ImGui::Text("Long: %.3f, Lat: %.3f", longlatMouse.longitude, longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh.locations.size());
 	ImGui::Text("N:%.2f, S:%.3f, W:%f, E:%f", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	
+	float maxhour = 0;
+	float fhours[24];
+	for (int i = 0; i < 24; i++) {
+		fhours[i] = testRegion->hours[i];
+		if (fhours[i] > maxhour) {
+			maxhour = fhours[i];
+		}
+	}
+
+	ImGui::PlotHistogram("", fhours, 24 , 0, "Time spent each hour", 0, maxhour, ImVec2(0, 80),sizeof(float));
+
 	ImGui::End();
 
 	ImGui::Begin("Path drawing");
@@ -423,7 +451,7 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 	return;
 }
 
-void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //currently just straight copy from paths
+void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //currently just straight copy from paths, but i should do new array
 {
 	glGenBuffers(1, &mapPointsInfo->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);

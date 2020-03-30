@@ -122,10 +122,12 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 					if ((jsr->location.longitude - jsr->oldlocation.longitude >180)|| (jsr->location.longitude - jsr->oldlocation.longitude < -180)) {	//we can't do this just yet
 						BreakRoundTheWorlds(jsr, loc);
 					}
-					jsr->oldlocation.longitude = jsr->location.longitude;
-					jsr->oldlocation.latitude = jsr->location.latitude;
+					jsr->oldlocation= jsr->location;	//make the old this one
 
 					//write the new value into the Vector
+					if (jsr->location.timestamp < 1336886768) {
+						printf("too small: %i ", jsr->location.timestamp);
+					}
 					loc.push_back(jsr->location);
 
 					//reset to defaults
@@ -152,8 +154,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 	if (jsr->location.longitude < jsr->oldlocation.longitude) {
 		westwards = 1;
 	}
-	else
-	{
+	else {
 		westwards = 0;
 	}
 	
@@ -163,7 +164,8 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 	float dx, dy;
 
 	float movedlongitude;	//this is an extra 360 deg
-
+	float proportionNew;	//proportion with the most recent
+	proportionNew = 0.5;
 
 	if (!westwards) {
 		movedlongitude = 360 + jsr->oldlocation.longitude;
@@ -176,6 +178,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 		newloc.detaillevel = 0;//?don't draw
 		newloc.latitude = newlat;
 		newloc.longitude = -180;
+		newloc.timestamp = jsr->location.timestamp*(proportionNew)+ jsr->oldlocation.timestamp*(1-proportionNew);
 		loc.push_back(newloc);
 
 		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
@@ -198,6 +201,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 		newloc.detaillevel = 0;
 		newloc.latitude = newlat;
 		newloc.longitude = 180;
+		newloc.timestamp = jsr->location.timestamp * (proportionNew)+jsr->oldlocation.timestamp * (1 - proportionNew);
 		loc.push_back(newloc);
 
 		
