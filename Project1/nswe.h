@@ -27,6 +27,8 @@ public:
 	void nudgevertical(float p);
 	void moveby(float x, float y);
 
+
+	NSWE createExpandedBy(float factor);
 	WORLDCOORD centre();
 
 	void zoom(float z, WORLDCOORD c);
@@ -52,6 +54,7 @@ public:
 	void settarget(NSWE nsweTarget, double stime, double ttime);
 
 	void makeDirty();
+	void setMoving(bool torf);
 	bool isDirty();
 	bool isMoving();
 

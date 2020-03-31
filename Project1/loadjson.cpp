@@ -125,9 +125,6 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 					jsr->oldlocation= jsr->location;	//make the old this one
 
 					//write the new value into the Vector
-					if (jsr->location.timestamp < 1336886768) {
-						printf("too small: %i ", jsr->location.timestamp);
-					}
 					loc.push_back(jsr->location);
 
 					//reset to defaults

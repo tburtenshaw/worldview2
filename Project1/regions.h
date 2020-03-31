@@ -7,6 +7,9 @@ class LocationHistory;
 class Region {
 private:
 	void AddHoursOfDay(unsigned long startt, unsigned long endt);
+	
+	int GetDayOfWeek(unsigned long unixtime);
+	void AddDaysOfWeek(unsigned long startt, unsigned long endt);
 public:
 	Region();
 	Region(float n, float s, float w, float e);

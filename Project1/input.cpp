@@ -97,6 +97,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 			mouseDrag.SetStart(xpos,ypos);
 	
 			originalNSWE = viewNSWE;
+			viewNSWE.setMoving(true);
 
 		}
 		else {	//if we're dragging
@@ -112,7 +113,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 			dppy = viewNSWE.height() / windowDimensions.height;
 
 			viewNSWE.target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
-
+			viewNSWE.setMoving(true);
 
 			//printf("degrees: %f %f\n", dppx * deltax, dppy * deltay);
 
@@ -124,6 +125,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 		if (mouseDrag.isDragging) {
 			//printf("up");
 			mouseDrag.isDragging = 0;
+			viewNSWE.setMoving(false);
 		}
 	}
 	return;

@@ -192,10 +192,15 @@ int OpenGLTrial3()
 		//get the view moving towards the target
 		viewNSWE.movetowards(globalOptions.seconds);
 
-		if (!viewNSWE.isMoving() && viewNSWE.isDirty()) {
+		if (viewNSWE.isDirty()) {
 			testRegion->SetNSWE(&viewNSWE.target);
 			testRegion->Populate(&lh);
-			printf("d");
+			//printf("d");
+		}
+		if (!viewNSWE.isMoving() && viewNSWE.isDirty()) {
+			NSWE expanded;
+			expanded = viewNSWE.target.createExpandedBy(2);
+			UpdateHeatmapTexture(&expanded, &bgInfo);
 		}
 
 
@@ -247,16 +252,30 @@ void MakeGUI()
 	ImGui::Text("Number of points: %i", lh.locations.size());
 	ImGui::Text("N:%.2f, S:%.3f, W:%f, E:%f", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
 	
-	float maxhour = 0;
-	float fhours[24];
-	for (int i = 0; i < 24; i++) {
-		fhours[i] = testRegion->hours[i];
-		if (fhours[i] > maxhour) {
-			maxhour = fhours[i];
+	{
+		float maxhour = 0;
+		float fhours[24];
+		for (int i = 0; i < 24; i++) {
+			fhours[i] = testRegion->hours[i];
+			if (fhours[i] > maxhour) {
+				maxhour = fhours[i];
+			}
 		}
+		ImGui::PlotHistogram("", fhours, 24, 0, "Time spent each hour", 0, maxhour, ImVec2(0, 80), sizeof(float));
 	}
 
-	ImGui::PlotHistogram("", fhours, 24 , 0, "Time spent each hour", 0, maxhour, ImVec2(0, 80),sizeof(float));
+	{
+		float maxday = 0;
+		float fdays[7];
+		for (int i = 0; i < 7; i++) {
+			fdays[i] = testRegion->dayofweeks[i];
+			if (fdays[i] > maxday) {
+				maxday = fdays[i];
+			}
+		}
+		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent each day", 0, maxday, ImVec2(0, 80), sizeof(float));
+	}
+	
 
 	ImGui::End();
 
@@ -344,9 +363,9 @@ void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {
-	printf("Creating heatmap... ");
+	//printf("Creating heatmap... ");
 	lh.CreateHeatmap(nswe, 0);
-	printf("Done.\n");
+	//printf("Done.\n");
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lh.heatmap->width, lh.heatmap->height, GL_RED, GL_FLOAT, lh.heatmap->pixel);

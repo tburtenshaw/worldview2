@@ -96,6 +96,27 @@ void NSWE::setto(NSWE *setthis) {
 		return;
 	}
 
+	NSWE NSWE::createExpandedBy(float factor)
+	{
+		//this makes the height and width both "factor" larger, centred at the middle, to a max of -180,90->180,-90.
+		NSWE outputNSWE;
+
+		float h = north - south;
+		float w = east - west;
+
+		float midlat = (north + south) / 2;
+		float midlong = (east + west) / 2;
+
+		outputNSWE.north = midlat + h / 2 * factor;
+		outputNSWE.south = midlat - h / 2 * factor;
+		outputNSWE.west = midlong - w / 2 * factor;
+		outputNSWE.east = midlong + w / 2 * factor;
+
+		//printf("Start: %f %f. %.1f, %.1f, %.1f, %.1f. Then %.1f, %.1f, %.1f, %.1f, .\n",h,w,north,south,west,east,outputNSWE.north, outputNSWE.south, outputNSWE.west, outputNSWE.east);
+
+		return outputNSWE;
+	}
+
 	WORLDCOORD NSWE::centre() {
 		WORLDCOORD c;
 
@@ -273,6 +294,11 @@ void NSWE::setto(NSWE *setthis) {
 	void movingTarget::makeDirty()
 	{
 		dirty = true;
+	}
+
+	void movingTarget::setMoving(bool torf)
+	{
+		moving = torf;
 	}
 
 	bool movingTarget::isDirty()

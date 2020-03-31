@@ -15,16 +15,7 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 	heatmap->maxPixel = 0;
 	for (int y = 0; y < heatmap->height; y++) {
 		for (int x = 0; x < heatmap->width; x++) {
-			long p;
-			p= (x+y)*0;
-			//if (!(x % 5)) { p = 50; }
-			if ((y == 0) || (x == 0) || (x==heatmap->width-1) || (y==heatmap->height-1)) {//make the border 0
-				p = 10;
-			}
-	
-			heatmap->pixel[y * heatmap->width + x] = p;	//row,col, that's why y,x
-
-
+			heatmap->pixel[y * heatmap->width + x] = 0;	//row,col, that's why y,x
 		}
 	}
 	
@@ -56,10 +47,9 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 			p = heatmap->pixel[y * heatmap->width + x];
 
 			if (p > heatmap->maxPixel) {
-				//printf("%i %i Max %i. tsdiff: %i. (%i-%i)\n", x, y, p, tsdiff, iter->timestamp, tsold);
 				heatmap->maxPixel = p;
 			}
-			//printf("%f %f %i %i %i %i\n", iter->longitude, iter->latitude, x, y, p, tsdiff);
+
 		}
 
 		tsold = iter->timestamp;
@@ -68,34 +58,14 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 
 	}
 
-	printf("Max before log: %f\n", heatmap->maxPixel);
-
-
-
-	//this takes the logarithm
-	heatmap->maxPixel = 0;
-	for (int y = 0; y < heatmap->height; y++) {
-		for (int x = 0; x < heatmap->width; x++) {
-			p = heatmap->pixel[y * heatmap->width + x];
-			if (p > 1) {
-
-				heatmap->pixel[y * heatmap->width + x] = log(p);
-				//printf("%.2f ", heatmap->pixel[y * heatmap->width + x]);
-				if (heatmap->pixel[y * heatmap->width + x] > heatmap->maxPixel) {
-					heatmap->maxPixel = heatmap->pixel[y * heatmap->width + x];
-				}
-			}
-		}
-		//+printf("\n");
-	}
-	printf("Max after log: %f\n", heatmap->maxPixel);
 	return;
+
 }
 
 
 Heatmap::Heatmap()
 {
-	height=width = 4096;
+	height=width = 2048;
 	
 
 	//width = height = 100;
