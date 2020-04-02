@@ -23,3 +23,17 @@ LocationHistory::~LocationHistory()
 {
 	delete heatmap;
 }
+
+GlobalOptions::GlobalOptions()
+{
+	seconds = 0;
+	
+	showPaths = false;
+	showPoints = false;
+
+	linewidth = 2;
+	cycle = 3600;
+	pointradius = 20;
+
+	minimumaccuracy = 24;
+}

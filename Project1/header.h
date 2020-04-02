@@ -67,6 +67,7 @@ struct LOCATION {
 
 class GlobalOptions {
 public:
+	GlobalOptions();
 	bool showPaths;
 	bool showPoints;
 	float seconds;
@@ -76,6 +77,11 @@ public:
 
 	float pointradius;
 
+	//heatmap
+	int palette; //viridis = 1, inferno = 2
+	bool blurperaccuracy;
+	int minimumaccuracy;
+	bool predictpath;
 };
 
 
@@ -132,9 +138,6 @@ public:
 
 };
 
-
-
-void MakeGUI();
 
 void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);

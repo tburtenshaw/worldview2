@@ -163,9 +163,11 @@
     <ClCompile Include="..\..\..\..\..\..\GL\include\imgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\..\..\..\..\GL\include\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\..\..\..\..\GL\include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="gui.cpp" />
     <ClCompile Include="header.cpp" />
     <ClCompile Include="heatmap.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="mytimezone.cpp" />
     <ClCompile Include="nswe.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="regions.cpp" />
@@ -173,10 +175,12 @@
     <ClCompile Include="loadjson.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gui.h" />
     <ClInclude Include="header.h" />
     <ClInclude Include="heatmap.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="loadjson.h" />
+    <ClInclude Include="mytimezone.h" />
     <ClInclude Include="nswe.h" />
     <ClInclude Include="regions.h" />
     <ClInclude Include="shaders.h" />

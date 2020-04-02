@@ -7,7 +7,6 @@
 #include "heatmap.h"
 #include <stdio.h>
 
-extern NSWE targetNSWE;
 extern movingTarget viewNSWE;
 extern RECTDIMENSION windowDimensions;
 extern WORLDCOORD longlatMouse;

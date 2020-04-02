@@ -100,6 +100,13 @@ void Shader::SetUniformFromFloats(const char* uniformname, float f1, float f2, f
 	return;
 }
 
+void Shader::SetUniformFromInts(const char* uniformname, int i1)
+{
+	int uniloc;
+	uniloc = glGetUniformLocation(program, uniformname);
+	glUniform1i(uniloc, i1);
+}
+
 GLboolean Shader::CheckForErrors(GLuint shader, GLuint type) {
 	int params=0;
 	if (type == GL_COMPILE_STATUS)	glGetShaderiv(shader, type, &params);

@@ -6,6 +6,7 @@ class Shader;
 
 
 class Heatmap {
+
 public:
 	int width;
 	int height;
@@ -15,6 +16,8 @@ public:
 
 	float pixel[4096*4096];
 	float maxPixel;
+
+	void GaussianBlur(int radius);
 
 	Heatmap();
 	~Heatmap();

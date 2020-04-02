@@ -1,7 +1,7 @@
 // Project1.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #define IMGUI_IMPL_OPENGL_LOADER_GLEW
-
+//#define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
 #include <iostream>
 #include <tchar.h>
@@ -12,6 +12,7 @@
 
 #define GLEW_STATIC
 #include <glew.h>
+//#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <imgui/imgui.h>
@@ -22,23 +23,23 @@
 #include "header.h"
 #include "nswe.h"
 #include "loadjson.h"
-//#include "shaders.h"
 #include "input.h"
 #include "heatmap.h"
 #include "regions.h"
+#include "gui.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <STB/stb_image.h>
 
 using namespace std;
 
+LocationHistory lh;
+
 WORLDCOORD longlatMouse;
-NSWE targetNSWE;
 movingTarget viewNSWE;
 RECTDIMENSION windowDimensions;
 
-LocationHistory lh;
-Region* testRegion;
+Region* viewportRegion;
 
 
 BackgroundInfo bgInfo;
@@ -84,11 +85,6 @@ int OpenAndReadJSON()
 	return 0;
 }
 
-
-extern "C" {
-	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-}
-
 int OpenGLTrial3()
 {
 
@@ -97,9 +93,6 @@ int OpenGLTrial3()
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		return 1;
 	}
-
-	globalOptions.showPaths = false;
-
 
 	windowDimensions.width = 900;
 	windowDimensions.height = 900;
@@ -153,22 +146,15 @@ int OpenGLTrial3()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
-	int params = -1;
 
 	//Set some app parameters
 	viewNSWE.target.setvalues(-36.83, -37.11, 174.677-1, 174.961-1);
 	viewNSWE.movetowards(1000000000000);
-	globalOptions.linewidth = 2;
-	globalOptions.cycle = 3600;
-	globalOptions.pointradius = 20;
 
 
-	//try out regions
-	//Region * testRegion =new Region(30,-30,-180,180);
+	viewportRegion = new Region(-37.01, -37.072, 174.88, 174.943);
 
-	testRegion = new Region(-37.01, -37.072, 174.88, 174.943);
-
-	testRegion->Populate(&lh);
+	//testRegion->Populate(&lh);
 
 	
 	//set up the background and heatmap
@@ -193,8 +179,8 @@ int OpenGLTrial3()
 		viewNSWE.movetowards(globalOptions.seconds);
 
 		if (viewNSWE.isDirty()) {
-			testRegion->SetNSWE(&viewNSWE.target);
-			testRegion->Populate(&lh);
+			viewportRegion->SetNSWE(&viewNSWE.target);
+			viewportRegion->Populate(&lh);
 			//printf("d");
 		}
 		if (!viewNSWE.isMoving() && viewNSWE.isDirty()) {
@@ -225,7 +211,7 @@ int OpenGLTrial3()
 		// update other events like input handling 
 
 
-		MakeGUI();	//make the ImGui stuff
+		Gui::MakeGUI(&lh);	//make the ImGui stuff
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -242,59 +228,6 @@ int OpenGLTrial3()
 	// close GL context and any other GLFW resources
 	glfwTerminate();
 	return 0;
-}
-
-void MakeGUI()
-{
-	ImGui::Begin("Map information");
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Long: %.3f, Lat: %.3f", longlatMouse.longitude, longlatMouse.latitude);
-	ImGui::Text("Number of points: %i", lh.locations.size());
-	ImGui::Text("N:%.2f, S:%.3f, W:%f, E:%f", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-	
-	{
-		float maxhour = 0;
-		float fhours[24];
-		for (int i = 0; i < 24; i++) {
-			fhours[i] = testRegion->hours[i];
-			if (fhours[i] > maxhour) {
-				maxhour = fhours[i];
-			}
-		}
-		ImGui::PlotHistogram("", fhours, 24, 0, "Time spent each hour", 0, maxhour, ImVec2(0, 80), sizeof(float));
-	}
-
-	{
-		float maxday = 0;
-		float fdays[7];
-		for (int i = 0; i < 7; i++) {
-			fdays[i] = testRegion->dayofweeks[i];
-			if (fdays[i] > maxday) {
-				maxday = fdays[i];
-			}
-		}
-		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent each day", 0, maxday, ImVec2(0, 80), sizeof(float));
-	}
-	
-
-	ImGui::End();
-
-	ImGui::Begin("Path drawing");
-	ImGui::Checkbox("Show paths", &globalOptions.showPaths);
-	ImGui::SliderFloat("Line thickness", &globalOptions.linewidth, 0.0f, 20.0f, "%.2f");
-	ImGui::SliderFloat("Cycle", &globalOptions.cycle, 1.0f, 3600.0f * 7.0 * 24, "%.0f");
-	ImGui::End();
-
-	ImGui::Begin("Heatmap");
-
-	ImGui::End();
-
-	ImGui::Begin("Selected");
-	ImGui::Checkbox("Show points", &globalOptions.showPoints);
-	ImGui::SliderFloat("Point radius", &globalOptions.pointradius,0,100,"%.1f");
-	ImGui::End();
-
-	return;
 }
 
 
@@ -351,8 +284,8 @@ void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 
 
 	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	//this is the poles
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
@@ -406,6 +339,7 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", lh.heatmap->nswe->north, lh.heatmap->nswe->south, lh.heatmap->nswe->west, lh.heatmap->nswe->east);
 
 	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", lh.heatmap->maxPixel);
+	backgroundInfo->shader->SetUniformFromInts("palette", globalOptions.palette);
 
 
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -518,48 +452,6 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	return;
 }
 
-BackgroundInfo::BackgroundInfo()
-{
-	vao = 0;
-	vbo = 0;
-
-	shader = new Shader;
-
-	worldTexture = 0;
-	heatmapTexture = 0;
-
-	worldTextureLocation = 0;
-	heatmapTextureLocation = 0;
-}
-
-BackgroundInfo::~BackgroundInfo()
-{
-	delete shader;
-}
-
-MapPathInfo::MapPathInfo()
-{
-	vao = 0;
-	vbo = 0;
-
-	shader = new Shader;
-}
-MapPathInfo::~MapPathInfo()
-{
-	delete shader;
-}
-
-MapPointsInfo::MapPointsInfo()
-{
-	vao = 0;
-	vbo = 0;
-
-	shader = new Shader;
-}
-MapPointsInfo::~MapPointsInfo()
-{
-	delete shader;
-}
 
 
 

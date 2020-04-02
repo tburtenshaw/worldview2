@@ -3,6 +3,7 @@
 #include "header.h"
 #include "nswe.h"
 #include "regions.h"
+#include "mytimezone.h"
 
 
 
@@ -24,6 +25,14 @@ Region::Region(float n, float s, float w, float e)
 	memset(&hours, 0, sizeof(hours));
 }
 
+float Region::GetHoursInRegion()
+{
+	float h;
+	h = totalsecondsinregion;
+	h /= 3600;
+	return h;
+}
+
 void Region::SetNSWE(NSWE* sourceNSWE)
 {
 	nswe = *sourceNSWE;
@@ -39,11 +48,14 @@ void Region::SetNSWE(float n, float s, float w, float e)
 
 void Region::Populate(LocationHistory* lh)
 {
+	using namespace MyTimeZone;
+	
 	unsigned long startofstay;
 	unsigned long endofstay;
 
 	memset(&hours, 0, sizeof(hours));	//set arrays to zero
 	memset(&dayofweeks, 0, sizeof(dayofweeks));	//set arrays to zero
+	totalsecondsinregion = 0;
 
 	bool instay = false;
 
@@ -62,16 +74,17 @@ void Region::Populate(LocationHistory* lh)
 				instay = false;
 				
 				//printf("%i-%i=%i\n", endofstay, startofstay, endofstay - startofstay);
+				if (endofstay > startofstay) {
+					CalculateStats(FixToLocalTime(startofstay), FixToLocalTime(endofstay));
 
-				AddHoursOfDay(startofstay, endofstay);
-				AddDaysOfWeek(startofstay, endofstay);
-
-
-				if (endofstay < startofstay) {
-					//printf("end:%i %i %f,%f\n", endofstay, iter->timestamp, iter->latitude, iter->longitude);
 				}
 			}
 		}
+	}
+	if (instay == true) {//if we're still in, we'll end at the last point
+		endofstay = lh->locations.back().timestamp;
+		CalculateStats(FixToLocalTime(startofstay), FixToLocalTime(endofstay));
+		//printf("out %i %i %i\n",startofstay,endofstay);
 	}
 
 //	for (int i = 0; i < 24; i++) {
@@ -86,7 +99,14 @@ void Region::Populate(LocationHistory* lh)
 	return;
 }
 
-void Region::AddHoursOfDay(unsigned long startt, unsigned long endt)
+void Region::CalculateStats(unsigned long startofstay, unsigned long endofstay)
+{
+	AddHoursOfDay(startofstay, endofstay);
+	AddDaysOfWeek(startofstay, endofstay);
+	totalsecondsinregion += endofstay - startofstay;
+}
+
+void Region::AddHoursOfDay(unsigned long startt, unsigned long endt) //this needs to be fixed, it overcounts some things
 {
 	unsigned long firstpartofhour;
 	unsigned long currenthour;
@@ -140,11 +160,9 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 		enddayofweek = GetDayOfWeek(endt);
 		if (enddayofweek == currentdayofweek) {
 			dayofweeks[currentdayofweek] += endt - startt;	//all the seconds go there
-			//printf("s %i:%i\n",currentdayofweek,endt-startt);
 			return;
 		}
 	}
-
 
 	unsigned long firstwholeday;
 	unsigned long notintheweek;
@@ -160,21 +178,17 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 		firstpartofweek = 0;
 	}
 
-	//printf("\tfirst whole day %i.\nS: %i:%i\n", firstwholeday,currentdayofweek,firstpartofweek);
 	dayofweeks[currentdayofweek] += firstpartofweek;
 
 	//now we'll get the last part of the week
 	lastwholeday = (endt / secondsperday) * secondsperday;
 	currentdayofweek = GetDayOfWeek(lastwholeday) ;
-	//printf("\tlast whole day %i\nE: %i:%i\n", lastwholeday, currentdayofweek, endt - lastwholeday);
 	dayofweeks[currentdayofweek] += endt - lastwholeday;
 
 	//now the middle part
 	for (t = firstwholeday; t < lastwholeday; t += secondsperday) {
 		currentdayofweek = GetDayOfWeek(t);
-		//printf("\tt:%i\nM:%i:%i\n", t,currentdayofweek,secondsperday);
 		dayofweeks[currentdayofweek] += secondsperday;
 	}
-	//printf("\n\n");
 	return;
 }
