@@ -1,5 +1,6 @@
 #include "mytimezone.h"
 #include <time.h>
+#include <string>
 #pragma warning(disable : 4996)
 
 unsigned long MyTimeZone::FixToLocalTime(unsigned long unixtime)
@@ -31,4 +32,23 @@ unsigned long MyTimeZone::AdjustBasedOnLongitude(unsigned long unixtime, float l
     naivetz = ((longitude + 7.5) / 15);
  
     return unixtime+naivetz*3600;
+}
+
+std::string MyTimeZone::FormatUnixTime(unsigned long unixtime)
+{
+    std::string output;
+
+    std::string daynames[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    
+    struct std::tm *corrected;
+
+    time_t t;
+    t = unixtime;
+    
+    corrected = gmtime(&t);
+
+    
+    output = daynames[corrected->tm_wday]+" "+std::to_string(corrected->tm_year+1900)+"-"+std::to_string(corrected->tm_mon+1) + "-" + std::to_string(corrected->tm_mday);
+
+    return output;
 }

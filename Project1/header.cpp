@@ -18,6 +18,9 @@ void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *win
 LocationHistory::LocationHistory()
 {
 	
+	earliesttimestamp = 2145916800;
+	latesttimestamp = 0;
+
 	windowDimensions = new RECTDIMENSION;
 	longlatMouse = new WORLDCOORD;
 	viewNSWE = new movingTarget;
@@ -54,4 +57,7 @@ GlobalOptions::GlobalOptions()
 
 	minimumaccuracy = 24;
 	palette = 1;
+
+	blurperaccuracy = false;
+	predictpath = false;
 }

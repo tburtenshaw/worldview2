@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <vector>
 
 //forward declaration
 class NSWE;
@@ -29,7 +31,7 @@ public:
 	unsigned long months[12];
 
 	unsigned long earliestday;	//stores the locally adjusted unix time of midnight the first day
-	unsigned long lastestday;
+	unsigned long latestday;
 
 	float GetHoursInRegion();
 	
@@ -37,4 +39,6 @@ public:
 	void SetNSWE(float n, float s, float w, float e);
 
 	void Populate(LocationHistory* lh);
+
+	void FillVectorWithDates(std::vector<std::string> &list);
 };

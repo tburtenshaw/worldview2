@@ -26,7 +26,7 @@ typedef struct json_reader_state {
 
 } JSON_READER_STATE;
 
-int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION> &loc);
+int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION> &loc, LocationHistory* lh);
 int AssignValueToName(JSON_READER_STATE* jsr);
 void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc);
 void OptimiseDetail(vector<LOCATION>& loc);

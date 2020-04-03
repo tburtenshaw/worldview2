@@ -93,6 +93,9 @@ class LocationHistory {
 public:
 	std::string filename;
 	std::vector<LOCATION> locations;
+	unsigned long earliesttimestamp;
+	unsigned long latesttimestamp;
+	
 	Heatmap* heatmap;
 
 	LocationHistory();

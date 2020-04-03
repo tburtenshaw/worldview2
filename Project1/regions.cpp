@@ -96,12 +96,45 @@ void Region::Populate(LocationHistory* lh)
 //	printf("d: %i, sec: %i\n", i, dayofweeks[i]);
 //}
 
-	for (int i = 0; i < 5000; i++) {
-		if (daynumbersince2010[i]>0)	printf("%i %i %i\n", i, i* 60 * 60 * 24 + 1262304000,daynumbersince2010[i]);
-	}
+	int e = GetDaySince2010(lh->earliesttimestamp);
+	int l = GetDaySince2010(lh->latesttimestamp);
 
-	//printf("%f\n", iter->latitude);
+	earliestday = 5000;
+
+	for (int i = e; (i <= l) && (i<5000); i++) {
+		if (daynumbersince2010[i] > 0) {
+			if (i < earliestday) { earliestday = i; }
+			latestday = i;	//this will be overwritten mulitple times
+			//printf("%i %i %i %s\n", i, i * 60 * 60 * 24 + 1262304000, daynumbersince2010[i], FormatUnixTime(i * 60 * 60 * 24 + 1262304000).c_str());
+		}
+	}
+	//printf("%i %i\n", earliestday, latestday);
+	
 	return;
+}
+
+void Region::FillVectorWithDates(std::vector<std::string>& list)
+{
+	int inrun = 0;
+
+
+	for (int i = earliestday; i <= latestday; i++) {
+		if (daynumbersince2010[i] > 60 * 15) {	//at least fifteen minutes
+			if (inrun == 0) {
+				list.push_back(MyTimeZone::FormatUnixTime(i * 60 * 60 * 24 + 1262304000));
+				inrun = i;
+			}
+		}
+		else {
+			if ((inrun <i-1)&& (inrun>0)) {
+				list.push_back(" to " + MyTimeZone::FormatUnixTime((i - 1) * 60 * 60 * 24 + 1262304000));
+				inrun = 0;
+			}
+		}
+	}
+	if ((inrun < latestday) && (inrun > 0)) {
+		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday) * 60 * 60 * 24 + 1262304000));
+	}
 }
 
 void Region::CalculateStats(unsigned long startofstay, unsigned long endofstay)

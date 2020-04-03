@@ -60,7 +60,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 			printf("failed reading the file");
 			return 1;
 		}
-		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations);
+		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations, lh);
 
 		if (result) {
 			readbytes = 0;	//trick the loading loop into ending

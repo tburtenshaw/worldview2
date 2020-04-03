@@ -4,6 +4,7 @@
 #include "nswe.h"
 #include "regions.h"
 #include <string>
+#include <vector>
 
 void Gui::MakeGUI(LocationHistory * lh)
 {
@@ -25,6 +26,9 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->viewNSWE->north, lh->viewNSWE->south, lh->viewNSWE->west, lh->viewNSWE->east);
+
+	ImGui::Text("Earliest: %i", lh->earliesttimestamp);
+	ImGui::Text("Latest: %i", lh->latesttimestamp);
 
 	{
 		float maxhour = 0;
@@ -54,6 +58,8 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	ImGui::Text("Time (hours): %.1f", lh->viewportRegion->GetHoursInRegion());
 
+	Gui::ListDatesInRegion(lh->viewportRegion);
+
 	ImGui::End();
 
 	ImGui::Begin("Path drawing");
@@ -76,6 +82,20 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::End();
 
 	return;
+}
+
+void Gui::ListDatesInRegion(Region* r)
+{
+	std::vector<std::string> dates;
+	r->FillVectorWithDates(dates);
+	int i;
+	
+	std::vector<const char*> cstrings{};
+
+	for (const auto& string : dates)
+		cstrings.push_back(string.c_str());
+	
+	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 
 const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION *rect)

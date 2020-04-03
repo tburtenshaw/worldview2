@@ -6,7 +6,7 @@
 #include "loadjson.h"
 #include "heatmap.h"
 
-int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION>& loc) {
+int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION>& loc, LocationHistory * lh) {
 
 	unsigned long i;
 	//char c;
@@ -124,8 +124,16 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 					}
 					jsr->oldlocation= jsr->location;	//make the old this one
 
-					//write the new value into the Vector
+					//Write the new value into the Vector
 					loc.push_back(jsr->location);
+
+					//early/late data
+					if (jsr->location.timestamp < lh->earliesttimestamp) {
+						lh->earliesttimestamp = jsr->location.timestamp;
+					}
+					if (jsr->location.timestamp > lh->latesttimestamp) {
+						lh->latesttimestamp = jsr->location.timestamp;
+					}
 
 					//reset to defaults
 					jsr->location.altitude = -1;
