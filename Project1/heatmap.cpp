@@ -6,10 +6,13 @@
 #include <stdio.h>
 #include <iostream>
 
-extern GlobalOptions globalOptions;
+extern LocationHistory* pLocationHistory;
 
 void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 	
+	GlobalOptions* options;
+	options = pLocationHistory->globalOptions;
+
 	heatmap->nswe->setto(inputNswe);
 	
 	heatmap->maxPixel = 0;
@@ -34,12 +37,12 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 		fx = (iter->longitude - heatmap->nswe->west) / heatmap->nswe->width() * heatmap->width;
 		fy = (heatmap->nswe->north - iter->latitude) / heatmap->nswe->height() * heatmap->height;
 		
-		x = (int)fx;
-		y = (int)fy;
+		x = (int)(fx+0.5);
+		y = (int)(fy+0.5);
 
 		if ((x < heatmap->width) && (x >= 0) && (y < heatmap->height) && (y >= 0)) {
 			
-			if (iter->accuracy < globalOptions.minimumaccuracy) {
+			if (iter->accuracy < options->minimumaccuracy) {
 				heatmap->pixel[y * heatmap->width + x] += (tsdiff * 10);
 			}
 			

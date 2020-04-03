@@ -55,6 +55,7 @@ void Region::Populate(LocationHistory* lh)
 
 	memset(&hours, 0, sizeof(hours));	//set arrays to zero
 	memset(&dayofweeks, 0, sizeof(dayofweeks));	//set arrays to zero
+	memset(&daynumbersince2010, 0, sizeof(daynumbersince2010));
 	totalsecondsinregion = 0;
 
 	bool instay = false;
@@ -94,6 +95,10 @@ void Region::Populate(LocationHistory* lh)
 //for (int i = 0; i < 7; i++) {
 //	printf("d: %i, sec: %i\n", i, dayofweeks[i]);
 //}
+
+	for (int i = 0; i < 5000; i++) {
+		if (daynumbersince2010[i]>0)	printf("%i %i %i\n", i, i* 60 * 60 * 24 + 1262304000,daynumbersince2010[i]);
+	}
 
 	//printf("%f\n", iter->latitude);
 	return;
@@ -142,6 +147,19 @@ int Region::GetDayOfWeek(unsigned long unixtime)
 	return ((unixtime / secondsperday) + 4) % 7;
 }
 
+int Region::GetDaySince2010(unsigned long unixtime)
+{
+	const int secondsperday = 60 * 60 * 24;
+
+	unsigned long u;
+	u = (unixtime - 1262304000) / secondsperday;
+	if (u >= 10000) {
+		u = 0;
+	}
+
+	return u;
+}
+
 void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 {
 	unsigned long firstpartofweek;
@@ -160,6 +178,7 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 		enddayofweek = GetDayOfWeek(endt);
 		if (enddayofweek == currentdayofweek) {
 			dayofweeks[currentdayofweek] += endt - startt;	//all the seconds go there
+			daynumbersince2010[GetDaySince2010(endt)] += endt - startt;
 			return;
 		}
 	}
@@ -179,16 +198,20 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 	}
 
 	dayofweeks[currentdayofweek] += firstpartofweek;
+	daynumbersince2010[GetDaySince2010(startt)] += firstpartofweek;
 
 	//now we'll get the last part of the week
 	lastwholeday = (endt / secondsperday) * secondsperday;
 	currentdayofweek = GetDayOfWeek(lastwholeday) ;
 	dayofweeks[currentdayofweek] += endt - lastwholeday;
+	daynumbersince2010[GetDaySince2010(lastwholeday)] += endt - lastwholeday;
+
 
 	//now the middle part
 	for (t = firstwholeday; t < lastwholeday; t += secondsperday) {
 		currentdayofweek = GetDayOfWeek(t);
 		dayofweeks[currentdayofweek] += secondsperday;
+		daynumbersince2010[GetDaySince2010(t)] += secondsperday;
 	}
 	return;
 }

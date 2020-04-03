@@ -4,6 +4,7 @@
 
 #include "header.h"
 #include "shaders.h"
+#include "nswe.h"
 #include <iostream>
 #include <fstream>
 
@@ -105,6 +106,14 @@ void Shader::SetUniformFromInts(const char* uniformname, int i1)
 	int uniloc;
 	uniloc = glGetUniformLocation(program, uniformname);
 	glUniform1i(uniloc, i1);
+}
+
+void Shader::SetUniformFromNSWE(const char* uniformname, NSWE* nswe)
+{
+	int uniloc;
+	uniloc = glGetUniformLocation(program, uniformname);
+	glUniform4f(uniloc, nswe->north, nswe->south, nswe->west, nswe->east);
+	return;
 }
 
 GLboolean Shader::CheckForErrors(GLuint shader, GLuint type) {

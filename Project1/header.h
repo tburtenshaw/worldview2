@@ -14,6 +14,10 @@ struct LOCATION;
 class Heatmap;
 class Shader;
 class BackgroundInfo;
+class MapPathInfo;
+class MapPointsInfo;
+class Region;
+class movingTarget;
 
 //typedef struct sLocation ;
 
@@ -45,7 +49,7 @@ public:
 	float latitude;
 	float longitude;
 
-	void SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION window);
+	void SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *window);
 
 };
 
@@ -94,6 +98,21 @@ public:
 	LocationHistory();
 	~LocationHistory();
 	void CreateHeatmap(NSWE *nswe, int n);
+
+
+	WORLDCOORD *longlatMouse;
+	movingTarget *viewNSWE;
+	RECTDIMENSION *windowDimensions;
+
+	Region* viewportRegion;
+
+
+	BackgroundInfo *bgInfo;
+	MapPathInfo *pathInfo;
+	MapPointsInfo *pointsInfo;
+
+	GlobalOptions *globalOptions;
+
 };
 
 class BackgroundInfo {

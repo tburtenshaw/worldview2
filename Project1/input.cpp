@@ -7,10 +7,11 @@
 #include "heatmap.h"
 #include <stdio.h>
 
-extern movingTarget viewNSWE;
-extern RECTDIMENSION windowDimensions;
-extern WORLDCOORD longlatMouse;
-extern BackgroundInfo bgInfo;
+//extern movingTarget viewNSWE;
+//extern RECTDIMENSION windowDimensions;
+//extern WORLDCOORD longlatMouse;
+//extern BackgroundInfo bgInfo;
+extern LocationHistory* pLocationHistory;
 
 MouseActions mouseDrag;
 
@@ -31,36 +32,37 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	uppressed = glfwGetKey(window, GLFW_KEY_UP);
 	downpressed = glfwGetKey(window, GLFW_KEY_DOWN);
 
+	movingTarget* viewNSWE;
+	viewNSWE = pLocationHistory->viewNSWE;
 
 	if (GLFW_PRESS == leftpressed) {
-		viewNSWE.target.nudgehorizontal(-step);
+		viewNSWE->target.nudgehorizontal(-step);
 	}
 
 	if (GLFW_PRESS == rightpressed) {
-		viewNSWE.target.nudgehorizontal(step);
+		viewNSWE->target.nudgehorizontal(step);
 	}
 
 	if (GLFW_PRESS == uppressed) {
-		viewNSWE.target.nudgevertical(step);
+		viewNSWE->target.nudgevertical(step);
 	}
 	if (GLFW_PRESS == downpressed) {
-		viewNSWE.target.nudgevertical(-step);
+		viewNSWE->target.nudgevertical(-step);
 	}
 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-		UpdateHeatmapTexture(&viewNSWE.target, &bgInfo);
 		//glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
 
 	if (key == GLFW_KEY_KP_ADD) {
-		viewNSWE.target.zoom(0.9, viewNSWE.target.centre());
+		viewNSWE->target.zoom(0.9, viewNSWE->target.centre());
 	}
 	if (key == GLFW_KEY_KP_SUBTRACT) {
-		viewNSWE.target.zoom(1 / 0.9, viewNSWE.target.centre());
+		viewNSWE->target.zoom(1 / 0.9, viewNSWE->target.centre());
 	}
 
-	viewNSWE.starttime = glfwGetTime();
-	viewNSWE.targettime = glfwGetTime() + 0.4;
+	viewNSWE->starttime = glfwGetTime();
+	viewNSWE->targettime = glfwGetTime() + 0.4;
 }
 
 
@@ -71,15 +73,17 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 
 	WORLDCOORD mapCoord;
+	movingTarget* viewNSWE;
+	viewNSWE = pLocationHistory->viewNSWE;
 
-	mapCoord.SetFromWindowXY(xpos, ypos, viewNSWE.target, windowDimensions);
+	mapCoord.SetFromWindowXY(xpos, ypos, viewNSWE->target, pLocationHistory->windowDimensions);
 
-	if (yoffset > 0) { viewNSWE.target.zoom(0.8, mapCoord); }
-	else if (yoffset < 1) { viewNSWE.target.zoom(1 / 0.8, mapCoord); }
+	if (yoffset > 0) { viewNSWE->target.zoom(0.8, mapCoord); }
+	else if (yoffset < 1) { viewNSWE->target.zoom(1 / 0.8, mapCoord); }
 
-	viewNSWE.target.makeratio(1);
-	viewNSWE.starttime = glfwGetTime();
-	viewNSWE.targettime = glfwGetTime() + 0.4;
+	viewNSWE->target.makeratio(1);
+	viewNSWE->starttime = glfwGetTime();
+	viewNSWE->targettime = glfwGetTime() + 0.4;
 
 	return;
 }
@@ -87,7 +91,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	longlatMouse.SetFromWindowXY(xpos, ypos, viewNSWE, windowDimensions);
+	movingTarget* viewNSWE;
+	viewNSWE = pLocationHistory->viewNSWE;
+	
+	pLocationHistory->longlatMouse->SetFromWindowXY(xpos, ypos, *viewNSWE, pLocationHistory->windowDimensions);
 
 	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	if (state == GLFW_PRESS) {
@@ -95,8 +102,8 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 			mouseDrag.isDragging = 1;
 			mouseDrag.SetStart(xpos,ypos);
 	
-			originalNSWE = viewNSWE;
-			viewNSWE.setMoving(true);
+			originalNSWE = *viewNSWE;
+			viewNSWE->setMoving(true);
 
 		}
 		else {	//if we're dragging
@@ -108,15 +115,15 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 			delta.y = (ypos - mouseDrag.dragStartXY.y);
 
 			float dppx, dppy;
-			dppx = viewNSWE.width() / windowDimensions.width;
-			dppy = viewNSWE.height() / windowDimensions.height;
+			dppx = viewNSWE->width() / pLocationHistory->windowDimensions->width;
+			dppy = viewNSWE->height() / pLocationHistory->windowDimensions->height;
 
-			viewNSWE.target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
-			viewNSWE.setMoving(true);
+			viewNSWE->target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
+			viewNSWE->setMoving(true);
 
 			//printf("degrees: %f %f\n", dppx * deltax, dppy * deltay);
 
-			viewNSWE.starttime = glfwGetTime();
+			viewNSWE->starttime = glfwGetTime();
 
 		}
 	}
@@ -124,7 +131,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 		if (mouseDrag.isDragging) {
 			//printf("up");
 			mouseDrag.isDragging = 0;
-			viewNSWE.setMoving(false);
+			viewNSWE->setMoving(false);
 		}
 	}
 	return;

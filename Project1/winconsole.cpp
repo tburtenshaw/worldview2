@@ -33,23 +33,11 @@
 
 using namespace std;
 
-LocationHistory lh;
-
-WORLDCOORD longlatMouse;
-movingTarget viewNSWE;
-RECTDIMENSION windowDimensions;
-
-Region* viewportRegion;
+LocationHistory* pLocationHistory;
 
 
-BackgroundInfo bgInfo;
-MapPathInfo pathInfo;
-MapPointsInfo pointsInfo;
 
-
-GlobalOptions globalOptions;
-
-int OpenAndReadJSON()
+int OpenAndReadJSON(LocationHistory * lh)
 {
 	HANDLE jsonfile;
 	JSON_READER_STATE jrs;
@@ -72,7 +60,7 @@ int OpenAndReadJSON()
 			printf("failed reading the file");
 			return 1;
 		}
-		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh.locations);
+		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations);
 
 		if (result) {
 			readbytes = 0;	//trick the loading loop into ending
@@ -85,8 +73,10 @@ int OpenAndReadJSON()
 	return 0;
 }
 
-int OpenGLTrial3()
+int StartGLProgram(LocationHistory * lh)
 {
+	GlobalOptions *options;
+	options = lh->globalOptions;
 
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
@@ -94,14 +84,14 @@ int OpenGLTrial3()
 		return 1;
 	}
 
-	windowDimensions.width = 900;
-	windowDimensions.height = 900;
+	lh->windowDimensions->width = 900;
+	lh->windowDimensions->height = 900;
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(windowDimensions.width, windowDimensions.height, "Hello World", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(lh->windowDimensions->width, lh->windowDimensions->height, "Hello World", NULL, NULL);
 	if (!window) {
 		fprintf(stderr, "ERROR: could not open window with GLFW3\n");
 		glfwTerminate();
@@ -136,7 +126,7 @@ int OpenGLTrial3()
 	//glEnable(GL_DEPTH_TEST); // enable depth-testing (don't do this, as breask alpha)
 	//glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 
-	glViewport(0, 0, windowDimensions.width, windowDimensions.height);
+	glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -148,45 +138,45 @@ int OpenGLTrial3()
 	glBlendEquation(GL_FUNC_ADD);
 
 	//Set some app parameters
-	viewNSWE.target.setvalues(-36.83, -37.11, 174.677-1, 174.961-1);
-	viewNSWE.movetowards(1000000000000);
+	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677-1, 174.961-1);
+	lh->viewNSWE->movetowards(1000000000000);
 
 
-	viewportRegion = new Region(-37.01, -37.072, 174.88, 174.943);
+	lh->viewportRegion = new Region(-37.01, -37.072, 174.88, 174.943);
 
 	//testRegion->Populate(&lh);
 
 	
 	//set up the background and heatmap
-	SetupBackgroundVertices(&bgInfo);
-	LoadBackgroundImageToTexture(&bgInfo.worldTexture);
-	LoadHeatmapToTexture(&viewNSWE, &bgInfo.heatmapTexture);
-	SetupBackgroundShaders(&bgInfo);
+	SetupBackgroundVertices(lh->bgInfo);
+	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
+	LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
+	SetupBackgroundShaders(lh->bgInfo);
 
 	//this does the lines of the map
-	SetupPathsBufferDataAndVertexAttribArrays(&pathInfo);
-	SetupPathsShaders(&pathInfo);
+	SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
+	SetupPathsShaders(lh->pathInfo);
 
 	//and I'll do one that does points (this will be round points, that can be selectable and maybe deletable
-	SetupPointsBufferDataAndVertexAttribArrays(&pointsInfo);
-	SetupPointsShaders(&pointsInfo);
+	SetupPointsBufferDataAndVertexAttribArrays(lh->pointsInfo);
+	SetupPointsShaders(lh->pointsInfo);
 
 	while (!glfwWindowShouldClose(window)) {
 
-		globalOptions.seconds = glfwGetTime();
+		options->seconds = glfwGetTime();
 				
 		//get the view moving towards the target
-		viewNSWE.movetowards(globalOptions.seconds);
+		lh->viewNSWE->movetowards(lh->globalOptions->seconds);
 
-		if (viewNSWE.isDirty()) {
-			viewportRegion->SetNSWE(&viewNSWE.target);
-			viewportRegion->Populate(&lh);
+		if (lh->viewNSWE->isDirty()) {
+			lh->viewportRegion->SetNSWE(&lh->viewNSWE->target);
+			lh->viewportRegion->Populate(lh);
 			//printf("d");
 		}
-		if (!viewNSWE.isMoving() && viewNSWE.isDirty()) {
+		if (!lh->viewNSWE->isMoving() && lh->viewNSWE->isDirty()) {
 			NSWE expanded;
-			expanded = viewNSWE.target.createExpandedBy(2);
-			UpdateHeatmapTexture(&expanded, &bgInfo);
+			expanded = lh->viewNSWE->target.createExpandedBy(2);
+			UpdateHeatmapTexture(&expanded, lh->bgInfo);
 		}
 
 
@@ -198,25 +188,26 @@ int OpenGLTrial3()
 		ImGui::NewFrame();
 
 		//This draws the heatmap
-		DrawBackgroundAndHeatmap(&bgInfo);
+		DrawBackgroundAndHeatmap(lh->bgInfo);
 	
-		if (globalOptions.showPaths) {
-			DrawPaths(&pathInfo);
+		if (options->showPaths) {
+			DrawPaths(lh->pathInfo);
 		}
 
-		if (globalOptions.showPoints) {
-			DrawPoints(&pointsInfo);
+		if (options->showPoints) {
+			DrawPoints(lh->pointsInfo);
 		}
 
 		// update other events like input handling 
 
 
-		Gui::MakeGUI(&lh);	//make the ImGui stuff
+		Gui::MakeGUI(lh);	//make the ImGui stuff
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
-		glfwPollEvents();
+		//glfwPollEvents();
+		glfwWaitEventsTimeout(0.016);
 		glfwSwapBuffers(window);
 	}
 
@@ -275,12 +266,12 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 
 void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 {	
-	lh.CreateHeatmap(nswe, 0);
+	pLocationHistory->CreateHeatmap(nswe, 0);
 	
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lh.heatmap->width, lh.heatmap->height, 0, GL_RED, GL_FLOAT, lh.heatmap->pixel);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
 
 
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -297,11 +288,11 @@ void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {
 	//printf("Creating heatmap... ");
-	lh.CreateHeatmap(nswe, 0);
+	pLocationHistory->CreateHeatmap(nswe, 0);
 	//printf("Done.\n");
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, lh.heatmap->width, lh.heatmap->height, GL_RED, GL_FLOAT, lh.heatmap->pixel);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -330,16 +321,22 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 
 void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 {
+	NSWE* viewnswe;
+	NSWE *heatmapnswe;
+
+	viewnswe = pLocationHistory->viewNSWE;
+	heatmapnswe = pLocationHistory->heatmap->nswe;
+	
 	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
 
 	backgroundInfo->shader->UseMe();
 	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
-	backgroundInfo->shader->SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
-	backgroundInfo->shader->SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", lh.heatmap->nswe->north, lh.heatmap->nswe->south, lh.heatmap->nswe->west, lh.heatmap->nswe->east);
+	backgroundInfo->shader->SetUniformFromFloats("resolution", pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height);
+	backgroundInfo->shader->SetUniformFromFloats("nswe", viewnswe->north, viewnswe->south, viewnswe->west, viewnswe->east);
+	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", heatmapnswe->north, heatmapnswe->south, heatmapnswe->west, heatmapnswe->east);
 
-	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", lh.heatmap->maxPixel);
-	backgroundInfo->shader->SetUniformFromInts("palette", globalOptions.palette);
+	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", pLocationHistory->heatmap->maxPixel);
+	backgroundInfo->shader->SetUniformFromInts("palette", pLocationHistory->globalOptions->palette);
 
 
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -359,7 +356,7 @@ void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
 {
 	glGenBuffers(1, &mapPathInfo->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, lh.locations.size() * sizeof(LOCATION), &lh.locations.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->locations.size() * sizeof(LOCATION), &pLocationHistory->locations.front(), GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &mapPathInfo->vao);
 	glBindVertexArray(mapPathInfo->vao);
@@ -389,17 +386,20 @@ void SetupPathsShaders(MapPathInfo* mapPathInfo)
 
 void DrawPaths(MapPathInfo* mapPathInfo)
 {
+	GlobalOptions* options;
+	options = pLocationHistory->globalOptions;
+	
 	//update uniform shader variables
 	mapPathInfo->shader->UseMe();
-	mapPathInfo->shader->SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-	mapPathInfo->shader->SetUniformFromFloats("seconds", globalOptions.seconds);
-	mapPathInfo->shader->SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
-	mapPathInfo->shader->SetUniformFromFloats("linewidth", globalOptions.linewidth);
-	mapPathInfo->shader->SetUniformFromFloats("cycle", globalOptions.cycle);
+	mapPathInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
+	mapPathInfo->shader->SetUniformFromFloats("seconds", options->seconds);
+	mapPathInfo->shader->SetUniformFromFloats("resolution", pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height);
+	mapPathInfo->shader->SetUniformFromFloats("linewidth", options->linewidth);
+	mapPathInfo->shader->SetUniformFromFloats("cycle", options->cycle);
 
 	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
 	glBindVertexArray(mapPathInfo->vao);
-	glDrawArrays(GL_LINE_STRIP, 0, lh.locations.size());
+	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->locations.size());
 	
 	return;
 }
@@ -408,7 +408,7 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 {
 	glGenBuffers(1, &mapPointsInfo->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, lh.locations.size() * sizeof(LOCATION), &lh.locations.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->locations.size() * sizeof(LOCATION), &pLocationHistory->locations.front(), GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &mapPointsInfo->vao);
 	glBindVertexArray(mapPointsInfo->vao);
@@ -440,14 +440,14 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 {
 	//update uniform shader variables
 	mapPointsInfo->shader->UseMe();
-	mapPointsInfo->shader->SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-	mapPointsInfo->shader->SetUniformFromFloats("resolution", windowDimensions.width, windowDimensions.height);
-	mapPointsInfo->shader->SetUniformFromFloats("pointradius", globalOptions.pointradius);
+	mapPointsInfo->shader->SetUniformFromFloats("nswe", pLocationHistory->viewNSWE->north, pLocationHistory->viewNSWE->south, pLocationHistory->viewNSWE->west, pLocationHistory->viewNSWE->east);
+	mapPointsInfo->shader->SetUniformFromFloats("resolution", pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height);
+	mapPointsInfo->shader->SetUniformFromFloats("pointradius", pLocationHistory->globalOptions->pointradius);
 
 
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
 	glBindVertexArray(mapPointsInfo->vao);
-	glDrawArrays(GL_POINTS, 0, lh.locations.size());
+	glDrawArrays(GL_POINTS, 0, pLocationHistory->locations.size());
 
 	return;
 }
@@ -459,11 +459,12 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 int main(int argc, char** argv)
 {
     std::cout << "Hello World!\n";
+	pLocationHistory = new LocationHistory;
 
-	OpenAndReadJSON();
-	OptimiseDetail(lh.locations);
+	OpenAndReadJSON(pLocationHistory);
+	OptimiseDetail(pLocationHistory->locations);
 
-	OpenGLTrial3();
+	StartGLProgram(pLocationHistory);
 
 
 	return 0;
