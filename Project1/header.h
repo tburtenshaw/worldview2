@@ -92,6 +92,8 @@ public:
 class LocationHistory {
 public:
 	std::string filename;
+	unsigned long filesize;
+	
 	std::vector<LOCATION> locations;
 	unsigned long earliesttimestamp;
 	unsigned long latesttimestamp;
@@ -101,6 +103,11 @@ public:
 	LocationHistory();
 	~LocationHistory();
 	void CreateHeatmap(NSWE *nswe, int n);
+	bool isFullyLoaded;
+	bool isLoadingFile;
+	bool isInitialised;
+	unsigned long totalbytesread;
+
 
 
 	WORLDCOORD *longlatMouse;

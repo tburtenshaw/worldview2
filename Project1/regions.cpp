@@ -5,11 +5,13 @@
 #include "regions.h"
 #include "mytimezone.h"
 
-
+const int secondsperday = 60 * 60 * 24;
 
 Region::Region()
 {
 	SetNSWE(-10, 10, -10, 10);
+	earliestday = 0;
+	latestday = 0;
 	
 }
 
@@ -21,7 +23,10 @@ Region::Region(float n, float s, float w, float e)
 	nswe.east = e;
 
 	completed = 0;
-	printf("%i",sizeof(hours));
+	earliestday = 0;
+	latestday = 0;
+	minimumsecondstobeincludedinday = 0;
+
 	memset(&hours, 0, sizeof(hours));
 }
 
@@ -99,9 +104,9 @@ void Region::Populate(LocationHistory* lh)
 	int e = GetDaySince2010(lh->earliesttimestamp);
 	int l = GetDaySince2010(lh->latesttimestamp);
 
-	earliestday = 5000;
+	earliestday = MAX_DAY_NUMBER;
 
-	for (int i = e; (i <= l) && (i<5000); i++) {
+	for (int i = e; (i <= l) && (i< MAX_DAY_NUMBER); i++) {
 		if (daynumbersince2010[i] > 0) {
 			if (i < earliestday) { earliestday = i; }
 			latestday = i;	//this will be overwritten mulitple times
@@ -117,23 +122,29 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 {
 	int inrun = 0;
 
-
+	if (latestday >= MAX_DAY_NUMBER) {
+		latestday = 0;
+	}
 	for (int i = earliestday; i <= latestday; i++) {
-		if (daynumbersince2010[i] > 60 * 15) {	//at least fifteen minutes
+		if (daynumbersince2010[i] > minimumsecondstobeincludedinday) {	//at least fifteen minutes
 			if (inrun == 0) {
-				list.push_back(MyTimeZone::FormatUnixTime(i * 60 * 60 * 24 + 1262304000));
+				list.push_back(MyTimeZone::FormatUnixTime(i * secondsperday + 1262304000));
 				inrun = i;
 			}
 		}
 		else {
-			if ((inrun <i-1)&& (inrun>0)) {
-				list.push_back(" to " + MyTimeZone::FormatUnixTime((i - 1) * 60 * 60 * 24 + 1262304000));
+			if ((inrun < (i - 1)) && (inrun > 0)) {
+
+				if (daynumbersince2010[i - 1] > minimumsecondstobeincludedinday) {
+					list.push_back(" to " + MyTimeZone::FormatUnixTime((i - 1) * secondsperday + 1262304000));
+				}
 				inrun = 0;
 			}
 		}
+
 	}
 	if ((inrun < latestday) && (inrun > 0)) {
-		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday) * 60 * 60 * 24 + 1262304000));
+		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday)*secondsperday + 1262304000));
 	}
 }
 
@@ -175,18 +186,14 @@ void Region::AddHoursOfDay(unsigned long startt, unsigned long endt) //this need
 
 int Region::GetDayOfWeek(unsigned long unixtime)
 {
-	const int secondsperday = 60 * 60 * 24;
-
 	return ((unixtime / secondsperday) + 4) % 7;
 }
 
 int Region::GetDaySince2010(unsigned long unixtime)
 {
-	const int secondsperday = 60 * 60 * 24;
-
 	unsigned long u;
 	u = (unixtime - 1262304000) / secondsperday;
-	if (u >= 10000) {
+	if (u >= MAX_DAY_NUMBER) {
 		u = 0;
 	}
 
@@ -200,7 +207,6 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 	unsigned long enddayofweek;
 
 	unsigned long t;	//for the loop
-	const int secondsperday = 60 * 60 * 24;
 
 	if (endt <= startt)	return;	//don't count negatives or zeros
 

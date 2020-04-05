@@ -17,7 +17,8 @@ void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *win
 
 LocationHistory::LocationHistory()
 {
-	
+	filesize = 0;
+
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
 
@@ -36,6 +37,10 @@ LocationHistory::LocationHistory()
 
 	globalOptions = new GlobalOptions;
 
+	isLoadingFile = false;
+	isFullyLoaded = false;
+	isInitialised = false;
+	totalbytesread = 0;
 
 }
 

@@ -225,7 +225,7 @@ void Heatmap::GaussianBlur(int radius)
 
 Heatmap::Heatmap()
 {
-	height=width = 2048;
+	height=width = 1024;
 	memset(pixel, 0, sizeof(pixel));
 
 	//width = height = 100;

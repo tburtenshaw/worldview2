@@ -35,15 +35,21 @@ using namespace std;
 
 LocationHistory* pLocationHistory;
 
-
+std::thread* pthread;
 
 int OpenAndReadJSON(LocationHistory * lh)
 {
 	HANDLE jsonfile;
 	JSON_READER_STATE jrs;
-
+	lh->isLoadingFile = true;
 
 	jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+
+	LARGE_INTEGER filesize;
+	GetFileSizeEx(jsonfile, &filesize);
+	lh->filesize = filesize.LowPart;
+	printf("filesize: %i\n", lh->filesize);
+
 
 	memset(&jrs, 0, sizeof(jrs));
 	char* buffer;
@@ -61,7 +67,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 			return 1;
 		}
 		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations, lh);
-
+		lh->totalbytesread += readbytes;
 		if (result) {
 			readbytes = 0;	//trick the loading loop into ending
 		}
@@ -70,6 +76,13 @@ int OpenAndReadJSON(LocationHistory * lh)
 
 	delete[] buffer;
 	CloseHandle(jsonfile);
+
+	OptimiseDetail(lh->locations);
+
+	lh->isLoadingFile=false;
+	lh->isFullyLoaded = true;
+	lh->isInitialised = false;
+
 	return 0;
 }
 
@@ -77,7 +90,7 @@ int StartGLProgram(LocationHistory * lh)
 {
 	GlobalOptions *options;
 	options = lh->globalOptions;
-
+	printf("tbr: %i\n", lh->totalbytesread);
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
@@ -86,10 +99,12 @@ int StartGLProgram(LocationHistory * lh)
 
 	lh->windowDimensions->width = 900;
 	lh->windowDimensions->height = 900;
-
+	printf("tbr: %i\n", lh->totalbytesread);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_SAMPLES, 4);
+	//glEnable(GL_MULTISAMPLE);
 
 	GLFWwindow* window = glfwCreateWindow(lh->windowDimensions->width, lh->windowDimensions->height, "Hello World", NULL, NULL);
 	if (!window) {
@@ -102,7 +117,7 @@ int StartGLProgram(LocationHistory * lh)
 	// start GLEW extension handler
 	glewExperimental = GL_TRUE;
 	glewInit();
-
+	printf("tbr: %i\n", lh->totalbytesread);
 
 
 	// get version info
@@ -110,7 +125,7 @@ int StartGLProgram(LocationHistory * lh)
 	const GLubyte* version = glGetString(GL_VERSION); // version as a string
 	printf("Renderer: %s\n", renderer);	
 	printf("OpenGL version supported %s\n", version);
-
+	printf("tbr: %i\n", lh->totalbytesread);
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -127,7 +142,6 @@ int StartGLProgram(LocationHistory * lh)
 	//glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 
 	glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
-
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -138,47 +152,35 @@ int StartGLProgram(LocationHistory * lh)
 	glBlendEquation(GL_FUNC_ADD);
 
 	//Set some app parameters
-	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677-1, 174.961-1);
-	lh->viewNSWE->movetowards(1000000000000);
-
-
-	lh->viewportRegion = new Region(-37.01, -37.072, 174.88, 174.943);
-
-	//testRegion->Populate(&lh);
-
 	
-	//set up the background and heatmap
+	//pthread->join();
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
 	LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
 	SetupBackgroundShaders(lh->bgInfo);
 
-	//this does the lines of the map
-	SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
-	SetupPathsShaders(lh->pathInfo);
-
-	//and I'll do one that does points (this will be round points, that can be selectable and maybe deletable
-	SetupPointsBufferDataAndVertexAttribArrays(lh->pointsInfo);
-	SetupPointsShaders(lh->pointsInfo);
-
 	while (!glfwWindowShouldClose(window)) {
 
-		options->seconds = glfwGetTime();
-				
-		//get the view moving towards the target
-		lh->viewNSWE->movetowards(lh->globalOptions->seconds);
+		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
+			printf("initialising\n");
+			pthread->join();
+			lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 1, 174.961 - 1);
+			lh->viewNSWE->movetowards(1000000000000);
+			lh->viewportRegion = new Region(-37.01, -37.072, 174.88, 174.943);
 
-		if (lh->viewNSWE->isDirty()) {
-			lh->viewportRegion->SetNSWE(&lh->viewNSWE->target);
-			lh->viewportRegion->Populate(lh);
-			//printf("d");
-		}
-		if (!lh->viewNSWE->isMoving() && lh->viewNSWE->isDirty()) {
-			NSWE expanded;
-			expanded = lh->viewNSWE->target.createExpandedBy(2);
-			UpdateHeatmapTexture(&expanded, lh->bgInfo);
-		}
+			//set up the background and heatmap
 
+
+			//this does the lines of the map
+			SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
+			SetupPathsShaders(lh->pathInfo);
+
+			//and I'll do one that does points (this will be round points, that can be selectable and maybe deletable
+			SetupPointsBufferDataAndVertexAttribArrays(lh->pointsInfo);
+			SetupPointsShaders(lh->pointsInfo);
+			lh->isInitialised = true;
+
+		}
 
 		// wipe the drawing surface clear
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -187,21 +189,49 @@ int StartGLProgram(LocationHistory * lh)
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		//This draws the heatmap
-		DrawBackgroundAndHeatmap(lh->bgInfo);
-	
-		if (options->showPaths) {
-			DrawPaths(lh->pathInfo);
-		}
+		
+		if (lh->isInitialised && lh->isFullyLoaded) {
 
-		if (options->showPoints) {
-			DrawPoints(lh->pointsInfo);
+			options->seconds = glfwGetTime();
+
+			//get the view moving towards the target
+			lh->viewNSWE->movetowards(lh->globalOptions->seconds);
+
+			if (lh->viewNSWE->isDirty()) {
+				lh->viewportRegion->SetNSWE(&lh->viewNSWE->target);
+				lh->viewportRegion->Populate(lh);
+				//printf("d");
+			}
+			if (!lh->viewNSWE->isMoving() && lh->viewNSWE->isDirty()) {
+				NSWE expanded;
+				expanded = lh->viewNSWE->target.createExpandedBy(1);
+				UpdateHeatmapTexture(&expanded, lh->bgInfo);
+			}
+
+
+			//This draws the heatmap
+			DrawBackgroundAndHeatmap(lh->bgInfo);
+
+			if (options->showPaths) {
+				DrawPaths(lh->pathInfo);
+			}
+
+			if (options->showPoints) {
+				DrawPoints(lh->pointsInfo);
+			}
+
+			Gui::MakeGUI(lh);	//make the ImGui stuff
 		}
 
 		// update other events like input handling 
 
-
-		Gui::MakeGUI(lh);	//make the ImGui stuff
+		if (lh->isLoadingFile == true) {
+			ImGui::Begin("Loading");
+			float percent = 100.0*(float)lh->totalbytesread/ (float)lh->filesize;
+			ImGui::Text("%.0f%%", percent);
+			ImGui::End();
+		}
+		
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -326,7 +356,7 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 
 	viewnswe = pLocationHistory->viewNSWE;
 	heatmapnswe = pLocationHistory->heatmap->nswe;
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
 
 	backgroundInfo->shader->UseMe();
@@ -461,8 +491,9 @@ int main(int argc, char** argv)
     std::cout << "Hello World!\n";
 	pLocationHistory = new LocationHistory;
 
-	OpenAndReadJSON(pLocationHistory);
-	OptimiseDetail(pLocationHistory->locations);
+	std::thread loadingthread(OpenAndReadJSON,pLocationHistory);
+	
+	pthread = &loadingthread;
 
 	StartGLProgram(pLocationHistory);
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#define MAX_DAY_NUMBER 5000
 
 //forward declaration
 class NSWE;
@@ -27,8 +28,9 @@ public:
 
 	unsigned long hours[24];	//seconds in each hour
 	unsigned long dayofweeks[7];	//seconds in each day of week
-	unsigned long daynumbersince2010[10000];	//not neccesarily the best way, I was considering stl map
+	unsigned long daynumbersince2010[MAX_DAY_NUMBER];	//not neccesarily the best way, I was considering stl map
 	unsigned long months[12];
+	
 
 	unsigned long earliestday;	//stores the locally adjusted unix time of midnight the first day
 	unsigned long latestday;
@@ -40,5 +42,8 @@ public:
 
 	void Populate(LocationHistory* lh);
 
+	unsigned int minimumsecondstobeincludedinday;
 	void FillVectorWithDates(std::vector<std::string> &list);
+
+	
 };

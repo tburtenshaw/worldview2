@@ -72,7 +72,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::Checkbox("_Predict paths", &options->predictpath);
 	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
-	const char* items[] = { "Viridis", "Inferno" };
+	const char* items[] = { "Viridis", "Inferno", "Turbo" };
 	ImGui::Combo("Palette", &options->palette, items, IM_ARRAYSIZE(items));
 	ImGui::End();
 
@@ -86,15 +86,18 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 void Gui::ListDatesInRegion(Region* r)
 {
+	float hours = r->minimumsecondstobeincludedinday;
+	hours /= 60 * 60;
+
 	std::vector<std::string> dates;
 	r->FillVectorWithDates(dates);
-	int i;
-	
 	std::vector<const char*> cstrings{};
-
 	for (const auto& string : dates)
 		cstrings.push_back(string.c_str());
 	
+	int i;
+	ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
+	r->minimumsecondstobeincludedinday = hours * 60 * 60;
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 

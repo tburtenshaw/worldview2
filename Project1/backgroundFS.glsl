@@ -39,7 +39,19 @@ vec3 viridis_quintic( float x )
 		dot( x1.xyzw, vec4( +0.300805501, +2.614650302, -12.019139090, +28.933559110 ) ) + dot( x2.xy, vec2( -33.491294770, +13.762053843 ) ) );
 }
 
+vec3 turbo(float t) {
+//https://www.shadertoy.com/view/3lBXR3
+    const vec3 c0 = vec3(0.1140890109226559, 0.06288340699912215, 0.2248337216805064);
+    const vec3 c1 = vec3(6.716419496985708, 3.182286745507602, 7.571581586103393);
+    const vec3 c2 = vec3(-66.09402360453038, -4.9279827041226, -10.09439367561635);
+    const vec3 c3 = vec3(228.7660791526501, 25.04986699771073, -91.54105330182436);
+    const vec3 c4 = vec3(-334.8351565777451, -69.31749712757485, 288.5858850615712);
+    const vec3 c5 = vec3(218.7637218434795, 67.52150567819112, -305.2045772184957);
+    const vec3 c6 = vec3(-52.88903478218835, -21.54527364654712, 110.5174647748972);
 
+    return c0+t*(c1+t*(c2+t*(c3+t*(c4+t*(c5+t*c6)))));
+
+}
 
 vec4 FloatToColour(float vraw, float mraw)	{
 	
@@ -49,6 +61,9 @@ vec4 FloatToColour(float vraw, float mraw)	{
 		float a=smoothstep(0.0,0.01,r);
 		if (palette==1)	{
 			c=vec4(inferno(r),a);
+		}
+		else if (palette==2)	{
+			c=vec4(turbo(r),a);
 		}
 		else {
 			c=vec4(viridis_quintic(r),a);
