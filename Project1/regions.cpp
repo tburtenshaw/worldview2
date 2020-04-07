@@ -1,4 +1,5 @@
 #include <vector>
+#include <string>
 
 #include "header.h"
 #include "nswe.h"
@@ -6,7 +7,8 @@
 #include "mytimezone.h"
 
 const int secondsperday = 60 * 60 * 24;
-
+int Region::numberOfNextRegion = 0;
+/*
 Region::Region()
 {
 	SetNSWE(-10, 10, -10, 10);
@@ -14,9 +16,17 @@ Region::Region()
 	latestday = 0;
 	
 }
+*/
 
 Region::Region(float n, float s, float w, float e)
 {
+	id = numberOfNextRegion;
+	displayname = "Region " + std::to_string(id);
+	shouldShowWindow = true;
+	toDelete = false;
+	//printf(displayname.c_str());
+
+	numberOfNextRegion++;
 	nswe.north = n;
 	nswe.south = s;
 	nswe.west = w;
@@ -28,12 +38,18 @@ Region::Region(float n, float s, float w, float e)
 	minimumsecondstobeincludedinday = 0;
 
 	memset(&hours, 0, sizeof(hours));
+	memset(&dayofweeks, 0, sizeof(dayofweeks));
+}
+
+Region::~Region()
+{
+	
 }
 
 float Region::GetHoursInRegion()
 {
 	float h;
-	h = totalsecondsinregion;
+	h = (float)totalsecondsinregion;
 	h /= 3600;
 	return h;
 }
@@ -101,8 +117,8 @@ void Region::Populate(LocationHistory* lh)
 //	printf("d: %i, sec: %i\n", i, dayofweeks[i]);
 //}
 
-	int e = GetDaySince2010(lh->earliesttimestamp);
-	int l = GetDaySince2010(lh->latesttimestamp);
+	unsigned int e = GetDaySince2010(lh->earliesttimestamp);
+	unsigned int l = GetDaySince2010(lh->latesttimestamp);
 
 	earliestday = MAX_DAY_NUMBER;
 
@@ -120,15 +136,18 @@ void Region::Populate(LocationHistory* lh)
 
 void Region::FillVectorWithDates(std::vector<std::string>& list)
 {
-	int inrun = 0;
+	numberofdays = 0;	//this is used for stats, not for the algorithm below
+	
+	unsigned int inrun = 0;
 
-	if (latestday >= MAX_DAY_NUMBER) {
+	if (latestday >= MAX_DAY_NUMBER-1) {
 		latestday = 0;
 	}
-	for (int i = earliestday; i <= latestday; i++) {
+	for (int i = earliestday; i <= latestday+1; i++) {
 		if (daynumbersince2010[i] > minimumsecondstobeincludedinday) {	//at least fifteen minutes
+			numberofdays++;
 			if (inrun == 0) {
-				list.push_back(MyTimeZone::FormatUnixTime(i * secondsperday + 1262304000));
+				list.push_back(MyTimeZone::FormatUnixTime(i * secondsperday + 1262304000,MyTimeZone::FormatFlags::DEFAULT));
 				inrun = i;
 			}
 		}
@@ -136,7 +155,11 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 			if ((inrun < (i - 1)) && (inrun > 0)) {
 
 				if (daynumbersince2010[i - 1] > minimumsecondstobeincludedinday) {
-					list.push_back(" to " + MyTimeZone::FormatUnixTime((i - 1) * secondsperday + 1262304000));
+					std::string last;
+					last = list.back();
+
+					list.back() = last + " to " + MyTimeZone::FormatUnixTime((i - 1) * secondsperday + 1262304000, MyTimeZone::FormatFlags::DEFAULT);
+					//list.push_back(" to " + MyTimeZone::FormatUnixTime((i - 1) * secondsperday + 1262304000));
 				}
 				inrun = 0;
 			}
@@ -144,7 +167,7 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 
 	}
 	if ((inrun < latestday) && (inrun > 0)) {
-		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday)*secondsperday + 1262304000));
+		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday)*secondsperday + 1262304000, MyTimeZone::FormatFlags::DEFAULT));
 	}
 }
 

@@ -114,8 +114,7 @@ public:
 	movingTarget *viewNSWE;
 	RECTDIMENSION *windowDimensions;
 
-	Region* viewportRegion;
-
+	std::vector<Region*> regions;
 
 	BackgroundInfo *bgInfo;
 	MapPathInfo *pathInfo;

@@ -3,6 +3,7 @@
 #include "header.h"
 #include "nswe.h"
 #include "regions.h"
+#include "mytimezone.h"
 #include <string>
 #include <vector>
 
@@ -27,40 +28,27 @@ void Gui::MakeGUI(LocationHistory * lh)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->viewNSWE->north, lh->viewNSWE->south, lh->viewNSWE->west, lh->viewNSWE->east);
 
-	ImGui::Text("Earliest: %i", lh->earliesttimestamp);
-	ImGui::Text("Latest: %i", lh->latesttimestamp);
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->earliesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME| MyTimeZone::FormatFlags::DMY).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->latesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	{
-		float maxhour = 0;
-		float fhours[24];
-		for (int i = 0; i < 24; i++) {
-			fhours[i] = lh->viewportRegion->hours[i];
-			fhours[i] /= 3600;
-			if (fhours[i] > maxhour) {
-				maxhour = fhours[i];
-			}
-		}
-		ImGui::PlotHistogram("", fhours, 24, 0, "Time spent each hour", 0, maxhour, ImVec2(0, 80), sizeof(float));
-	}
 
-	{
-		float maxday = 0;
-		float fdays[7];
-		for (int i = 0; i < 7; i++) {
-			fdays[i] = lh->viewportRegion->dayofweeks[i];
-			fdays[i] /= 3600;
-			if (fdays[i] > maxday) {
-				maxday = fdays[i];
-			}
-		}
-		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent each day", 0, maxday, ImVec2(0, 80), sizeof(float));
-	}
+	Gui::ShowRegionInfo(lh->regions[0]);
 
-	ImGui::Text("Time (hours): %.1f", lh->viewportRegion->GetHoursInRegion());
-
-	Gui::ListDatesInRegion(lh->viewportRegion);
 
 	ImGui::End();
+
+	for (std::size_t i = 1; i < lh->regions.size(); i++) {
+		
+		if (lh->regions[i]->toDelete) {
+			lh->regions.erase(lh->regions.begin() + i);
+		}
+		if (lh->regions[i]->shouldShowWindow) {
+			ImGui::Begin(lh->regions[i]->displayname.c_str());
+			Gui::ShowRegionInfo(lh->regions[i]);
+			ImGui::End();
+		}
+	}
+
 
 	ImGui::Begin("Path drawing");
 	ImGui::Checkbox("Show paths", &options->showPaths);
@@ -84,6 +72,45 @@ void Gui::MakeGUI(LocationHistory * lh)
 	return;
 }
 
+void Gui::ShowRegionInfo(Region* r)
+{
+	{
+		float maxhour = 0;
+		float fhours[24];
+		for (int i = 0; i < 24; i++) {
+			fhours[i] = r->hours[i];
+			fhours[i] /= 3600;
+			if (fhours[i] > maxhour) {
+				maxhour = fhours[i];
+			}
+		}
+		ImGui::PlotHistogram("", fhours, 24, 0, "Time spent each hour", 0, maxhour, ImVec2(0, 80), sizeof(float));
+	}
+
+	{
+		float maxday = 0;
+		float fdays[7];
+		for (int i = 0; i < 7; i++) {
+			fdays[i] = r->dayofweeks[i];
+			fdays[i] /= 3600;
+			if (fdays[i] > maxday) {
+				maxday = fdays[i];
+			}
+		}
+		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent each day", 0, maxday, ImVec2(0, 80), sizeof(float));
+	}
+
+	ImGui::Text("Time (hours): %.1f", r->GetHoursInRegion());
+
+	Gui::ListDatesInRegion(r);
+
+	if (r->id > 0) {	//don't do this for the viewport region
+		if (ImGui::Button("Delete")) {
+			r->toDelete = true;
+		}
+	}
+}
+
 void Gui::ListDatesInRegion(Region* r)
 {
 	float hours = r->minimumsecondstobeincludedinday;
@@ -98,6 +125,7 @@ void Gui::ListDatesInRegion(Region* r)
 	int i;
 	ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
 	r->minimumsecondstobeincludedinday = hours * 60 * 60;
+	ImGui::Text("Days %i", r->numberofdays);
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 

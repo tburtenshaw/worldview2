@@ -28,8 +28,6 @@ LocationHistory::LocationHistory()
 
 
 	heatmap = new Heatmap;
-	viewportRegion = new Region;
-
 
 	bgInfo = new BackgroundInfo;
 	pathInfo = new MapPathInfo;

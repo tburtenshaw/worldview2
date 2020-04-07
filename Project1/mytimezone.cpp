@@ -34,11 +34,12 @@ unsigned long MyTimeZone::AdjustBasedOnLongitude(unsigned long unixtime, float l
     return unixtime+naivetz*3600;
 }
 
-std::string MyTimeZone::FormatUnixTime(unsigned long unixtime)
+std::string MyTimeZone::FormatUnixTime(unsigned long unixtime, int flags)
 {
     std::string output;
 
     std::string daynames[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    std::string monthnames[] = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
     
     struct std::tm *corrected;
 
@@ -47,8 +48,41 @@ std::string MyTimeZone::FormatUnixTime(unsigned long unixtime)
     
     corrected = gmtime(&t);
 
-    
-    output = daynames[corrected->tm_wday]+" "+std::to_string(corrected->tm_year+1900)+"-"+std::to_string(corrected->tm_mon+1) + "-" + std::to_string(corrected->tm_mday);
+    std::string year, mon, mday, wday, delim;
 
+    year = std::to_string(corrected->tm_year + 1900);
+    
+    delim = "-";
+    if (flags & FormatFlags::TEXT_MONTH) {
+        mon = monthnames[corrected->tm_mon];
+        delim = " ";
+    }
+    else {
+        mon = std::to_string(corrected->tm_mon + 1);
+    }
+
+    mday = std::to_string(corrected->tm_mday);
+
+    if (flags & FormatFlags::SHOW_DAY) {
+        wday = daynames[corrected->tm_wday] + " ";
+    }
+    else {
+        wday = "";
+    }
+
+
+    if (flags & FormatFlags::DMY) { //nz format
+        output = wday + mday + delim + mon + delim + year;
+    }
+    else if (flags & FormatFlags::MDY) { //us format
+        output = wday + mon + delim + mday + delim + year;
+    }
+    else { //y-m-d
+        output = wday + year + delim + mon + delim + mday;
+    }
+
+    if (flags & FormatFlags::SHOW_TIME) {
+        output = output + ((corrected->tm_hour > 9) ? " " : " 0") + std::to_string(corrected->tm_hour) + ((corrected->tm_min > 9) ? ":" : ":0") + std::to_string(corrected->tm_min);
+    }
     return output;
 }

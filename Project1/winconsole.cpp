@@ -47,7 +47,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(jsonfile, &filesize);
-	lh->filesize = filesize.LowPart;
+	lh->filesize = filesize.QuadPart;
 	printf("filesize: %i\n", lh->filesize);
 
 
@@ -153,7 +153,7 @@ int StartGLProgram(LocationHistory * lh)
 
 	//Set some app parameters
 	
-	//pthread->join();
+	//set up the background and heatmap
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
 	LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
@@ -166,9 +166,12 @@ int StartGLProgram(LocationHistory * lh)
 			pthread->join();
 			lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 1, 174.961 - 1);
 			lh->viewNSWE->movetowards(1000000000000);
-			lh->viewportRegion = new Region(-37.01, -37.072, 174.88, 174.943);
-
-			//set up the background and heatmap
+			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
+			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
+			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
+			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
+			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
+			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
 
 
 			//this does the lines of the map
@@ -192,14 +195,14 @@ int StartGLProgram(LocationHistory * lh)
 		
 		if (lh->isInitialised && lh->isFullyLoaded) {
 
-			options->seconds = glfwGetTime();
+			options->seconds = (float)glfwGetTime();
 
 			//get the view moving towards the target
 			lh->viewNSWE->movetowards(lh->globalOptions->seconds);
 
 			if (lh->viewNSWE->isDirty()) {
-				lh->viewportRegion->SetNSWE(&lh->viewNSWE->target);
-				lh->viewportRegion->Populate(lh);
+				lh->regions[0]->SetNSWE(&lh->viewNSWE->target);
+				lh->regions[0]->Populate(lh);
 				//printf("d");
 			}
 			if (!lh->viewNSWE->isMoving() && lh->viewNSWE->isDirty()) {
@@ -227,8 +230,10 @@ int StartGLProgram(LocationHistory * lh)
 
 		if (lh->isLoadingFile == true) {
 			ImGui::Begin("Loading");
-			float percent = 100.0*(float)lh->totalbytesread/ (float)lh->filesize;
-			ImGui::Text("%.0f%%", percent);
+			
+			float p = (float)lh->totalbytesread/ (float)lh->filesize;
+			ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh->totalbytesread/0x100000, (float)lh->filesize / 0x100000);
+			ImGui::ProgressBar(p);
 			ImGui::End();
 		}
 		
@@ -361,7 +366,7 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 
 	backgroundInfo->shader->UseMe();
 	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
-	backgroundInfo->shader->SetUniformFromFloats("resolution", pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height);
+	backgroundInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	backgroundInfo->shader->SetUniformFromFloats("nswe", viewnswe->north, viewnswe->south, viewnswe->west, viewnswe->east);
 	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", heatmapnswe->north, heatmapnswe->south, heatmapnswe->west, heatmapnswe->east);
 
@@ -423,7 +428,7 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 	mapPathInfo->shader->UseMe();
 	mapPathInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
 	mapPathInfo->shader->SetUniformFromFloats("seconds", options->seconds);
-	mapPathInfo->shader->SetUniformFromFloats("resolution", pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height);
+	mapPathInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	mapPathInfo->shader->SetUniformFromFloats("linewidth", options->linewidth);
 	mapPathInfo->shader->SetUniformFromFloats("cycle", options->cycle);
 

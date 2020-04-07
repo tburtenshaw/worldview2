@@ -17,14 +17,20 @@ private:
 
 	unsigned long totalsecondsinregion;
 	void CalculateStats(unsigned long startofstay, unsigned long endofstay);
-
+	static int numberOfNextRegion;
 public:
-	Region();
+	//Region();
 	Region(float n, float s, float w, float e);
-	
+	~Region();
+
 	NSWE nswe;
 
+	std::string displayname;
+	int id;
+
 	bool completed;
+	bool shouldShowWindow;
+	bool toDelete;	//the next function that can, will delete this region.
 
 	unsigned long hours[24];	//seconds in each hour
 	unsigned long dayofweeks[7];	//seconds in each day of week
@@ -44,6 +50,6 @@ public:
 
 	unsigned int minimumsecondstobeincludedinday;
 	void FillVectorWithDates(std::vector<std::string> &list);
-
+	unsigned int numberofdays;
 	
 };

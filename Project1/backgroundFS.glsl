@@ -41,6 +41,7 @@ vec3 viridis_quintic( float x )
 
 vec3 turbo(float t) {
 //https://www.shadertoy.com/view/3lBXR3
+//https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
     const vec3 c0 = vec3(0.1140890109226559, 0.06288340699912215, 0.2248337216805064);
     const vec3 c1 = vec3(6.716419496985708, 3.182286745507602, 7.571581586103393);
     const vec3 c2 = vec3(-66.09402360453038, -4.9279827041226, -10.09439367561635);
