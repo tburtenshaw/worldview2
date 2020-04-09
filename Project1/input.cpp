@@ -5,15 +5,16 @@
 #include "input.h"
 #include "nswe.h"
 #include "heatmap.h"
+#include "regions.h"
 #include <stdio.h>
 
-//extern movingTarget viewNSWE;
+//extern MovingTarget viewNSWE;
 //extern RECTDIMENSION windowDimensions;
 //extern WORLDCOORD longlatMouse;
 //extern BackgroundInfo bgInfo;
 extern LocationHistory* pLocationHistory;
 
-MouseActions mouseDrag;
+
 
 NSWE originalNSWE;
 
@@ -32,7 +33,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	uppressed = glfwGetKey(window, GLFW_KEY_UP);
 	downpressed = glfwGetKey(window, GLFW_KEY_DOWN);
 
-	movingTarget* viewNSWE;
+	MovingTarget* viewNSWE;
 	viewNSWE = pLocationHistory->viewNSWE;
 
 	if (GLFW_PRESS == leftpressed) {
@@ -73,7 +74,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 
 	WORLDCOORD mapCoord;
-	movingTarget* viewNSWE;
+	MovingTarget* viewNSWE;
 	viewNSWE = pLocationHistory->viewNSWE;
 
 	mapCoord.SetFromWindowXY(xpos, ypos, viewNSWE->target, pLocationHistory->windowDimensions);
@@ -88,20 +89,67 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	return;
 }
 
-
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
 {
-	movingTarget* viewNSWE;
-	viewNSWE = pLocationHistory->viewNSWE;
-	
-	pLocationHistory->longlatMouse->SetFromWindowXY(xpos, ypos, *viewNSWE, pLocationHistory->windowDimensions);
+	MovingTarget* viewNSWE;
+	MouseActions* mouse;
+	viewNSWE = lh->viewNSWE;
+	mouse = lh->mouseInfo;
 
-	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	if (state == GLFW_PRESS) {
-		if (mouseDrag.isDragging == 0) {	//if we're not dragging yet
-			mouseDrag.isDragging = 1;
-			mouseDrag.SetStart(xpos,ypos);
+	glfwGetCursorPos(window, &mouse->xpos, &mouse->ypos);
+
+	mouse->longlatMouse.SetFromWindowXY(mouse->xpos, mouse->ypos, *viewNSWE, lh->windowDimensions);
+	mouse->lmbState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	
+	switch (mouse->mouseMode) {
+	case MouseMode::ScreenNavigation:
+		MouseNavigation(mouse, viewNSWE, lh);
+		break;
+	case MouseMode::RegionSelect:
+		RegionSelect(mouse, viewNSWE, lh);
+		break;
+	case MouseMode::PointSelect:
+		//PointSelect;
+		break;
+	default:
+		printf("other");
+	}
+	
+	
+	return;
+}
+
+void RegionSelect(MouseActions* mouse, MovingTarget* viewNSWE, LocationHistory* lh)
+{
+
+	if (mouse->lmbState == GLFW_PRESS) {
+		if (!mouse->IsDragging()) {	//if we're not dragging yet		
+			mouse->SetStartOfDrag();
+			mouse->dragStartLatLong.SetFromWindowXY(mouse->xpos, mouse->ypos, *viewNSWE, lh->windowDimensions);
+
+			lh->regions.push_back(new Region());
+		}
+		else {
+			
+			lh->regions.back()->SetNSWE(mouse->longlatMouse.latitude,  mouse->dragStartLatLong.latitude, mouse->longlatMouse.longitude, mouse->dragStartLatLong.longitude);
+			
+			lh->regions.back()->Populate(lh);
+		}
+	}
+	if (mouse->lmbState == GLFW_RELEASE) {
+		if (mouse->IsDragging()) {
+			
+			mouse->FinishDragging();
+		}
+	}
+}
+
+void MouseNavigation(MouseActions* mouse, MovingTarget* viewNSWE, LocationHistory*lh)
+{
+	if (mouse->lmbState == GLFW_PRESS) {
+		if (!mouse->IsDragging()) {	//if we're not dragging yet		
+			mouse->SetStartOfDrag();
+
 			originalNSWE = *viewNSWE;
 			viewNSWE->setMoving(true);
 
@@ -111,12 +159,11 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
 			//printf("d %f, mdds %f. ", delta.x, mouseDrag.dragStartXY.x);
 
-			delta.x = xpos - mouseDrag.dragStartXY.x;
-			delta.y = (ypos - mouseDrag.dragStartXY.y);
+			delta = mouse->GetDragDelta();
 
 			float dppx, dppy;
-			dppx = viewNSWE->width() / pLocationHistory->windowDimensions->width;
-			dppy = viewNSWE->height() / pLocationHistory->windowDimensions->height;
+			dppx = viewNSWE->width() / lh->windowDimensions->width;
+			dppy = viewNSWE->height() / lh->windowDimensions->height;
 
 			viewNSWE->target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
 			viewNSWE->setMoving(true);
@@ -127,19 +174,60 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
 		}
 	}
-	if (state == GLFW_RELEASE) {
-		if (mouseDrag.isDragging) {
+	if (mouse->lmbState == GLFW_RELEASE) {
+		if (mouse->IsDragging()) {
 			//printf("up");
-			mouseDrag.isDragging = 0;
+			mouse->FinishDragging();
 			viewNSWE->setMoving(false);
 		}
 	}
-	return;
 }
 
-void MouseActions::SetStart(float x, float y)
+
+MouseActions::MouseActions()
+{
+	xpos = 0.0;
+	ypos = 0.0;
+	lmbState = 0;
+	mouseMode = MouseMode::ScreenNavigation;
+	isDragging = 0;
+	dragStartXY.x = 0;
+	dragStartXY.y = 0;
+	longlatMouse.latitude = 0;
+	longlatMouse.longitude = 0;
+}
+
+
+void MouseActions::SetStartOfDrag()
+{
+	dragStartXY.x = xpos;
+	dragStartXY.y = ypos;
+	isDragging = 1;
+}
+
+void MouseActions::SetStartOfDrag(float x, float y)
 {
 	dragStartXY.x = x;
 	dragStartXY.y = y;
+	isDragging = 1;
 	return;
+}
+
+void MouseActions::FinishDragging()
+{
+	isDragging = 0;
+}
+
+bool MouseActions::IsDragging()
+{
+	return isDragging;
+}
+
+XY MouseActions::GetDragDelta()
+{
+	XY delta;
+	delta.x =xpos - dragStartXY.x;
+	delta.y = ypos - dragStartXY.y;
+	
+	return delta;
 }

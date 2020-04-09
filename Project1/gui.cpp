@@ -4,6 +4,7 @@
 #include "nswe.h"
 #include "regions.h"
 #include "mytimezone.h"
+#include "input.h"
 #include <string>
 #include <vector>
 
@@ -16,13 +17,11 @@ void Gui::MakeGUI(LocationHistory * lh)
 	std::string sCoords;
 	sigfigs = Gui::BestSigFigsFormat(lh->viewNSWE, lh->windowDimensions);
 	
-
-
 	ImGui::Begin("Map information");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	
 	sCoords = "Long: " + sigfigs + ", Lat: " + sigfigs;
-	ImGui::Text(sCoords.c_str(), lh->longlatMouse->longitude, lh->longlatMouse->latitude);
+	ImGui::Text(sCoords.c_str(), lh->mouseInfo->longlatMouse.longitude, lh->mouseInfo->longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh->locations.size());
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
@@ -57,6 +56,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::End();
 
 	ImGui::Begin("Heatmap");
+	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur,0.0f,10.0f, "%.1f");
 	ImGui::Checkbox("_Predict paths", &options->predictpath);
 	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
@@ -69,11 +69,29 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::SliderFloat("Point radius", &options->pointradius, 0, 100, "%.1f");
 	ImGui::End();
 
+	ImGui::Begin("Toolbar");
+	if (ImGui::Button("Nav")) {
+		lh->mouseInfo->mouseMode = MouseMode::ScreenNavigation;
+	}
+	if (ImGui::Button("Select")) {
+		lh->mouseInfo->mouseMode = MouseMode::PointSelect;
+	}
+	if (ImGui::Button("Regions")) {
+		lh->mouseInfo->mouseMode = MouseMode::RegionSelect;
+	}
+
+
+
+
+	ImGui::End();
+
 	return;
 }
 
 void Gui::ShowRegionInfo(Region* r)
 {
+	ImGui::Text("N:%.4f S:%.4f W:%.4f E:%.4f", r->nswe.north, r->nswe.south, r->nswe.west, r->nswe.east);
+	
 	{
 		float maxhour = 0;
 		float fhours[24];
@@ -97,7 +115,7 @@ void Gui::ShowRegionInfo(Region* r)
 				maxday = fdays[i];
 			}
 		}
-		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent each day", 0, maxday, ImVec2(0, 80), sizeof(float));
+		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent per weekday", 0, maxday, ImVec2(0, 80), sizeof(float));
 	}
 
 	ImGui::Text("Time (hours): %.1f", r->GetHoursInRegion());

@@ -17,7 +17,8 @@ class BackgroundInfo;
 class MapPathInfo;
 class MapPointsInfo;
 class Region;
-class movingTarget;
+class MovingTarget;
+class MouseActions;
 
 //typedef struct sLocation ;
 
@@ -86,6 +87,7 @@ public:
 	bool blurperaccuracy;
 	int minimumaccuracy;
 	bool predictpath;
+	float gaussianblur;
 };
 
 
@@ -108,10 +110,9 @@ public:
 	bool isInitialised;
 	unsigned long totalbytesread;
 
+	MouseActions *mouseInfo;
 
-
-	WORLDCOORD *longlatMouse;
-	movingTarget *viewNSWE;
+	MovingTarget *viewNSWE;
 	RECTDIMENSION *windowDimensions;
 
 	std::vector<Region*> regions;

@@ -61,10 +61,23 @@ void Region::SetNSWE(NSWE* sourceNSWE)
 
 void Region::SetNSWE(float n, float s, float w, float e)
 {
-	nswe.north = n;
-	nswe.south = s;
-	nswe.west = w;
-	nswe.east = e;
+	if (n > s) {	//check these are the right way around
+		nswe.north = n;
+		nswe.south = s;
+	}
+	else {	//otherwise flip them
+		nswe.north = s;
+		nswe.south = n;
+	}
+
+	if (w < e) {
+		nswe.west = w;
+		nswe.east = e;
+	}
+	else {
+		nswe.west = e;
+		nswe.east = w;
+	}
 }
 
 void Region::Populate(LocationHistory* lh)

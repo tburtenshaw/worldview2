@@ -19,7 +19,7 @@ private:
 	void CalculateStats(unsigned long startofstay, unsigned long endofstay);
 	static int numberOfNextRegion;
 public:
-	//Region();
+	Region() :Region(-10, 10, -10, 10) {};	//I think this is called delegating
 	Region(float n, float s, float w, float e);
 	~Region();
 

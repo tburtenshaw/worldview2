@@ -17,7 +17,8 @@ public:
 	float pixel[4096*4096];
 	float maxPixel;
 
-	void GaussianBlur(int radius);
+	void StampGaussian(float fx, float fy, float stddev, long seconds);
+	void GaussianBlur(float sigma);
 
 	Heatmap();
 	~Heatmap();

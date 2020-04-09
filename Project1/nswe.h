@@ -3,7 +3,7 @@
 
 //forward declaration
 class WORLDCOORD;
-class movingTarget;
+class MovingTarget;
 
 class NSWE {
 public:
@@ -11,7 +11,7 @@ public:
 	NSWE(float n, float s, float w, float e);
 
 	void operator=(const NSWE sourceNSWE);
-	void operator=(const movingTarget sourceMT);
+	void operator=(const MovingTarget sourceMT);
 
 	float north;
 	float south;
@@ -39,7 +39,7 @@ public:
 
 };
 
-class movingTarget : public NSWE {
+class MovingTarget : public NSWE {
 
 public:
 	NSWE target;

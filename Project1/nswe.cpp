@@ -19,7 +19,7 @@ void NSWE::operator=(const NSWE sourceNSWE)
 	east = sourceNSWE.east;
 }
 
-void NSWE::operator=(const movingTarget sourceMT)
+void NSWE::operator=(const MovingTarget sourceMT)
 {
 	north = sourceMT.north;
 	south = sourceMT.south;
@@ -198,7 +198,7 @@ void NSWE::setto(NSWE *setthis) {
 
 
 
-	void movingTarget::movetowards(double currenttime) {
+	void MovingTarget::movetowards(double currenttime) {
 
 		if (currenttime >= targettime) {
 			north = target.north;
@@ -280,7 +280,7 @@ void NSWE::setto(NSWE *setthis) {
 		return;
 	}
 
-	void movingTarget::settarget(NSWE nsweTarget, double stime, double ttime) {
+	void MovingTarget::settarget(NSWE nsweTarget, double stime, double ttime) {
 		target.north = nsweTarget.north;
 		target.south = nsweTarget.south;
 		target.west = nsweTarget.west;
@@ -291,29 +291,29 @@ void NSWE::setto(NSWE *setthis) {
 		dirty = true;
 	}
 
-	void movingTarget::makeDirty()
+	void MovingTarget::makeDirty()
 	{
 		dirty = true;
 	}
 
-	void movingTarget::setMoving(bool torf)
+	void MovingTarget::setMoving(bool torf)
 	{
 		moving = torf;
 	}
 
-	bool movingTarget::isDirty()
+	bool MovingTarget::isDirty()
 	{
 		if (dirty) return true;
 		return false;
 	}
 
-	bool movingTarget::isMoving()
+	bool MovingTarget::isMoving()
 	{
 		if (moving)	return true;
 		return false;
 	}
 
-	float movingTarget::abs(float f)
+	float MovingTarget::abs(float f)
 	{
 		if (f < 0) {
 			return -f;

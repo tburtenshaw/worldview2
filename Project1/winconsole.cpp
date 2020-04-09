@@ -43,6 +43,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	JSON_READER_STATE jrs;
 	lh->isLoadingFile = true;
 
+	//jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
 	LARGE_INTEGER filesize;
@@ -90,7 +91,7 @@ int StartGLProgram(LocationHistory * lh)
 {
 	GlobalOptions *options;
 	options = lh->globalOptions;
-	printf("tbr: %i\n", lh->totalbytesread);
+
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
@@ -99,7 +100,6 @@ int StartGLProgram(LocationHistory * lh)
 
 	lh->windowDimensions->width = 900;
 	lh->windowDimensions->height = 900;
-	printf("tbr: %i\n", lh->totalbytesread);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -117,7 +117,6 @@ int StartGLProgram(LocationHistory * lh)
 	// start GLEW extension handler
 	glewExperimental = GL_TRUE;
 	glewInit();
-	printf("tbr: %i\n", lh->totalbytesread);
 
 
 	// get version info
@@ -125,7 +124,6 @@ int StartGLProgram(LocationHistory * lh)
 	const GLubyte* version = glGetString(GL_VERSION); // version as a string
 	printf("Renderer: %s\n", renderer);	
 	printf("OpenGL version supported %s\n", version);
-	printf("tbr: %i\n", lh->totalbytesread);
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -144,7 +142,7 @@ int StartGLProgram(LocationHistory * lh)
 	glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
+	//glfwSetCursorPosCallback(window, ManageMouseMoveClickAndDrag);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -153,25 +151,27 @@ int StartGLProgram(LocationHistory * lh)
 
 	//Set some app parameters
 	
-	//set up the background and heatmap
+	//set up the background
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
-	LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
-	SetupBackgroundShaders(lh->bgInfo);
+
 
 	while (!glfwWindowShouldClose(window)) {
 
+		if (!io.WantCaptureMouse) {
+			ManageMouseMoveClickAndDrag(window, lh);
+		}
+
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
-			printf("initialising\n");
+			printf("Initialising\n");
 			pthread->join();
-			lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 1, 174.961 - 1);
+			lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
 			lh->viewNSWE->movetowards(1000000000000);
-			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
-			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
-			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
-			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
-			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
-			lh->regions.push_back(new Region(-37.01, -37.072, 174.88, 174.943));
+			lh->regions.push_back(new Region());
+
+
+			LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
+			SetupBackgroundShaders(lh->bgInfo);
 
 
 			//this does the lines of the map
@@ -229,8 +229,9 @@ int StartGLProgram(LocationHistory * lh)
 		// update other events like input handling 
 
 		if (lh->isLoadingFile == true) {
-			ImGui::Begin("Loading");
-			
+			ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
+			ImGui::SetNextWindowPos(ImVec2(200.0f, 300.0f));
+			ImGui::Begin("Loading",NULL, ImGuiWindowFlags_NoResize| ImGuiWindowFlags_NoMove| ImGuiWindowFlags_NoCollapse);
 			float p = (float)lh->totalbytesread/ (float)lh->filesize;
 			ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh->totalbytesread/0x100000, (float)lh->filesize / 0x100000);
 			ImGui::ProgressBar(p);

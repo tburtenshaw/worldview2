@@ -59,7 +59,7 @@ vec4 FloatToColour(float vraw, float mraw)	{
 	if (vraw>2)	{
 		vec4 c;
 		float r=log(vraw)/log(mraw); //value/max
-		float a=smoothstep(0.0,0.01,r);
+		float a=smoothstep(0.0,0.2,r);
 		if (palette==1)	{
 			c=vec4(inferno(r),a);
 		}
@@ -114,7 +114,7 @@ void main() {
 	heatmapuv.y+=(heatmapnswe.x-90)/heatmapheight;
 
 	//do a gaussian blur
-	vec2 heatmappix = 1/vec2(2048,2048);
+	//vec2 heatmappix = 1/vec2(2048,2048);
 
 
 	float heatvalue;

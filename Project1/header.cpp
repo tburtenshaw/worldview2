@@ -2,6 +2,7 @@
 #include "heatmap.h"
 #include "nswe.h"
 #include "regions.h"
+#include "input.h"
 #include <stdio.h>
 
 void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *window)
@@ -23,8 +24,8 @@ LocationHistory::LocationHistory()
 	latesttimestamp = 0;
 
 	windowDimensions = new RECTDIMENSION;
-	longlatMouse = new WORLDCOORD;
-	viewNSWE = new movingTarget;
+	mouseInfo = new MouseActions;
+	viewNSWE = new MovingTarget;
 
 
 	heatmap = new Heatmap;
@@ -61,6 +62,7 @@ GlobalOptions::GlobalOptions()
 	minimumaccuracy = 24;
 	palette = 1;
 
+	gaussianblur = 0.0;
 	blurperaccuracy = false;
 	predictpath = false;
 }
