@@ -135,9 +135,11 @@ public:
 
 	Shader* shader;
 	unsigned int worldTexture;	//the background NASA map
+	unsigned int highresTexture;
 	unsigned int heatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
+	unsigned int highresTextureLocation;
 	unsigned int heatmapTextureLocation;
 
 };
@@ -170,6 +172,7 @@ public:
 
 void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);
+void LoadHighresImageToTexture(unsigned int* texture);
 void LoadHeatmapToTexture(NSWE* nswe, unsigned int* texture);
 void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 

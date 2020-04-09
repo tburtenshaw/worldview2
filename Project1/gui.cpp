@@ -8,6 +8,22 @@
 #include <string>
 #include <vector>
 
+void Gui::ShowLoadingWindow(LocationHistory* lh)
+{
+	ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
+	ImGui::SetNextWindowPos(ImVec2(200.0f, 300.0f));
+	ImGui::Begin("Loading", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+	float p = (float)lh->totalbytesread / (float)lh->filesize;
+	if (lh->totalbytesread < lh->filesize) {
+		ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh->totalbytesread / 0x100000, (float)lh->filesize / 0x100000);
+	}
+	else {
+		ImGui::Text("Initialising...");
+	}
+	ImGui::ProgressBar(p);
+	ImGui::End();
+}
+
 void Gui::MakeGUI(LocationHistory * lh)
 {
 	GlobalOptions * options;

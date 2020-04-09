@@ -7,6 +7,7 @@ struct RECTDIMENSION;
 
 
 namespace Gui {
+	void ShowLoadingWindow(LocationHistory* lh);
 	void MakeGUI(LocationHistory* lh);
 	void ShowRegionInfo(Region* r);
 	void ListDatesInRegion(Region* r);

@@ -154,7 +154,7 @@ int StartGLProgram(LocationHistory * lh)
 	//set up the background
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
-
+	LoadHighresImageToTexture(&lh->bgInfo->highresTexture);
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -226,16 +226,9 @@ int StartGLProgram(LocationHistory * lh)
 			Gui::MakeGUI(lh);	//make the ImGui stuff
 		}
 
-		// update other events like input handling 
 
 		if (lh->isLoadingFile == true) {
-			ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
-			ImGui::SetNextWindowPos(ImVec2(200.0f, 300.0f));
-			ImGui::Begin("Loading",NULL, ImGuiWindowFlags_NoResize| ImGuiWindowFlags_NoMove| ImGuiWindowFlags_NoCollapse);
-			float p = (float)lh->totalbytesread/ (float)lh->filesize;
-			ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh->totalbytesread/0x100000, (float)lh->filesize / 0x100000);
-			ImGui::ProgressBar(p);
-			ImGui::End();
+			Gui::ShowLoadingWindow(lh);
 		}
 		
 
@@ -300,6 +293,23 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 	return;
 }
 
+void LoadHighresImageToTexture(unsigned int* texture)
+{
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("D:/n-34s-48w166e179.png", &width, &height, &nrChannels, 0);
+
+	glGenTextures(1, texture);
+	glBindTexture(GL_TEXTURE_2D, *texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	stbi_image_free(data);
+
+	return;
+}
+
+
 void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 {	
 	pLocationHistory->CreateHeatmap(nswe, 0);
@@ -344,12 +354,14 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 
 	//unsigned int worldTextureLocation, heatmapTextureLocation;
 	backgroundInfo->worldTextureLocation = glGetUniformLocation(backgroundInfo->shader->program, "worldTexture");
+	backgroundInfo->highresTextureLocation = glGetUniformLocation(backgroundInfo->shader->program, "highresTexture");
 	backgroundInfo->heatmapTextureLocation = glGetUniformLocation(backgroundInfo->shader->program, "heatmapTexture");
 
 	// Then bind the uniform samplers to texture units:
 	backgroundInfo->shader->UseMe();
 	glUniform1i(backgroundInfo->worldTextureLocation, 0);
-	glUniform1i(backgroundInfo->heatmapTextureLocation, 1);
+	glUniform1i(backgroundInfo->highresTextureLocation, 1);
+	glUniform1i(backgroundInfo->heatmapTextureLocation, 2);
 	
 	return;
 }
@@ -369,7 +381,8 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
 	backgroundInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	backgroundInfo->shader->SetUniformFromFloats("nswe", viewnswe->north, viewnswe->south, viewnswe->west, viewnswe->east);
-	backgroundInfo->shader->SetUniformFromFloats("heatmapnswe", heatmapnswe->north, heatmapnswe->south, heatmapnswe->west, heatmapnswe->east);
+	backgroundInfo->shader->SetUniformFromFloats("highresnswe", -34.0f, -48.0f, 166.0f, 179.0f);
+	backgroundInfo->shader->SetUniformFromNSWE("heatmapnswe", heatmapnswe);
 
 	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", pLocationHistory->heatmap->maxPixel);
 	backgroundInfo->shader->SetUniformFromInts("palette", pLocationHistory->globalOptions->palette);
@@ -377,7 +390,13 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->worldTexture);
+
 	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, backgroundInfo->highresTexture);
+
+
+
+	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
 
 	glBindVertexArray(backgroundInfo->vao);
