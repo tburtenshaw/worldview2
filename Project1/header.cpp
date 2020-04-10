@@ -3,6 +3,7 @@
 #include "nswe.h"
 #include "regions.h"
 #include "input.h"
+#include "highresmanager.h"
 #include <stdio.h>
 
 void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *window)
@@ -33,6 +34,8 @@ LocationHistory::LocationHistory()
 	bgInfo = new BackgroundInfo;
 	pathInfo = new MapPathInfo;
 	pointsInfo = new MapPointsInfo;
+
+	highres = new HighResManager;
 
 	globalOptions = new GlobalOptions;
 

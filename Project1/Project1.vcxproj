@@ -171,6 +171,7 @@
     <ClCompile Include="nswe.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="regions.cpp" />
+    <ClCompile Include="highresmanager.cpp" />
     <ClCompile Include="winconsole.cpp" />
     <ClCompile Include="loadjson.cpp" />
   </ItemGroup>
@@ -178,6 +179,7 @@
     <ClInclude Include="gui.h" />
     <ClInclude Include="header.h" />
     <ClInclude Include="heatmap.h" />
+    <ClInclude Include="highresmanager.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="loadjson.h" />
     <ClInclude Include="mytimezone.h" />

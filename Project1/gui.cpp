@@ -107,6 +107,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 void Gui::ShowRegionInfo(Region* r)
 {
 	ImGui::Text("N:%.4f S:%.4f W:%.4f E:%.4f", r->nswe.north, r->nswe.south, r->nswe.west, r->nswe.east);
+	ImGui::Text("Height: %.2f Width:%.2f", r->nswe.height(), r->nswe.width());
 	
 	{
 		float maxhour = 0;

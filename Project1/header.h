@@ -19,6 +19,7 @@ class MapPointsInfo;
 class Region;
 class MovingTarget;
 class MouseActions;
+class HighResManager;
 
 //typedef struct sLocation ;
 
@@ -121,6 +122,8 @@ public:
 	MapPathInfo *pathInfo;
 	MapPointsInfo *pointsInfo;
 
+	HighResManager* highres;
+
 	GlobalOptions *globalOptions;
 
 };
@@ -135,7 +138,7 @@ public:
 
 	Shader* shader;
 	unsigned int worldTexture;	//the background NASA map
-	unsigned int highresTexture;
+	//unsigned int highresTexture;
 	unsigned int heatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
@@ -178,7 +181,7 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 
-void DrawBackgroundAndHeatmap(BackgroundInfo* backgroundInfo);
+void DrawBackgroundAndHeatmap(LocationHistory* lh);
 
 //paths
 void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);

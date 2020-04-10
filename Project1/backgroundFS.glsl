@@ -7,6 +7,8 @@ uniform sampler2D heatmapTexture;
 uniform vec2 resolution;
 uniform vec4 nswe;	//the view
 uniform vec4 highresnswe;
+uniform vec2 highresscale;
+
 uniform vec4 heatmapnswe;	//where the heatmap covers
 
 uniform float maxheatmapvalue;
@@ -109,8 +111,9 @@ void main() {
 	highresuv.y=uv.y/(highresheight/180);
 	highresuv.y+=(highresnswe.x-90)/highresheight;
 
+
 	if ((highresuv.x>0)&&(highresuv.y>0)&&(highresuv.x<1)&&(highresuv.y<1))	{
-		wt=texture(highresTexture, highresuv);
+		wt=texture(highresTexture, highresuv*highresscale);
 	}
 	
 	

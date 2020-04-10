@@ -27,6 +27,8 @@
 #include "heatmap.h"
 #include "regions.h"
 #include "gui.h"
+#include "highresmanager.h"
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <STB/stb_image.h>
@@ -92,6 +94,8 @@ int StartGLProgram(LocationHistory * lh)
 	GlobalOptions *options;
 	options = lh->globalOptions;
 
+	HighResManager *highres = new HighResManager;
+
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
@@ -154,7 +158,7 @@ int StartGLProgram(LocationHistory * lh)
 	//set up the background
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
-	LoadHighresImageToTexture(&lh->bgInfo->highresTexture);
+	LoadHighresImageToTexture(&lh->highres->highresTexture);
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -172,7 +176,6 @@ int StartGLProgram(LocationHistory * lh)
 
 			LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
 			SetupBackgroundShaders(lh->bgInfo);
-
 
 			//this does the lines of the map
 			SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
@@ -211,9 +214,7 @@ int StartGLProgram(LocationHistory * lh)
 				UpdateHeatmapTexture(&expanded, lh->bgInfo);
 			}
 
-
-			//This draws the heatmap
-			DrawBackgroundAndHeatmap(lh->bgInfo);
+			DrawBackgroundAndHeatmap(lh);
 
 			if (options->showPaths) {
 				DrawPaths(lh->pathInfo);
@@ -295,16 +296,33 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 
 void LoadHighresImageToTexture(unsigned int* texture)
 {
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("D:/n-34s-48w166e179.png", &width, &height, &nrChannels, 0);
+	
+
+	GLint maxtexturesize;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxtexturesize);
+	printf("Max texture size: %i\n", maxtexturesize);
+
 
 	glGenTextures(1, texture);
+	printf("Gen Texture %i. glGetError %i\n", *texture, glGetError());
 	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	printf("glGetError %i\n", glGetError());
+
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8192, 8192, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	printf("glGetError %i\n", glGetError());
+	
+	int width, height, nrChannels;
+	//unsigned char* data = stbi_load("D:/n-34s-48w166e179.png", &width, &height, &nrChannels, 0);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+	//stbi_image_free(data);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	stbi_image_free(data);
+	//pLocationHistory->highres->bestImage = 1;
+	//pLocationHistory->highres->subImageLoaded = 1;
+	//pLocationHistory->highres->dataReady = 1;
+
+	printf("glGetError %i\n", glGetError());
 
 	return;
 }
@@ -319,28 +337,24 @@ void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
 
-
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	//this is the poles
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	//printf("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR); glGetError %i\n", glGetError());
 
-	glBindTexture(GL_TEXTURE_2D, 0);
-
+	printf("After heatmap load glGetError %i\n", glGetError());
 	return;
 }
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {
-	//printf("Creating heatmap... ");
 	pLocationHistory->CreateHeatmap(nswe, 0);
-	//printf("Done.\n");
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return;
 }
@@ -363,17 +377,30 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 	glUniform1i(backgroundInfo->highresTextureLocation, 1);
 	glUniform1i(backgroundInfo->heatmapTextureLocation, 2);
 	
+	printf("After background shaders. glGetError %i\n", glGetError());
+
 	return;
 }
 
 
-void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
+void DrawBackgroundAndHeatmap(LocationHistory * lh)
 {
 	NSWE* viewnswe;
 	NSWE *heatmapnswe;
+	BackgroundInfo* backgroundInfo;
+	HighResManager* highres;
+	NSWE* highresnswe;
 
+	backgroundInfo = lh->bgInfo;
 	viewnswe = pLocationHistory->viewNSWE;
 	heatmapnswe = pLocationHistory->heatmap->nswe;
+	highres = lh->highres;
+
+	highres->DecideBestTex(*lh->windowDimensions, lh->viewNSWE);
+	//printf("%i ", highres->bestImage);
+
+	highresnswe = highres->GetBestNSWE();
+
 
 	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
 
@@ -381,7 +408,8 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
 	backgroundInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	backgroundInfo->shader->SetUniformFromFloats("nswe", viewnswe->north, viewnswe->south, viewnswe->west, viewnswe->east);
-	backgroundInfo->shader->SetUniformFromFloats("highresnswe", -34.0f, -48.0f, 166.0f, 179.0f);
+	backgroundInfo->shader->SetUniformFromNSWE("highresnswe", highresnswe);
+	backgroundInfo->shader->SetUniformFromFloats("highresscale", (float)highres->width / 8192.0f, (float)highres->height / 8192.0f); //as we're just loading the
 	backgroundInfo->shader->SetUniformFromNSWE("heatmapnswe", heatmapnswe);
 
 	backgroundInfo->shader->SetUniformFromFloats("maxheatmapvalue", pLocationHistory->heatmap->maxPixel);
@@ -392,9 +420,7 @@ void DrawBackgroundAndHeatmap(BackgroundInfo * backgroundInfo)
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->worldTexture);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, backgroundInfo->highresTexture);
-
-
+	glBindTexture(GL_TEXTURE_2D, highres->highresTexture);
 
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
