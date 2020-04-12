@@ -59,6 +59,11 @@ void NSWE::setto(NSWE *setthis) {
 		return (north - south);
 	}
 
+	float NSWE::area()
+	{
+		return (north - south) * (east - west);
+	}
+
 	void NSWE::nudgehorizontal(float p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
 		float w;
 		w = east - west;
@@ -113,6 +118,23 @@ void NSWE::setto(NSWE *setthis) {
 		outputNSWE.east = midlong + w / 2 * factor;
 
 		//printf("Start: %f %f. %.1f, %.1f, %.1f, %.1f. Then %.1f, %.1f, %.1f, %.1f, .\n",h,w,north,south,west,east,outputNSWE.north, outputNSWE.south, outputNSWE.west, outputNSWE.east);
+
+		return outputNSWE;
+	}
+
+	NSWE NSWE::interectionWith(NSWE otherNSWE)
+	{
+		NSWE outputNSWE;
+
+		outputNSWE.north = std::min(north, otherNSWE.north);
+		outputNSWE.south = std::max(south, otherNSWE.south);
+		outputNSWE.west= std::max(west, otherNSWE.west);
+		outputNSWE.east = std::min(east, otherNSWE.east);
+
+		if ((outputNSWE.south > outputNSWE.north) || (outputNSWE.west > outputNSWE.east)) {
+			outputNSWE.north = outputNSWE.south = outputNSWE.west = outputNSWE.east = 0;
+		}
+
 
 		return outputNSWE;
 	}

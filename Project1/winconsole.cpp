@@ -45,8 +45,8 @@ int OpenAndReadJSON(LocationHistory * lh)
 	JSON_READER_STATE jrs;
 	lh->isLoadingFile = true;
 
-	//jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	//jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(jsonfile, &filesize);
@@ -296,33 +296,14 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 
 void LoadHighresImageToTexture(unsigned int* texture)
 {
-	
-
 	GLint maxtexturesize;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxtexturesize);
 	printf("Max texture size: %i\n", maxtexturesize);
 
-
 	glGenTextures(1, texture);
-	printf("Gen Texture %i. glGetError %i\n", *texture, glGetError());
 	glBindTexture(GL_TEXTURE_2D, *texture);
-	printf("glGetError %i\n", glGetError());
-
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8192, 8192, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	printf("glGetError %i\n", glGetError());
-	
-	int width, height, nrChannels;
-	//unsigned char* data = stbi_load("D:/n-34s-48w166e179.png", &width, &height, &nrChannels, 0);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-	//stbi_image_free(data);
 	glGenerateMipmap(GL_TEXTURE_2D);
-	//pLocationHistory->highres->bestImage = 1;
-	//pLocationHistory->highres->subImageLoaded = 1;
-	//pLocationHistory->highres->dataReady = 1;
-
-	printf("glGetError %i\n", glGetError());
 
 	return;
 }
@@ -397,8 +378,6 @@ void DrawBackgroundAndHeatmap(LocationHistory * lh)
 	highres = lh->highres;
 
 	highres->DecideBestTex(*lh->windowDimensions, lh->viewNSWE);
-	//printf("%i ", highres->bestImage);
-
 	highresnswe = highres->GetBestNSWE();
 
 

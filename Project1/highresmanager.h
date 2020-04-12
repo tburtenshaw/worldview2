@@ -10,6 +10,9 @@ public:
 	int bestImage;
 	int dataReady; //which file the data belongs to
 	int subImageLoaded;	//which file is loaded into the subimage with glTexSubImage2D
+	bool fileThreadLoading;
+	bool subImageLoading;
+	int subImageHeightLoaded;	//the height so far uploaded
 
 	unsigned char* rawImageData;
 	int width, height, nrChannels;
@@ -21,7 +24,7 @@ public:
 
 	HighResManager();
 
-	void DecideBestTex(RECTDIMENSION windowSize, NSWE* nswe);
+	void DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE);
 	NSWE *GetBestNSWE();
 	void ImageLoadThread(int n);
 	void LoadBestTex();

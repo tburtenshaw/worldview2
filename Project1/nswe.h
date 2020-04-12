@@ -4,6 +4,7 @@
 //forward declaration
 class WORLDCOORD;
 class MovingTarget;
+#include <algorithm>
 
 class NSWE {
 public:
@@ -23,12 +24,14 @@ public:
 	void setto(NSWE *setthis);
 	float width();
 	float height();
+	float area();
 	void nudgehorizontal(float p);
 	void nudgevertical(float p);
 	void moveby(float x, float y);
 
 
 	NSWE createExpandedBy(float factor);
+	NSWE interectionWith(NSWE otherNSWE);
 	WORLDCOORD centre();
 
 	void zoom(float z, WORLDCOORD c);

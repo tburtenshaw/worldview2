@@ -2,6 +2,8 @@
 #include <string>
 #include <thread>
 
+#include <chrono>
+
 #include "header.h"
 #include "highresmanager.h"
 #include "nswe.h"
@@ -17,6 +19,8 @@ HighResManager::HighResManager()
 	bestImage = 0;
 	dataReady = 0;
 	subImageLoaded = 0;
+	fileThreadLoading = false;
+
 	rawImageData = NULL;
 	height = 0;
 	width = 0;
@@ -34,26 +38,44 @@ HighResManager::HighResManager()
 	filename.push_back("D:/n55s38w0e17.png");
 	nswe.push_back(NSWE(55.0f, 38.0f, 0.0f, 17.0f));
 
+	filename.push_back("D:/n-16s-28w145e154.png");
+	nswe.push_back(NSWE(-16.0f, -28.0f, 145.0f, 154.0f));
+
+	filename.push_back("D:/n50s47w-124e-121.png");
+	nswe.push_back(NSWE(50.0f, 47.0f, -124.0f, -121.0f));
+
+
 }
 
-void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* nswe)
+void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)
 {
 	float pixelsperdegree;
 
-	pixelsperdegree = (float)windowSize.width / (float)nswe->width();
+	pixelsperdegree = (float)windowSize.width / (float)viewportNSWE->width();
 
 	if (pixelsperdegree < (4096.0 / 360.0)) {	//does the background have a high enough pixel density
 		bestImage = 0;
 		return;
 	}
 	
-	if (nswe->east > 166.0f) {
-		bestImage = 1;
+	
+	float areaofviewport = viewportNSWE->area();
+	float bestscore;
+
+	bestscore = 0;
+	for (int i=1;i<nswe.size();i++)	{
+		NSWE intersection = viewportNSWE->interectionWith(nswe[i]);
+		float areatotest = nswe[i].area();
+		float areaofintersection = intersection.area();
+
+		float score = std::min(areaofintersection / areatotest, areaofintersection / areaofviewport);
+
+		if (score > bestscore) {
+			bestscore = score;
+			bestImage = i;
+		}
 	}
-	else
-	{
-		bestImage = 2;
-	}
+	return;
 
 }
 
@@ -64,7 +86,6 @@ NSWE* HighResManager::GetBestNSWE()
 	}
 	else if (bestImage>0)
 	{
-	//	subImageLoaded = 0;
 		LoadBestTex();
 	}
 
@@ -73,33 +94,50 @@ NSWE* HighResManager::GetBestNSWE()
 
 void HighResManager::ImageLoadThread(int n)
 {
-	printf("%s\n", filename[n].c_str());
+	printf("Filename: %s\n", filename[n].c_str());
 	rawImageData = stbi_load(filename[n].c_str(), &width, &height, &nrChannels, 0);
 	if (!rawImageData) { printf("didn't load.\n"); }
+	else { printf("loaded.\n"); }
 	dataReady = n;
+	fileThreadLoading = false;
+	subImageLoading = true;
+	subImageHeightLoaded = 0;
 }
 
 void HighResManager::LoadBestTex()
 {
-	printf("Loading texture\n");
-	if (dataReady != bestImage) {
+	//printf("Loading texture\n");
+	
+
+	if ((dataReady != bestImage)) {
 		//load the image from file
-		printf("Loading from file %i\n",bestImage);
-		dataReady = 0;
-		//std::thread imageload(&HighResManager::ImageLoadThread,this,bestImage);
-		ImageLoadThread(bestImage);
+		if (fileThreadLoading == false) {
+			printf("Loading from file %i\n", bestImage);
+			fileThreadLoading = true;
+			dataReady = 0;
+			std::thread(&HighResManager::ImageLoadThread, this, bestImage).detach();
+		}
 	}
-	else if (subImageLoaded != bestImage) {
-		printf("Setting up subimage\n");
+	if ((subImageLoaded != bestImage) && (fileThreadLoading==false)) {	//the dataready is the best, but the subimg hasn't been made, and we're not fileThreadLoading
+//		printf("Setting up subimage\n");
+	
 		//set the subimage, and free the data
 		glBindTexture(GL_TEXTURE_2D, highresTexture);
-		printf("After bind: glGetError %i\n", glGetError());
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, rawImageData);
-		stbi_image_free(rawImageData);
+		int heightToLoad = std::min(height - subImageHeightLoaded, 512);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageHeightLoaded, width, heightToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData+subImageHeightLoaded*width* nrChannels);
+//		printf("Height to load: %i", heightToLoad);
 
-		glGenerateMipmap(GL_TEXTURE_2D);
-		printf("glGetError %i\n", glGetError());
-		subImageLoaded = dataReady;
-		dataReady = 0;
+		subImageHeightLoaded += heightToLoad;
+
+		if (subImageHeightLoaded == height) {
+			printf("free\n");
+			stbi_image_free(rawImageData);
+			glGenerateMipmap(GL_TEXTURE_2D);
+			subImageLoaded = dataReady;
+			dataReady = 0;
+			subImageLoading = false;
+		}
+
+
 	}
 }
