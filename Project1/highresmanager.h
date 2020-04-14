@@ -12,7 +12,7 @@ public:
 	int subImageLoaded;	//which file is loaded into the subimage with glTexSubImage2D
 	bool fileThreadLoading;
 	bool subImageLoading;
-	int subImageHeightLoaded;	//the height so far uploaded
+	int subImageLinesLoaded;	//the height so far uploaded
 
 	unsigned char* rawImageData;
 	int width, height, nrChannels;

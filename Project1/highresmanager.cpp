@@ -44,6 +44,9 @@ HighResManager::HighResManager()
 	filename.push_back("D:/n50s47w-124e-121.png");
 	nswe.push_back(NSWE(50.0f, 47.0f, -124.0f, -121.0f));
 
+	filename.push_back("D:/n-33s-35w18e20.png");
+	nswe.push_back(NSWE(-33.0f, -35.0f, 18.0f, 20.0f));
+
 
 }
 
@@ -81,7 +84,7 @@ void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)
 
 NSWE* HighResManager::GetBestNSWE()
 {
-	if (bestImage == subImageLoaded) {
+	if ((bestImage == subImageLoaded) && ((bestImage==dataReady) || (dataReady==0))) {
 		return &nswe[bestImage];
 	}
 	else if (bestImage>0)
@@ -96,12 +99,17 @@ void HighResManager::ImageLoadThread(int n)
 {
 	printf("Filename: %s\n", filename[n].c_str());
 	rawImageData = stbi_load(filename[n].c_str(), &width, &height, &nrChannels, 0);
-	if (!rawImageData) { printf("didn't load.\n"); }
-	else { printf("loaded.\n"); }
+	if (!rawImageData) { 
+		printf("didn't load.\n");
+		fileThreadLoading = false;
+		//now we should remove the file from the list
+		return;
+	}
+	//else { printf("loaded. W:%i H:%i\n", width, height); }
 	dataReady = n;
 	fileThreadLoading = false;
 	subImageLoading = true;
-	subImageHeightLoaded = 0;
+	subImageLinesLoaded = 0;
 }
 
 void HighResManager::LoadBestTex()
@@ -109,7 +117,7 @@ void HighResManager::LoadBestTex()
 	//printf("Loading texture\n");
 	
 
-	if ((dataReady != bestImage)) {
+	if ((dataReady != bestImage) && (subImageLoading==false)) {
 		//load the image from file
 		if (fileThreadLoading == false) {
 			printf("Loading from file %i\n", bestImage);
@@ -118,18 +126,15 @@ void HighResManager::LoadBestTex()
 			std::thread(&HighResManager::ImageLoadThread, this, bestImage).detach();
 		}
 	}
-	if ((subImageLoaded != bestImage) && (fileThreadLoading==false)) {	//the dataready is the best, but the subimg hasn't been made, and we're not fileThreadLoading
-//		printf("Setting up subimage\n");
-	
-		//set the subimage, and free the data
+	if ((subImageLoading==true) && (fileThreadLoading==false)) {
+		//printf("subimageloading. W:%i H:%i\n", width, height);
 		glBindTexture(GL_TEXTURE_2D, highresTexture);
-		int heightToLoad = std::min(height - subImageHeightLoaded, 512);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageHeightLoaded, width, heightToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData+subImageHeightLoaded*width* nrChannels);
-//		printf("Height to load: %i", heightToLoad);
+		//if we try to load a whole image at once, it'll cause stutter, so we do a few lines at a time
+		int linesToLoad = std::min(height - subImageLinesLoaded, 512); //load at most 512 lines
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageLinesLoaded, width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData+subImageLinesLoaded*width* nrChannels);
+		subImageLinesLoaded += linesToLoad;
 
-		subImageHeightLoaded += heightToLoad;
-
-		if (subImageHeightLoaded == height) {
+		if (subImageLinesLoaded == height) {
 			printf("free\n");
 			stbi_image_free(rawImageData);
 			glGenerateMipmap(GL_TEXTURE_2D);
@@ -137,7 +142,5 @@ void HighResManager::LoadBestTex()
 			dataReady = 0;
 			subImageLoading = false;
 		}
-
-
 	}
 }

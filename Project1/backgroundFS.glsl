@@ -30,14 +30,18 @@ vec3 inferno(float t) {
 
 }
 
-vec3 viridis_quintic( float x )
-{
-	vec4 x1 = vec4( 1.0, x, x * x, x * x * x ); // 1 x x2 x3
-	vec4 x2 = x1 * x1.w * x; // x4 x5 x6 x7
-	return vec3(
-		dot( x1.xyzw, vec4( +0.280268003, -0.143510503, +2.225793877, -14.815088879 ) ) + dot( x2.xy, vec2( +25.212752309, -11.772589584 ) ),
-		dot( x1.xyzw, vec4( -0.002117546, +1.617109353, -1.909305070, +2.701152864 ) ) + dot( x2.xy, vec2( -1.685288385, +0.178738871 ) ),
-		dot( x1.xyzw, vec4( +0.300805501, +2.614650302, -12.019139090, +28.933559110 ) ) + dot( x2.xy, vec2( -33.491294770, +13.762053843 ) ) );
+vec3 viridis(float t) {
+
+    const vec3 c0 = vec3(0.2777273272234177, 0.005407344544966578, 0.3340998053353061);
+    const vec3 c1 = vec3(0.1050930431085774, 1.404613529898575, 1.384590162594685);
+    const vec3 c2 = vec3(-0.3308618287255563, 0.214847559468213, 0.09509516302823659);
+    const vec3 c3 = vec3(-4.634230498983486, -5.799100973351585, -19.33244095627987);
+    const vec3 c4 = vec3(6.228269936347081, 14.17993336680509, 56.69055260068105);
+    const vec3 c5 = vec3(4.776384997670288, -13.74514537774601, -65.35303263337234);
+    const vec3 c6 = vec3(-5.435455855934631, 4.645852612178535, 26.3124352495832);
+
+    return c0+t*(c1+t*(c2+t*(c3+t*(c4+t*(c5+t*c6)))));
+
 }
 
 vec3 turbo(float t) {
@@ -68,7 +72,7 @@ vec4 FloatToColour(float vraw, float mraw)	{
 			c=vec4(turbo(r),a);
 		}
 		else {
-			c=vec4(viridis_quintic(r),a);
+			c=vec4(viridis(r),a);
 		}
 		return 	c;
 	}
@@ -113,9 +117,15 @@ void main() {
 
 
 	if ((highresuv.x>0)&&(highresuv.y>0)&&(highresuv.x<1)&&(highresuv.y<1))	{
-		wt=texture(highresTexture, highresuv*highresscale);
-	}
+		//wt=texture(highresTexture, highresuv*highresscale);
 	
+		vec2 uvn=abs(highresuv-0.5)*2.0;
+		float maxDist  = max(abs(uvn.x), abs(uvn.y));
+		float square=1.0-smoothstep(0.9,1.0,maxDist);
+
+		wt = mix(wt, texture(highresTexture, highresuv*highresscale),square);
+	}
+
 	
 	
 	//find the UV of the heatmap, then add it.

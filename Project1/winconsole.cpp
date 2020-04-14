@@ -45,8 +45,8 @@ int OpenAndReadJSON(LocationHistory * lh)
 	JSON_READER_STATE jrs;
 	lh->isLoadingFile = true;
 
-	jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	//jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	//jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(jsonfile, &filesize);
@@ -146,15 +146,12 @@ int StartGLProgram(LocationHistory * lh)
 	glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-	//glfwSetCursorPosCallback(window, ManageMouseMoveClickAndDrag);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
 
-	//Set some app parameters
-	
 	//set up the background
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
@@ -188,8 +185,7 @@ int StartGLProgram(LocationHistory * lh)
 
 		}
 
-		// wipe the drawing surface clear
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -206,12 +202,14 @@ int StartGLProgram(LocationHistory * lh)
 			if (lh->viewNSWE->isDirty()) {
 				lh->regions[0]->SetNSWE(&lh->viewNSWE->target);
 				lh->regions[0]->Populate(lh);
-				//printf("d");
+				lh->heatmap->MakeDirty();
 			}
-			if (!lh->viewNSWE->isMoving() && lh->viewNSWE->isDirty()) {
+
+			if (!lh->viewNSWE->isMoving() && lh->heatmap->IsDirty() && lh->globalOptions->showHeatmap) {
 				NSWE expanded;
 				expanded = lh->viewNSWE->target.createExpandedBy(1);
 				UpdateHeatmapTexture(&expanded, lh->bgInfo);
+				lh->heatmap->MakeClean();
 			}
 
 			DrawBackgroundAndHeatmap(lh);
@@ -331,6 +329,8 @@ void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {
+	
+	
 	pLocationHistory->CreateHeatmap(nswe, 0);
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
@@ -452,7 +452,7 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 	//update uniform shader variables
 	mapPathInfo->shader->UseMe();
 	mapPathInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
-	mapPathInfo->shader->SetUniformFromFloats("seconds", options->seconds);
+	mapPathInfo->shader->SetUniformFromFloats("seconds", options->seconds*20.0f);
 	mapPathInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	mapPathInfo->shader->SetUniformFromFloats("linewidth", options->linewidth);
 	mapPathInfo->shader->SetUniformFromFloats("cycle", options->cycle);

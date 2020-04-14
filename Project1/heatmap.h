@@ -6,7 +6,8 @@ class Shader;
 
 
 class Heatmap {
-
+private:
+	bool dirty;
 public:
 	int width;
 	int height;
@@ -19,6 +20,11 @@ public:
 
 	void StampGaussian(float fx, float fy, float stddev, long seconds);
 	void GaussianBlur(float sigma);
+
+	void MakeDirty();
+	void MakeClean();
+	bool IsDirty();
+
 
 	Heatmap();
 	~Heatmap();

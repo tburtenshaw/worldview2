@@ -11,7 +11,7 @@ uniform vec2 resolution;
 
 out VS_OUT {
     vec3 color;
-	float dontdraw;
+	float dontdraw;		//whether or not we draw the (?next) line
 	vec2 origcoords;	//these are the map coords
 } vs_out;
 
@@ -21,6 +21,14 @@ vec3 hsv2rgb(vec3 c)
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
+
+vec3 rainbow(float f)
+{
+    //thanks jodie, https://www.shadertoy.com/view/4l2cDm
+	
+	return sqrt(sin( (f+vec3(0,2,1)/3.)*2*3.14159265359 ) * .5 + .5);
+}
+
 
 
 void main() {
@@ -37,12 +45,14 @@ void main() {
 	uint m;
 	float f;
 	
-	m = (ts + uint(seconds)) % uint(cycle); 
+	m = (ts - uint(seconds)) % uint(cycle); 
 
 
 	f = float(m)/cycle;
 	
-	vs_out.color=hsv2rgb(vec3(f,1.0,1.0));
+
+	vs_out.color=rainbow(f);
+	//vs_out.color=hsv2rgb(vec3(f,1.0,1.0));
 	
 
 	float res;

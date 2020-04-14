@@ -5,6 +5,7 @@
 #include "regions.h"
 #include "mytimezone.h"
 #include "input.h"
+#include "heatmap.h"
 #include <string>
 #include <vector>
 
@@ -67,17 +68,38 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	ImGui::Begin("Path drawing");
 	ImGui::Checkbox("Show paths", &options->showPaths);
-	ImGui::SliderFloat("Line thickness", &options->linewidth, 0.0f, 20.0f, "%.2f");
-	ImGui::SliderFloat("Cycle", &options->cycle, 1.0f, 3600.0f * 7.0 * 24, "%.0f");
+	ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
+
+	const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years" };
+	const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f };
+	
+	static int uiCycleSelect = 0;
+	ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames));
+	options->cycle = cycleresults[uiCycleSelect];
+	ImGui::SliderFloat("Cycle", &options->cycle, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f", 6.0f);
+
 	ImGui::End();
 
+	static float oldBlur=0;
+	static float oldMinimumaccuracy = 0;
 	ImGui::Begin("Heatmap");
-	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur,0.0f,10.0f, "%.1f");
+	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
+	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur,0.0f,10.0f, "%.1f");	
 	ImGui::Checkbox("_Predict paths", &options->predictpath);
 	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
-	const char* items[] = { "Viridis", "Inferno", "Turbo" };
-	ImGui::Combo("Palette", &options->palette, items, IM_ARRAYSIZE(items));
+	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
+	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
+	
+	if (options->gaussianblur != oldBlur) {
+		oldBlur = options->gaussianblur;
+		lh->heatmap->MakeDirty();
+	}
+	if (options->minimumaccuracy != oldMinimumaccuracy) {
+		oldMinimumaccuracy = options->minimumaccuracy;
+		lh->heatmap->MakeDirty();
+	}
+
 	ImGui::End();
 
 	ImGui::Begin("Selected");

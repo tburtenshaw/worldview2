@@ -318,6 +318,22 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 	}
 }
 
+void Heatmap::MakeDirty()
+{
+	dirty = true;
+}
+
+void Heatmap::MakeClean()
+{
+	dirty = false;
+}
+
+bool Heatmap::IsDirty()
+{
+	if (dirty) return true;
+	return false;
+}
+
 Heatmap::Heatmap()
 {
 	height=width = 1024;

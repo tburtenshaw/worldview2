@@ -76,6 +76,7 @@ public:
 	GlobalOptions();
 	bool showPaths;
 	bool showPoints;
+	bool showHeatmap;
 	float seconds;
 
 	float linewidth;
