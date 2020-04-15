@@ -2,8 +2,6 @@
 #include <string>
 #include <thread>
 
-#include <chrono>
-
 #include "header.h"
 #include "highresmanager.h"
 #include "nswe.h"
@@ -26,6 +24,9 @@ HighResManager::HighResManager()
 	width = 0;
 	nrChannels = 0;
 
+	subImageLinesLoaded = 0;
+	subImageLoading = false;
+
 	highresTexture = 0;
 
 	filename.push_back("Background");
@@ -46,8 +47,12 @@ HighResManager::HighResManager()
 
 	filename.push_back("D:/n-33s-35w18e20.png");
 	nswe.push_back(NSWE(-33.0f, -35.0f, 18.0f, 20.0f));
+	
+	filename.push_back("d:/n-25s-26w-55e-54.png");
+	nswe.push_back(NSWE(-25.0f, -26.0f, -55.0f, -54.0f));
 
-
+	filename.push_back("d:/n-22s-25w-47e-42.png");
+	nswe.push_back(NSWE(-22.0f, -25.0f, -47.0f, -42.0f));
 }
 
 void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)

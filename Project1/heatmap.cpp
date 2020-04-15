@@ -9,25 +9,29 @@
 
 extern LocationHistory* pLocationHistory;
 
-void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
+void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	
 	GlobalOptions* options;
 	options = pLocationHistory->globalOptions;
 
-	heatmap->nswe->setto(inputNswe);
+	NSWE expanded;
+
+	expanded = inputNswe->createExpandedBy(overdrawfactor);
+
+	nswe->setto(&expanded);
 	
-	heatmap->maxPixel = 0;
-	memset(heatmap->pixel, 0, sizeof(heatmap->pixel));
+	maxPixel = 0;
+	memset(pixel, 0, sizeof(pixel));
 		
 	unsigned long tsold;
 	long tsdiff;
 
-	tsold = locations.front().timestamp;
+	tsold = pLocationHistory->locations.front().timestamp;
 
 	float p;
 	p = 0;
 	
-	for (std::vector<LOCATION>::iterator iter = locations.begin(); iter != locations.end(); ++iter) {
+	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
 		float fx, fy;
 
@@ -35,29 +39,31 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 		if (tsdiff > 60*60*24*365) { tsdiff = 0; }
 		if (tsdiff < 0) { tsdiff = 0; }
 
-		fx = (iter->longitude - heatmap->nswe->west) / heatmap->nswe->width() * heatmap->width;
-		fy = (heatmap->nswe->north - iter->latitude) / heatmap->nswe->height() * heatmap->height;
+		fx = (iter->longitude - nswe->west) / nswe->width() * width;
+		fy = (nswe->north - iter->latitude) / nswe->height() * height;
 		
 		x = (int)(fx+0.5);
 		y = (int)(fy+0.5);
 
-		if ((x < heatmap->width) && (x >= 0) && (y < heatmap->height) && (y >= 0)) {
+		if ((x < width) && (x >= 0) && (y < height) && (y >= 0)) {
 			
 			//Single pixel
 			if (iter->accuracy < options->minimumaccuracy) {
-				heatmap->pixel[y * heatmap->width + x] += (tsdiff * 10);
+				pixel[y * width + x] += (tsdiff * 10);
 			}
 			
 
 
 			//Gaussian matrix
 			//printf("%i ", iter->accuracy);
-			//heatmap->StampGaussian(fx, fy, iter->accuracy / 10 , tsdiff);
+			if (options->blurperaccuracy) {
+				StampGaussian(fx, fy, iter->accuracy / 10, tsdiff);
+			}
 
-			p = heatmap->pixel[y * heatmap->width + x];
+			p = pixel[y * width + x];
 
-			if (p > heatmap->maxPixel) {
-				heatmap->maxPixel = p;
+			if (p > maxPixel) {
+				maxPixel = p;
 			}
 
 		}
@@ -69,13 +75,13 @@ void LocationHistory::CreateHeatmap(NSWE * inputNswe, int n) {
 	}
 
 
-	heatmap->GaussianBlur(options->gaussianblur);
+	GaussianBlur(options->gaussianblur);
 	return;
 
 }
 
 void Heatmap::StampGaussian(float fx, float fy, float stddev, long seconds) {
-	int maxradius =10;
+	int maxradius =5;
 	
 	int xstart = fx - maxradius;
 	int xfinish = fx + maxradius;
@@ -94,9 +100,12 @@ void Heatmap::StampGaussian(float fx, float fy, float stddev, long seconds) {
 
 	for (int y = ystart; y <= yfinish; y++) {
 		for (int x = xstart; x <= xfinish; x++) {
-			//printf("%i, %i\n", x, y);
-			pixel[y * width + x] += seconds*exp(-0.5 * (pow((x - fx) / stddev, 2.0) + pow((y - fy) / stddev, 2.0)))
+			
+			pixel[y * width + x] += (double)seconds*exp(-0.5 * (pow((x - fx) / stddev, 2.0) + pow((y - fy) / stddev, 2.0)))
 				/ (2 * 3.14159 * stddev * stddev);
+
+			printf("%i, %i\n", x, y);
+
 		}
 	}
 }
@@ -220,12 +229,15 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 	float totalfactors;
 	int coeffposition;
 
-	int cropfactor=1;//choosing 2, makes the blurred part half the width and height
-	int ystart = height / 2 - height / (2 * cropfactor);
-	int yend = height / 2 + height / (2 * cropfactor);
+	float cropfactor=1;//choosing 2, makes the blurred part half the width and height
 
-	int xstart = width / 2 - width / (2 * cropfactor);
-	int xend = width / 2 + width / (2 * cropfactor);
+	cropfactor = overdrawfactor;
+
+	int ystart = height / 2 - height / (2.0 * cropfactor);
+	int yend = height / 2 + height / (2.0 * cropfactor);
+
+	int xstart = width / 2 - width / (2.0 * cropfactor);
+	int xend = width / 2 + width / (2.0 * cropfactor);
 
 
 	if (matrixrow > 3) {	//no blur less than this.
@@ -336,7 +348,7 @@ bool Heatmap::IsDirty()
 
 Heatmap::Heatmap()
 {
-	height=width = 1024;
+	height=width = 1800;
 	memset(pixel, 0, sizeof(pixel));
 
 	//width = height = 100;
@@ -344,6 +356,7 @@ Heatmap::Heatmap()
 	nswe = new NSWE;
 	maxPixel = 0;
 	activeheatmap = 0;
+	overdrawfactor = 2.0;
 }
 
 Heatmap::~Heatmap()
@@ -365,6 +378,7 @@ BackgroundInfo::BackgroundInfo()
 
 	worldTextureLocation = 0;
 	heatmapTextureLocation = 0;
+	highresTextureLocation = 0;
 }
 
 BackgroundInfo::~BackgroundInfo()

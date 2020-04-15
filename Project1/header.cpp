@@ -21,6 +21,8 @@ LocationHistory::LocationHistory()
 {
 	filesize = 0;
 
+	filename = L"d:/location history.json";
+
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
 
@@ -39,6 +41,7 @@ LocationHistory::LocationHistory()
 
 	globalOptions = new GlobalOptions;
 
+	isFileChosen = false;
 	isLoadingFile = false;
 	isFullyLoaded = false;
 	isInitialised = false;
@@ -55,7 +58,7 @@ GlobalOptions::GlobalOptions()
 {
 	seconds = 0;
 	
-	showPaths = false;
+	showPaths = true;
 	showPoints = false;
 	showHeatmap = true;
 

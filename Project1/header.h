@@ -95,7 +95,7 @@ public:
 
 class LocationHistory {
 public:
-	std::string filename;
+	std::wstring filename;
 	unsigned long filesize;
 	
 	std::vector<LOCATION> locations;
@@ -106,7 +106,8 @@ public:
 
 	LocationHistory();
 	~LocationHistory();
-	void CreateHeatmap(NSWE *nswe, int n);
+	
+	bool isFileChosen;
 	bool isFullyLoaded;
 	bool isLoadingFile;
 	bool isInitialised;
@@ -176,8 +177,8 @@ public:
 
 void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);
-void LoadHighresImageToTexture(unsigned int* texture);
-void LoadHeatmapToTexture(NSWE* nswe, unsigned int* texture);
+void MakeHighresImageTexture(unsigned int* texture);
+void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
 void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);

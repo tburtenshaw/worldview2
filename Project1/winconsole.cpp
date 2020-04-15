@@ -43,10 +43,27 @@ int OpenAndReadJSON(LocationHistory * lh)
 {
 	HANDLE jsonfile;
 	JSON_READER_STATE jrs;
+	
+	if (lh->isLoadingFile) {	//we don't want to load if we're already loading something
+		return 2;
+	}
+
 	lh->isLoadingFile = true;
+	lh->isFileChosen = true;
 
 	//jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	jsonfile = CreateFile(_T("d:/location history.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	jsonfile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	
+	if (jsonfile == INVALID_HANDLE_VALUE) {
+		Beep(750, 300);
+		lh->isFileChosen = false;
+		lh->isLoadingFile = false;
+		return 1;
+	}
+
+	if (!lh->locations.empty()) {
+		lh->locations.clear();
+	}
 
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(jsonfile, &filesize);
@@ -155,7 +172,13 @@ int StartGLProgram(LocationHistory * lh)
 	//set up the background
 	SetupBackgroundVertices(lh->bgInfo);
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
-	LoadHighresImageToTexture(&lh->highres->highresTexture);
+	MakeHighresImageTexture(&lh->highres->highresTexture);
+	MakeHeatmapTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
+	SetupBackgroundShaders(lh->bgInfo);
+
+
+	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
+	lh->viewNSWE->movetowards(1000000000000);
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -163,16 +186,17 @@ int StartGLProgram(LocationHistory * lh)
 			ManageMouseMoveClickAndDrag(window, lh);
 		}
 
+		options->seconds = (float)glfwGetTime();
+
+		//get the view moving towards the target
+		lh->viewNSWE->movetowards(lh->globalOptions->seconds);
+
+
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
-			printf("Initialising\n");
+			printf("Initialising things that need file to be fully loaded\n");
 			pthread->join();
-			lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
-			lh->viewNSWE->movetowards(1000000000000);
+
 			lh->regions.push_back(new Region());
-
-
-			LoadHeatmapToTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
-			SetupBackgroundShaders(lh->bgInfo);
 
 			//this does the lines of the map
 			SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
@@ -191,13 +215,9 @@ int StartGLProgram(LocationHistory * lh)
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		
+		DrawBackgroundAndHeatmap(lh);
+
 		if (lh->isInitialised && lh->isFullyLoaded) {
-
-			options->seconds = (float)glfwGetTime();
-
-			//get the view moving towards the target
-			lh->viewNSWE->movetowards(lh->globalOptions->seconds);
 
 			if (lh->viewNSWE->isDirty()) {
 				lh->regions[0]->SetNSWE(&lh->viewNSWE->target);
@@ -212,7 +232,7 @@ int StartGLProgram(LocationHistory * lh)
 				lh->heatmap->MakeClean();
 			}
 
-			DrawBackgroundAndHeatmap(lh);
+			//DrawBackgroundAndHeatmap(lh);
 
 			if (options->showPaths) {
 				DrawPaths(lh->pathInfo);
@@ -225,6 +245,7 @@ int StartGLProgram(LocationHistory * lh)
 			Gui::MakeGUI(lh);	//make the ImGui stuff
 		}
 
+		
 
 		if (lh->isLoadingFile == true) {
 			Gui::ShowLoadingWindow(lh);
@@ -292,7 +313,7 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 	return;
 }
 
-void LoadHighresImageToTexture(unsigned int* texture)
+void MakeHighresImageTexture(unsigned int* texture)
 {
 	GLint maxtexturesize;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxtexturesize);
@@ -307,23 +328,19 @@ void LoadHighresImageToTexture(unsigned int* texture)
 }
 
 
-void LoadHeatmapToTexture(NSWE *nswe, unsigned int* texture)
+void MakeHeatmapTexture(NSWE *nswe, unsigned int* texture)
 {	
-	pLocationHistory->CreateHeatmap(nswe, 0);
-	
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, NULL);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	//this is the poles
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);	//this is the poles
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	//printf("glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR); glGetError %i\n", glGetError());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	printf("After heatmap load glGetError %i\n", glGetError());
 	return;
 }
 
@@ -331,7 +348,7 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {
 	
 	
-	pLocationHistory->CreateHeatmap(nswe, 0);
+	pLocationHistory->heatmap->CreateHeatmap(nswe, 0);
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);

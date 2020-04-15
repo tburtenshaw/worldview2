@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include <Windows.h>
+
 void Gui::ShowLoadingWindow(LocationHistory* lh)
 {
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
@@ -70,14 +72,20 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::Checkbox("Show paths", &options->showPaths);
 	ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
 
-	const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years" };
-	const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f };
+	const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years", "Other" };
+	const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f};
 	
 	static int uiCycleSelect = 0;
 	ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames));
-	options->cycle = cycleresults[uiCycleSelect];
+	if (uiCycleSelect < IM_ARRAYSIZE(cyclenames)-1) {
+		options->cycle = cycleresults[uiCycleSelect];
+	}
 	ImGui::SliderFloat("Cycle", &options->cycle, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f", 6.0f);
-
+	for (int i = 0; i < IM_ARRAYSIZE(cyclenames) - 1; i++) {
+		if (options->cycle == cycleresults[i]) {
+			uiCycleSelect = i;
+		}
+	}
 	ImGui::End();
 
 	static float oldBlur=0;
@@ -108,6 +116,9 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::End();
 
 	ImGui::Begin("Toolbar");
+	if (ImGui::Button("Open")) {
+		ChooseFile(lh);
+	}
 	if (ImGui::Button("Nav")) {
 		lh->mouseInfo->mouseMode = MouseMode::ScreenNavigation;
 	}
@@ -197,4 +208,32 @@ const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION *rect)
 	if (dpp > 0.001)	return "%.3f";
 	if (dpp > 0.0001)	return "%.4f";
 	return "%.5f";
+}
+
+int Gui::ChooseFile(LocationHistory * lh)
+{
+	OPENFILENAME ofn;	
+	wchar_t filename[MAX_PATH];
+
+	ZeroMemory(&ofn, sizeof(ofn));
+
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hInstance = GetModuleHandle(NULL);
+	ofn.hwndOwner = GetActiveWindow();
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = sizeof(filename);
+	ofn.lpstrTitle = L"Import";
+	ofn.nFilterIndex = 1;
+	//strcpy(filename, "*.json;");
+#pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
+	std::mbstowcs(filename, "*.json;", 6);
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY |OFN_EXPLORER;
+	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0All Supported Files (*.json)\0*.json\0Google History JSON Files (*.json)\0*.json\0\0";
+
+	GetOpenFileName(&ofn);
+	wprintf(L"Filename: %s\n", filename);
+	lh->filename = filename;
+
+	return 0;
 }
