@@ -12,5 +12,5 @@ namespace Gui {
 	void ShowRegionInfo(Region* r);
 	void ListDatesInRegion(Region* r);
 	const char* BestSigFigsFormat(NSWE* nswe, RECTDIMENSION *rect);
-	int ChooseFile(LocationHistory * lh);
+	bool ChooseFile(LocationHistory * lh);
 }

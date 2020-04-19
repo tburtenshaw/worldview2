@@ -37,8 +37,6 @@ using namespace std;
 
 LocationHistory* pLocationHistory;
 
-std::thread* pthread;
-
 int OpenAndReadJSON(LocationHistory * lh)
 {
 	HANDLE jsonfile;
@@ -50,14 +48,15 @@ int OpenAndReadJSON(LocationHistory * lh)
 
 	lh->isLoadingFile = true;
 	lh->isFileChosen = true;
+	lh->isInitialised = false;
 
 	//jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	jsonfile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	jsonfile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	
 	if (jsonfile == INVALID_HANDLE_VALUE) {
-		Beep(750, 300);
 		lh->isFileChosen = false;
 		lh->isLoadingFile = false;
+		lh->isFullyLoaded = false;
 		return 1;
 	}
 
@@ -78,6 +77,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	unsigned long readbytes;
 	BOOL rf;
 	int result;	//zero if no problems.
+	lh->totalbytesread = 0;
 
 	readbytes = 1;
 	while (readbytes) {
@@ -102,7 +102,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	lh->isLoadingFile=false;
 	lh->isFullyLoaded = true;
 	lh->isInitialised = false;
-
+	lh->isFileChosen = false;
 	return 0;
 }
 
@@ -174,11 +174,15 @@ int StartGLProgram(LocationHistory * lh)
 	LoadBackgroundImageToTexture(&lh->bgInfo->worldTexture);
 	MakeHighresImageTexture(&lh->highres->highresTexture);
 	MakeHeatmapTexture(lh->viewNSWE, &lh->bgInfo->heatmapTexture);
+	
+	//set up and compile the shaders
 	SetupBackgroundShaders(lh->bgInfo);
-
+	SetupPathsShaders(lh->pathInfo);
+	SetupPointsShaders(lh->pointsInfo);
 
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
 	lh->viewNSWE->movetowards(1000000000000);
+	lh->regions.push_back(new Region());
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -191,22 +195,17 @@ int StartGLProgram(LocationHistory * lh)
 		//get the view moving towards the target
 		lh->viewNSWE->movetowards(lh->globalOptions->seconds);
 
+		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
+			std::thread loadingthread(OpenAndReadJSON, pLocationHistory);
+			loadingthread.detach();
+		}
+
 
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
 			printf("Initialising things that need file to be fully loaded\n");
-			pthread->join();
-
-			lh->regions.push_back(new Region());
-
-			//this does the lines of the map
 			SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
-			SetupPathsShaders(lh->pathInfo);
-
-			//and I'll do one that does points (this will be round points, that can be selectable and maybe deletable
 			SetupPointsBufferDataAndVertexAttribArrays(lh->pointsInfo);
-			SetupPointsShaders(lh->pointsInfo);
 			lh->isInitialised = true;
-
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -231,8 +230,6 @@ int StartGLProgram(LocationHistory * lh)
 				UpdateHeatmapTexture(&expanded, lh->bgInfo);
 				lh->heatmap->MakeClean();
 			}
-
-			//DrawBackgroundAndHeatmap(lh);
 
 			if (options->showPaths) {
 				DrawPaths(lh->pathInfo);
@@ -538,9 +535,12 @@ int main(int argc, char** argv)
     std::cout << "Hello World!\n";
 	pLocationHistory = new LocationHistory;
 
-	std::thread loadingthread(OpenAndReadJSON,pLocationHistory);
 	
-	pthread = &loadingthread;
+	pLocationHistory->isFileChosen = true;
+	if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
+		std::thread loadingthread(OpenAndReadJSON, pLocationHistory);
+		loadingthread.detach();
+	}
 
 	StartGLProgram(pLocationHistory);
 

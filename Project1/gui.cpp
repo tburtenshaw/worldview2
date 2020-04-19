@@ -39,6 +39,14 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::Begin("Map information");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	
+
+	char displayfilename[260];
+	size_t i;
+	wcstombs_s(&i, displayfilename,260, lh->filename.c_str(), 260);
+
+	ImGui::Text("File name: %s",displayfilename);
+	ImGui::Text("File size: %i", lh->filesize);
+
 	sCoords = "Long: " + sigfigs + ", Lat: " + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->mouseInfo->longlatMouse.longitude, lh->mouseInfo->longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh->locations.size());
@@ -117,7 +125,12 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	ImGui::Begin("Toolbar");
 	if (ImGui::Button("Open")) {
-		ChooseFile(lh);
+		if (ChooseFile(lh)) {
+			lh->isFileChosen = true;
+			lh->isFullyLoaded = false;
+			lh->isInitialised = false;
+			lh->isLoadingFile = false;
+		}
 	}
 	if (ImGui::Button("Nav")) {
 		lh->mouseInfo->mouseMode = MouseMode::ScreenNavigation;
@@ -210,13 +223,12 @@ const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION *rect)
 	return "%.5f";
 }
 
-int Gui::ChooseFile(LocationHistory * lh)
+bool Gui::ChooseFile(LocationHistory * lh)
 {
 	OPENFILENAME ofn;	
 	wchar_t filename[MAX_PATH];
 
 	ZeroMemory(&ofn, sizeof(ofn));
-
 
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hInstance = GetModuleHandle(NULL);
@@ -231,9 +243,16 @@ int Gui::ChooseFile(LocationHistory * lh)
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY |OFN_EXPLORER;
 	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0All Supported Files (*.json)\0*.json\0Google History JSON Files (*.json)\0*.json\0\0";
 
-	GetOpenFileName(&ofn);
-	wprintf(L"Filename: %s\n", filename);
-	lh->filename = filename;
-
-	return 0;
+	bool result;
+	result = GetOpenFileName(&ofn);
+	
+	if (result) {
+		wprintf(L"Filename: %s\n", filename);
+		lh->filename = filename;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
