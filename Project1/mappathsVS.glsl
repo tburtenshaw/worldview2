@@ -1,4 +1,4 @@
-#version 400
+#version 330
 layout (location = 0) in vec2 vp;
 layout (location = 1) in uint ts;
 layout (location = 2) in float detail;

@@ -190,6 +190,8 @@
   <ItemGroup>
     <None Include="backgroundFS.glsl" />
     <None Include="backgroundVS.glsl" />
+    <None Include="fboFS.glsl" />
+    <None Include="fboVS.glsl" />
     <None Include="mappathsFS.glsl" />
     <None Include="mappathsGS.glsl" />
     <None Include="mappathsVS.glsl" />

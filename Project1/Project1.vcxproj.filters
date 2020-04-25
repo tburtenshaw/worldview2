@@ -121,5 +121,11 @@
     <None Include="pointsVS.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="fboFS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="fboVS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

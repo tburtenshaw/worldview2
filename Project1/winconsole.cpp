@@ -106,6 +106,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	return 0;
 }
 
+
 int StartGLProgram(LocationHistory * lh)
 {
 	GlobalOptions *options;
@@ -180,6 +181,50 @@ int StartGLProgram(LocationHistory * lh)
 	SetupPathsShaders(lh->pathInfo);
 	SetupPointsShaders(lh->pointsInfo);
 
+	//FBO
+	unsigned int fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	unsigned int fboTexture;
+	glGenTextures(1, &fboTexture);
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 900, 900, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0);
+	
+	
+	
+
+	
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		printf("framebuffer not finished\n");
+	else printf("fbo finished\n");
+
+	BackgroundInfo fboInfo;
+	
+
+	SetupBackgroundVertices(&fboInfo);
+	fboInfo.shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/fboVS.glsl", GL_VERTEX_SHADER);
+	fboInfo.shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/fboFS.glsl", GL_FRAGMENT_SHADER);
+	fboInfo.shader->CreateProgram();
+	printf("After create program. glGetError %i\n", glGetError());
+
+	
+	fboInfo.shader->UseMe();
+	int uniloc = glGetUniformLocation(fboInfo.shader->program, "screenTexture");
+	printf("After getuniloc. glGetError %i\n", glGetError());
+	glUniform1i(uniloc, 4);
+	printf("After uniform set. glGetError %i\n", glGetError());
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	printf("After FBO all done. glGetError %i\n", glGetError());
+	
+	//values
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
 	lh->viewNSWE->movetowards(1000000000000);
 	lh->regions.push_back(new Region());
@@ -210,11 +255,40 @@ int StartGLProgram(LocationHistory * lh)
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		
+		//trying fbo
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glViewport(0, 0, 900, 900);
+		DrawBackgroundAndHeatmap(lh);
+		if (options->showPaths) {
+			DrawPaths(lh->pathInfo);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		DrawBackgroundAndHeatmap(lh);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//draw FBO
+		fboInfo.shader->UseMe();
+		fboInfo.shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+
+		glActiveTexture(GL_TEXTURE0 + 4);
+
+		glBindTexture(GL_TEXTURE_2D, fboTexture);
+
+		glDisable(GL_DEPTH_TEST);
+		glBindVertexArray(fboInfo.vao);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		//printf("After FBO. glGetError %i\n", glGetError());
+
+
+
+		//DrawBackgroundAndHeatmap(lh);
+
 
 		if (lh->isInitialised && lh->isFullyLoaded) {
 
@@ -283,10 +357,10 @@ void SetupBackgroundVertices(BackgroundInfo* backgroundInfo)
 	glBindVertexArray(backgroundInfo->vao);
 
 	glGenBuffers(1, &backgroundInfo->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vao);
+	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
+
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -342,9 +416,7 @@ void MakeHeatmapTexture(NSWE *nswe, unsigned int* texture)
 }
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
-{
-	
-	
+{	
 	pLocationHistory->heatmap->CreateHeatmap(nswe, 0);
 
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
@@ -372,10 +444,18 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 	glUniform1i(backgroundInfo->highresTextureLocation, 1);
 	glUniform1i(backgroundInfo->heatmapTextureLocation, 2);
 	
-	printf("After background shaders. glGetError %i\n", glGetError());
+	
 
 	return;
 }
+
+void DrawFrameBuffer(LocationHistory* lh)
+{
+
+
+	return;
+}
+
 
 
 void DrawBackgroundAndHeatmap(LocationHistory * lh)

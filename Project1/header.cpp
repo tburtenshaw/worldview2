@@ -21,7 +21,7 @@ LocationHistory::LocationHistory()
 {
 	filesize = 0;
 
-	filename = L"d:/location history.json";
+	filename = L"d:/lizzie.json";
 
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
@@ -58,7 +58,7 @@ GlobalOptions::GlobalOptions()
 {
 	seconds = 0;
 	
-	showPaths = true;
+	showPaths = false;
 	showPoints = false;
 	showHeatmap = true;
 
