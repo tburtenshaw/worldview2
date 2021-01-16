@@ -1,5 +1,4 @@
-#define GLEW_STATIC
-#include <glew.h>
+#include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 
 #include "header.h"
@@ -50,8 +49,8 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 	glShaderSource(shader, 1, &c_str, NULL);
 	glCompileShader(shader);
 
-	if (CheckForErrors(shader, GL_COMPILE_STATUS)) {
-		printf("\nShader: %i %s", shader, data.c_str());
+	if (int r=CheckForErrors(shader, GL_COMPILE_STATUS)) {
+		printf("\nShader: %i,result:%i Content:%s \nFile:%s\n", shader, r, data.c_str(),filename);
 	}
 
 	return shader;
@@ -60,11 +59,15 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 GLuint Shader::CreateProgram()
 {
 	program= glCreateProgram();
+	printf("v");
 	glAttachShader(program, vertexShader);
+	printf("f");
 	glAttachShader(program, fragmentShader);
 	if (geometryShader) {
+		printf("g");
 		glAttachShader(program, geometryShader);
 	}
+	printf("l");
 	glLinkProgram(program);
 
 	CheckForErrors(program, GL_LINK_STATUS);
@@ -133,8 +136,11 @@ GLboolean Shader::CheckForErrors(GLuint shader, GLuint type) {
 
 		//return false; // or exit or something
 	}
-	if (type == GL_COMPILE_STATUS) printf("Compile okay\n");
-	if (type == GL_LINK_STATUS) printf("Link okay\n");
+	if (type == GL_COMPILE_STATUS) printf("Compile %i okay\n",shader);
+	else return GL_TRUE;
+	
+	if (type == GL_LINK_STATUS) printf("Link %i okay\n",shader);
+	else return GL_TRUE;
 
 	return GL_FALSE;
 }

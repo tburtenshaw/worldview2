@@ -147,13 +147,6 @@ void main() {
 	vec4 t;	//mix of world and heatmap
 	t=AlphaOnOpaqueMix(wt.rgb,ht,1.0);
 
-	vec2 sunloc;
-	sunloc=vec2(0.5,-0.7);
 
-	float specular =0.0;
-	if (t.b>t.g+t.r)	{
-		specular= pow(clamp(1.0-distance(uv,sunloc),0.0,1.0),30);
-		}
-	
-	frag_colour = t+vec4(specular);
+	frag_colour = t;
 }

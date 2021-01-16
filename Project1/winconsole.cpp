@@ -10,14 +10,12 @@
 #include <thread>
 
 
-#define GLEW_STATIC
-#include <glew.h>
-//#include <glad/glad.h>
+#include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-#include <imgui/imgui_impl_opengl3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
 
 #include "shaders.h"
 #include "header.h"
@@ -31,7 +29,7 @@
 
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <STB/stb_image.h>
+#include <stb_image.h>
 
 using namespace std;
 
@@ -92,13 +90,15 @@ int OpenAndReadJSON(LocationHistory * lh)
 			readbytes = 0;	//trick the loading loop into ending
 		}
 	}
-
+	printf("\nfinished loading1");
 
 	delete[] buffer;
 	CloseHandle(jsonfile);
 
+	printf("\nopt detail");
 	OptimiseDetail(lh->locations);
 
+	printf("\nfinished loading2");
 	lh->isLoadingFile=false;
 	lh->isFullyLoaded = true;
 	lh->isInitialised = false;
@@ -113,6 +113,8 @@ int StartGLProgram(LocationHistory * lh)
 	options = lh->globalOptions;
 
 	HighResManager *highres = new HighResManager;
+
+
 
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
@@ -136,16 +138,21 @@ int StartGLProgram(LocationHistory * lh)
 	}
 	glfwMakeContextCurrent(window);
 
-	// start GLEW extension handler
-	glewExperimental = GL_TRUE;
-	glewInit();
-
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return -1;
+	}
 
 	// get version info
 	const GLubyte* renderer = glGetString(GL_RENDERER); // get renderer string
 	const GLubyte* version = glGetString(GL_VERSION); // version as a string
 	printf("Renderer: %s\n", renderer);	
 	printf("OpenGL version supported %s\n", version);
+
+
+
+
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -209,8 +216,8 @@ int StartGLProgram(LocationHistory * lh)
 	
 
 	SetupBackgroundVertices(&fboInfo);
-	fboInfo.shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/fboVS.glsl", GL_VERTEX_SHADER);
-	fboInfo.shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/fboFS.glsl", GL_FRAGMENT_SHADER);
+	fboInfo.shader->LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
+	fboInfo.shader->LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
 	fboInfo.shader->CreateProgram();
 	printf("After create program. glGetError %i\n", glGetError());
 
@@ -373,6 +380,11 @@ void LoadBackgroundImageToTexture(unsigned int* texture)
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load("D:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
 
+	if (!data) {
+		printf("\nCan't load background\n");
+		return;
+	}
+
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -429,8 +441,8 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 {
 	//Create the shader program
-	backgroundInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/backgroundVS.glsl", GL_VERTEX_SHADER);
-	backgroundInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/backgroundFS.glsl", GL_FRAGMENT_SHADER);
+	backgroundInfo->shader->LoadShaderFromFile("backgroundVS.glsl", GL_VERTEX_SHADER);
+	backgroundInfo->shader->LoadShaderFromFile("backgroundFS.glsl", GL_FRAGMENT_SHADER);
 	backgroundInfo->shader->CreateProgram();
 
 	//unsigned int worldTextureLocation, heatmapTextureLocation;
@@ -532,9 +544,9 @@ void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
 
 void SetupPathsShaders(MapPathInfo* mapPathInfo)
 {
-	mapPathInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsVS.glsl", GL_VERTEX_SHADER);
-	mapPathInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsFS.glsl", GL_FRAGMENT_SHADER);
-	mapPathInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/mappathsGS.glsl", GL_GEOMETRY_SHADER);
+	mapPathInfo->shader->LoadShaderFromFile("mappathsVS.glsl", GL_VERTEX_SHADER);
+	mapPathInfo->shader->LoadShaderFromFile("mappathsFS.glsl", GL_FRAGMENT_SHADER);
+	mapPathInfo->shader->LoadShaderFromFile("mappathsGS.glsl", GL_GEOMETRY_SHADER);
 	mapPathInfo->shader->CreateProgram();
 }
 
@@ -584,9 +596,9 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 
 void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
 {
-	mapPointsInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/pointsVS.glsl", GL_VERTEX_SHADER);
-	mapPointsInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/pointsGS.glsl", GL_GEOMETRY_SHADER);
-	mapPointsInfo->shader->LoadShaderFromFile("C:/Users/Tristan/source/repos/Project1/Project1/pointsFS.glsl", GL_FRAGMENT_SHADER);
+	mapPointsInfo->shader->LoadShaderFromFile("pointsVS.glsl", GL_VERTEX_SHADER);
+	mapPointsInfo->shader->LoadShaderFromFile("pointsGS.glsl", GL_GEOMETRY_SHADER);
+	mapPointsInfo->shader->LoadShaderFromFile("pointsFS.glsl", GL_FRAGMENT_SHADER);
 	mapPointsInfo->shader->CreateProgram();
 }
 

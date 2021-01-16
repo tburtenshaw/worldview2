@@ -1,5 +1,4 @@
-#define GLEW_STATIC
-#include <glew.h>
+#include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 #include "header.h"
 #include "input.h"

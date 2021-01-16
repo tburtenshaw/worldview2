@@ -6,11 +6,11 @@
 #include "highresmanager.h"
 #include "nswe.h"
 
-#include <STB/stb_image.h>
+#include <stb_image.h>
 
-#define GLEW_STATIC
-#include <glew.h>
+#include <glad/glad.h> 
 #include <GLFW/glfw3.h>
+
 
 HighResManager::HighResManager()
 {
@@ -30,12 +30,14 @@ HighResManager::HighResManager()
 	highresTexture = 0;
 
 	filename.push_back("Background");
-	nswe.push_back(NSWE(10000, 20000, 30000, 40000));	//should never best displayed
+	nswe.push_back(NSWE(10000, 20000, 30000, 40000));	//should never be displayed
 
 
-	filename.push_back("D:/n-34s-48w166e179.png");
+	filename.push_back("D:/n-34s-48w166e179.png"); //nz
 	nswe.push_back(NSWE(-34.0f, -48.0f, 166.0f, 179.0f));
 
+
+	
 	filename.push_back("D:/n55s38w0e17.png");
 	nswe.push_back(NSWE(55.0f, 38.0f, 0.0f, 17.0f));
 
@@ -53,6 +55,7 @@ HighResManager::HighResManager()
 
 	filename.push_back("d:/n-22s-25w-47e-42.png");
 	nswe.push_back(NSWE(-22.0f, -25.0f, -47.0f, -42.0f));
+	
 }
 
 void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)
@@ -102,12 +105,21 @@ NSWE* HighResManager::GetBestNSWE()
 
 void HighResManager::ImageLoadThread(int n)
 {
-	printf("Filename: %s\n", filename[n].c_str());
+	printf("Filename: %s, number: %i\n", filename[n].c_str(),n);
 	rawImageData = stbi_load(filename[n].c_str(), &width, &height, &nrChannels, 0);
 	if (!rawImageData) { 
-		printf("didn't load.\n");
+		printf("Didn't load.\n");
 		fileThreadLoading = false;
 		//now we should remove the file from the list
+		filename.erase(filename.begin()+n);
+		nswe.erase(nswe.begin() + n);
+
+		bestImage = 0;
+		subImageLoaded = 0;
+		fileThreadLoading = false;
+		subImageLoading = false;
+		subImageLinesLoaded = 0;
+
 		return;
 	}
 	//else { printf("loaded. W:%i H:%i\n", width, height); }

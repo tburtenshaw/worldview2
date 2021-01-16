@@ -255,6 +255,9 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 
 	float power = 0.8;
 
+	printf("\nMax size: %zi, size: %zi", loc.max_size(), loc.size());
+
+
 	for (vector<LOCATION>::iterator iter = loc.begin(); iter != loc.end(); ++iter) {
 		float d = 2.0;
 		int notfound = 1;
@@ -289,12 +292,7 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 		
 	}
 	
-	/*
-	float d = 0.5;
-	for (i = 0; i < detaillevels; i++) {
-		printf("\n%i %i %f", i, count[i],d/power);
-		d *= power;
-	}*/
+
 	return;
 }
 

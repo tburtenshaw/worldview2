@@ -1,4 +1,4 @@
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include "gui.h"
 #include "header.h"
 #include "nswe.h"
@@ -172,7 +172,7 @@ void Gui::ShowRegionInfo(Region* r)
 		float maxday = 0;
 		float fdays[7];
 		for (int i = 0; i < 7; i++) {
-			fdays[i] = r->dayofweeks[i];
+			fdays[i] = (float)r->dayofweeks[i];
 			fdays[i] /= 3600;
 			if (fdays[i] > maxday) {
 				maxday = fdays[i];
@@ -204,7 +204,7 @@ void Gui::ListDatesInRegion(Region* r)
 		cstrings.push_back(string.c_str());
 	
 	int i;
-	ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
+	//ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
 	r->minimumsecondstobeincludedinday = hours * 60 * 60;
 	ImGui::Text("Days %i", r->numberofdays);
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
@@ -239,7 +239,7 @@ bool Gui::ChooseFile(LocationHistory * lh)
 	ofn.nFilterIndex = 1;
 	//strcpy(filename, "*.json;");
 #pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
-	std::mbstowcs(filename, "*.json;", 6);
+	std::mbstowcs(filename, "*.json;", 7);
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY |OFN_EXPLORER;
 	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0All Supported Files (*.json)\0*.json\0Google History JSON Files (*.json)\0*.json\0\0";
 

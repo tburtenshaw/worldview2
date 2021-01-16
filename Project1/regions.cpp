@@ -135,7 +135,7 @@ void Region::Populate(LocationHistory* lh)
 
 	earliestday = MAX_DAY_NUMBER;
 
-	for (int i = e; (i <= l) && (i< MAX_DAY_NUMBER); i++) {
+	for (unsigned int i = e; (i <= l) && (i< MAX_DAY_NUMBER); i++) {
 		if (daynumbersince2010[i] > 0) {
 			if (i < earliestday) { earliestday = i; }
 			latestday = i;	//this will be overwritten mulitple times

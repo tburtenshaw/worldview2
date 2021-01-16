@@ -29,7 +29,7 @@ unsigned long MyTimeZone::AdjustBasedOnLongitude(unsigned long unixtime, float l
 {
     int naivetz;
 
-    naivetz = ((longitude + 7.5) / 15);
+    naivetz = ((longitude + 7.5) / 15.0);
  
     return unixtime+naivetz*3600;
 }
