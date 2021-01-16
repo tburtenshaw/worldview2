@@ -119,7 +119,7 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 					//Here we check whether the longitude spanned over 180, we make the assumption that if this occurred, we took the shortest route
 					//(i.e. if we travel from NZ at longitude (174) to Vancouver (-123) we wouldn't travel through the pacific
-					if ((jsr->location.longitude - jsr->oldlocation.longitude >180)|| (jsr->location.longitude - jsr->oldlocation.longitude < -180)) {	//we can't do this just yet
+					if ((jsr->location.longitude - jsr->oldlocation.longitude >180.0)|| (jsr->location.longitude - jsr->oldlocation.longitude < -180.0)) {	//we can't do this just yet
 						BreakRoundTheWorlds(jsr, loc);
 					}
 					jsr->oldlocation= jsr->location;	//make the old this one
@@ -164,12 +164,12 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 	}
 	
 	//printf("old:%f %f, new:%f %f\n", jsr->oldlocation.longitude, jsr->oldlocation.latitude, jsr->location.longitude, jsr->location.latitude);
-	float newlat;
+	double newlat;
 	LOCATION newloc;
-	float dx, dy;
+	double dx, dy;
 
-	float movedlongitude;	//this is an extra 360 deg
-	float proportionNew;	//proportion with the most recent
+	double movedlongitude;	//this is an extra 360 deg
+	double proportionNew;	//proportion with the most recent
 	proportionNew = 0.5;
 
 	if (!westwards) {
@@ -212,7 +212,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 		
 		newloc.detaillevel = -1000.0;//?don't draw
 		newloc.latitude = newlat;
-		newloc.longitude = -180;
+		newloc.longitude = -180.0;
 		loc.push_back(newloc);
 		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
 	}
@@ -235,8 +235,8 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 	LOCATION detail4;
 	LOCATION detail5;
 
-	detail0.latitude = -500;	//these are deliberately out of bounds
-	detail0.longitude = -500;
+	detail0.latitude = -500.0;	//these are deliberately out of bounds
+	detail0.longitude = -500.0;
 	detail1 = detail2 = detail3 = detail4 = detail5 = detail0;
 
 	const int detaillevels=80;
@@ -247,8 +247,8 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 	detail.resize(detaillevels);
 	count.resize(detaillevels);
 
-	detail[0].longitude = -500;
-	detail[0].latitude = -500;
+	detail[0].longitude = -500.0;
+	detail[0].latitude = -500.0;
 	for (i = 1; i < detaillevels; i++) {
 		detail[i] = detail[0];
 	}
@@ -263,7 +263,7 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 		int notfound = 1;
 
 		if (iter->detaillevel < -1) {
-			iter->detaillevel = -1000;	//if we don't want to display it ever (i.e. moving across the map for the roundtheworlds)
+			iter->detaillevel = -1000.0;	//if we don't want to display it ever (i.e. moving across the map for the roundtheworlds)
 		}
 		else
 		{
@@ -314,7 +314,7 @@ double fast_strtolatlongdouble(char* str)
 	if (posneg < 1) { val = 0 - val; }
 	
 	d = val;
-	return d/10000000;
+	return d/10000000.0;
 }
 
 float fast_strtolatlong(char* str)
@@ -336,7 +336,7 @@ float fast_strtolatlong(char* str)
 
 	f = (float)val;
 
-	return f / 10000000;
+	return f / 10000000.0f;
 }
 
 
@@ -385,13 +385,18 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 		}
 	case 0x6974616c:
 		if (!strcmp(jsr->name, "latitudeE7")) {
-			//	jsr->location.latitude = strtod(jsr->buffer, NULL) / 10000000;
-			jsr->location.latitude = fast_strtolatlong(jsr->buffer);
+			//	jsr->location.latitude = strtod(jsr->buffer, NULL) / 10000000.0;
+			jsr->location.latitude = fast_strtolatlongdouble(jsr->buffer);
 			return 1;
 		}
 	case 0x676e6f6c: //gnol
 		if (!strcmp(jsr->name, "longitudeE7")) {
-			jsr->location.longitude = fast_strtolatlong(jsr->buffer);
+			jsr->location.longitude = fast_strtolatlongdouble(jsr->buffer);
+			/*
+			if (jsr->location.longitude != (double)((float)jsr->location.longitude)) {
+				printf("%s %.7f, %.7f\n", jsr->buffer, jsr->location.longitude, (float)jsr->location.longitude);
+			}
+			*/
 			return 1;
 		}
 	case 0x75636361:	//ucca (accu, backwards)

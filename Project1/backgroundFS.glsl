@@ -134,14 +134,14 @@ void main() {
 	heatmapwidth = (heatmapnswe.w-heatmapnswe.z);
 	heatmapheight = (heatmapnswe.x-heatmapnswe.y);
 
-	heatmapuv.x=uv.x/(heatmapwidth/360);
-	heatmapuv.x-=(heatmapnswe.z+180)/heatmapwidth;
+	heatmapuv.x=(width* gl_FragCoord.x/resolution.x + nswe.z-heatmapnswe.z)/heatmapwidth;
 
-	heatmapuv.y=uv.y/(heatmapheight/180);
-	heatmapuv.y+=(heatmapnswe.x-90)/heatmapheight;
+	heatmapuv.y=(heatmapnswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
+
 
 	float heatvalue;
 	heatvalue=texture(heatmapTexture, heatmapuv).r;
+
 	vec4 ht=FloatToColour(heatvalue, maxheatmapvalue);
 	
 	vec4 t;	//mix of world and heatmap

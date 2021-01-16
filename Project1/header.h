@@ -48,8 +48,8 @@ struct RECTDIMENSION {
 
 class WORLDCOORD {
 public:
-	float latitude;
-	float longitude;
+	double latitude;
+	double longitude;
 
 	void SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *window);
 
@@ -58,8 +58,8 @@ public:
 
 struct LOCATION {
 	unsigned long timestamp; //we'll use a long instead of the high precision of google (seconds rather than ms)	
-	float longitude;	//using a float rather than a double means an imprecision of less than 2metres
-	float latitude;		//longitude first as it's x
+	double longitude;	//using a float rather than a double means an imprecision of less than 2metres
+	double latitude;		//longitude first as it's x
 
 	float detaillevel;
 

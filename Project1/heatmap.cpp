@@ -31,19 +31,38 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	float p;
 	p = 0;
 	
+	/*
+	for (int x = 0; x < pLocationHistory->heatmap->width; x++) {
+		for (int y = 0; y < pLocationHistory->heatmap->height; y++) {
+			if (y % 2) { pixel[x + y * width] = x - y % 2; }
+			else pixel[x + y * width] = 1;
+			maxPixel = x;
+		}
+	}
+	return;
+	*/
 	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
-		float fx, fy;
+		double fx, fy;
 
 		tsdiff = iter->timestamp - tsold;
 		if (tsdiff > 60*60*24*365) { tsdiff = 0; }
 		if (tsdiff < 0) { tsdiff = 0; }
 
-		fx = (iter->longitude - nswe->west) / nswe->width() * width;
-		fy = (nswe->north - iter->latitude) / nswe->height() * height;
+		if (options->blurperaccuracy) {
+			fx = ((float)iter->longitude - (float)nswe->west) / (float)nswe->width() * (float)width;
+			fy = ((float)nswe->north - (float)iter->latitude) / (float)nswe->height() * (float)height;
+		}
+		else {
+			fx = (iter->longitude - (double)nswe->west) / (double)nswe->width() * (double)width;
+			fy = ((double)nswe->north - iter->latitude) / (double)nswe->height() * (double)height;
+		}
 		
-		x = (int)(fx+0.5);
-		y = (int)(fy+0.5);
+		//x = (int)(fx+0.5);
+		//y = (int)(fy+0.5);
+
+		x = round(fx);
+		y = round(fy);
 
 		if ((x < width) && (x >= 0) && (y < height) && (y >= 0)) {
 			
@@ -56,9 +75,9 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 
 			//Gaussian matrix
 			//printf("%i ", iter->accuracy);
-			if (options->blurperaccuracy) {
-				StampGaussian(fx, fy, iter->accuracy / 10, tsdiff);
-			}
+			//if (options->blurperaccuracy) {
+			//	StampGaussian(fx, fy, iter->accuracy / 10, tsdiff);
+			//}
 
 			p = pixel[y * width + x];
 
@@ -114,7 +133,7 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 {	
 	
 	int matrixrow;
-	matrixrow = 10.0f * sigma;	//each row is the sigma*10 (so row 4 is 0.4)
+	matrixrow = (int)(10.0f * sigma);	//each row is the sigma*10 (so row 4 is 0.4)
 	if (matrixrow > 100) { matrixrow = 100; }
 	if (matrixrow < 4) { return; }	//as sigma less than 0.4 doesn't blur
 
@@ -356,7 +375,7 @@ Heatmap::Heatmap()
 	nswe = new NSWE;
 	maxPixel = 0;
 	activeheatmap = 0;
-	overdrawfactor = 2.0;
+	overdrawfactor = 1.0;
 }
 
 Heatmap::~Heatmap()

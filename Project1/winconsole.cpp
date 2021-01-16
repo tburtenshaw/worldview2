@@ -276,9 +276,10 @@ int StartGLProgram(LocationHistory * lh)
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
 		//draw FBO
 		fboInfo.shader->UseMe();
 		fboInfo.shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
@@ -306,9 +307,9 @@ int StartGLProgram(LocationHistory * lh)
 			}
 
 			if (!lh->viewNSWE->isMoving() && lh->heatmap->IsDirty() && lh->globalOptions->showHeatmap) {
-				NSWE expanded;
-				expanded = lh->viewNSWE->target.createExpandedBy(1);
-				UpdateHeatmapTexture(&expanded, lh->bgInfo);
+				//NSWE expanded;
+				//expanded = lh->viewNSWE->target.createExpandedBy(1.0);
+				UpdateHeatmapTexture(&lh->viewNSWE->target, lh->bgInfo);
 				lh->heatmap->MakeClean();
 			}
 
@@ -528,7 +529,7 @@ void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
 	glBindVertexArray(mapPathInfo->vao);
 
 	//lat,long
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
+	glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
 	glEnableVertexAttribArray(0);
 
 	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
