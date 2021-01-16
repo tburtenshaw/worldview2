@@ -24,7 +24,7 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	memset(pixel, 0, sizeof(pixel));
 		
 	unsigned long tsold;
-	long tsdiff;
+	long tsdiff;	//the difference between the timestamps
 
 	tsold = pLocationHistory->locations.front().timestamp;
 
@@ -46,10 +46,10 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 		double fx, fy;
 
 		tsdiff = iter->timestamp - tsold;
-		if (tsdiff > 60*60*24*365) { tsdiff = 0; }
-		if (tsdiff < 0) { tsdiff = 0; }
+		if (tsdiff > 60*60*24*365) { tsdiff = 0; }	//if the change in time is over a year
+		if (tsdiff < 0) { tsdiff = 0; }	//or negative, then we don't use it
 
-		if (options->blurperaccuracy) {
+		if (options->blurperaccuracy) {	//this reduces precision to float
 			fx = ((float)iter->longitude - (float)nswe->west) / (float)nswe->width() * (float)width;
 			fy = ((float)nswe->north - (float)iter->latitude) / (float)nswe->height() * (float)height;
 		}
@@ -58,13 +58,13 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 			fy = ((double)nswe->north - iter->latitude) / (double)nswe->height() * (double)height;
 		}
 		
-		//x = (int)(fx+0.5);
-		//y = (int)(fy+0.5);
+		x = (int)(fx+0.5);
+		y = (int)(fy+0.5);
 
-		x = round(fx);
-		y = round(fy);
+		//x = round(fx);
+		//y = round(fy);
 
-		if ((x < width) && (x >= 0) && (y < height) && (y >= 0)) {
+		if ((x < width) && (x >= 0) && (y < height) && (y >= 0)) {	//if the point falls within the heatmap
 			
 			//Single pixel
 			if (iter->accuracy < options->minimumaccuracy) {

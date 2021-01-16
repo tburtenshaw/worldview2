@@ -87,7 +87,7 @@ vec4 AlphaOnOpaqueMix(vec3 dest, vec4 source, float strength)	{
 	float overallalpha=source.a*strength;
 	
 	outputcol.a=1.0;
-	outputcol.rgb=source.rgb*overallalpha + dest.rgb * (1-overallalpha);
+	outputcol.rgb=source.rgb*overallalpha + dest.rgb * (1.0-overallalpha);
 
 	return outputcol;
 }
@@ -116,7 +116,7 @@ void main() {
 	highresuv.y+=(highresnswe.x-90)/highresheight;
 
 
-	if ((highresuv.x>0)&&(highresuv.y>0)&&(highresuv.x<1)&&(highresuv.y<1))	{
+	if ((highresuv.x>0.0)&&(highresuv.y>0.0)&&(highresuv.x<1.0)&&(highresuv.y<1.0))	{
 		//wt=texture(highresTexture, highresuv*highresscale);
 	
 		vec2 uvn=abs(highresuv-0.5)*2.0;
@@ -138,15 +138,17 @@ void main() {
 
 	heatmapuv.y=(heatmapnswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
 
+	
 
 	float heatvalue;
 	heatvalue=texture(heatmapTexture, heatmapuv).r;
 
 	vec4 ht=FloatToColour(heatvalue, maxheatmapvalue);
 	
+	
+
 	vec4 t;	//mix of world and heatmap
 	t=AlphaOnOpaqueMix(wt.rgb,ht,1.0);
-
-
+	
 	frag_colour = t;
 }

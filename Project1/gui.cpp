@@ -98,6 +98,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	static float oldBlur=0;
 	static float oldMinimumaccuracy = 0;
+	static float oldBlurperaccurary = 0;
 	ImGui::Begin("Heatmap");
 	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
 	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur,0.0f,10.0f, "%.1f");	
@@ -107,6 +108,11 @@ void Gui::MakeGUI(LocationHistory * lh)
 	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
 	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
 	
+	if (options->blurperaccuracy != oldBlurperaccurary) {
+		oldBlurperaccurary = options->blurperaccuracy;
+		lh->heatmap->MakeDirty();
+	}
+
 	if (options->gaussianblur != oldBlur) {
 		oldBlur = options->gaussianblur;
 		lh->heatmap->MakeDirty();
