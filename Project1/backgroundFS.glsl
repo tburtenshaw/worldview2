@@ -96,12 +96,12 @@ void main() {
 	float width = (nswe.w-nswe.z); 
 	float height = (nswe.x-nswe.y);
 
-	vec2 uv=vec2(1,-1)*gl_FragCoord.xy/resolution;
+	vec2 uv=vec2(1,-1)*gl_FragCoord.xy/resolution.xy;
 	uv*=vec2(width,height)/vec2(360,180); //convert the NSWE locations to between 0 and 1
 	uv+=vec2(nswe.z+180,nswe.y-90)/vec2(360,-180); //shift them so aligned right
 
 	vec4 wt=texture(worldTexture, uv);
-	
+
 	
 	//high res image
 	vec2 highresuv;
@@ -109,11 +109,12 @@ void main() {
 	highreswidth = (highresnswe.w-highresnswe.z);
 	highresheight = (highresnswe.x-highresnswe.y);
 
-	highresuv.x=uv.x/(highreswidth/360);
-	highresuv.x-=(highresnswe.z+180)/highreswidth;
 
 	highresuv.y=uv.y/(highresheight/180);
 	highresuv.y+=(highresnswe.x-90)/highresheight;
+
+	
+	highresuv.x=(gl_FragCoord.x/resolution.x*(nswe.w-nswe.z) + (nswe.z-highresnswe.z))/(highresnswe.w-highresnswe.z);
 
 
 	if ((highresuv.x>0.0)&&(highresuv.y>0.0)&&(highresuv.x<1.0)&&(highresuv.y<1.0))	{
@@ -125,7 +126,7 @@ void main() {
 
 		wt = mix(wt, texture(highresTexture, highresuv*highresscale),square);
 	}
-
+	
 	
 	
 	//find the UV of the heatmap, then add it.
@@ -138,15 +139,11 @@ void main() {
 
 	heatmapuv.y=(heatmapnswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
 
-	
-
 	float heatvalue;
 	heatvalue=texture(heatmapTexture, heatmapuv).r;
 
 	vec4 ht=FloatToColour(heatvalue, maxheatmapvalue);
 	
-	
-
 	vec4 t;	//mix of world and heatmap
 	t=AlphaOnOpaqueMix(wt.rgb,ht,1.0);
 	

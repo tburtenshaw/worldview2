@@ -7,6 +7,6 @@ uniform sampler2D screenTexture;
 
 void main()
 { 
-    vec2 uv=gl_FragCoord.xy/resolution;
-    FragColor = texture(screenTexture, uv)+vec4(0.0,-0.1,uv.x/10.0,0.0);
+    vec2 uv=gl_FragCoord.xy/resolution.xy;
+    FragColor = texture(screenTexture, uv);
 }

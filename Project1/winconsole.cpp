@@ -122,8 +122,8 @@ int StartGLProgram(LocationHistory * lh)
 		return 1;
 	}
 
-	lh->windowDimensions->width = 900;
-	lh->windowDimensions->height = 900;
+	lh->windowDimensions->width = 1700;
+	lh->windowDimensions->height = 800;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -197,7 +197,7 @@ int StartGLProgram(LocationHistory * lh)
 	glGenTextures(1, &fboTexture);
 	glBindTexture(GL_TEXTURE_2D, fboTexture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 900, 900, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lh->windowDimensions->width, lh->windowDimensions->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -233,6 +233,8 @@ int StartGLProgram(LocationHistory * lh)
 	
 	//values
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
+	lh->viewNSWE->makeratio(lh->windowDimensions->height / lh->windowDimensions->width);
+
 	lh->viewNSWE->movetowards(1000000000000);
 	lh->regions.push_back(new Region());
 
@@ -265,7 +267,7 @@ int StartGLProgram(LocationHistory * lh)
 		
 		//trying fbo
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glViewport(0, 0, 900, 900);
+		glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
 		DrawBackgroundAndHeatmap(lh);
 		if (options->showPaths) {
 			DrawPaths(lh->pathInfo);

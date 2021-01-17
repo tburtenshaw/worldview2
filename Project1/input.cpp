@@ -81,7 +81,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	if (yoffset > 0) { viewNSWE->target.zoom(0.8, mapCoord); }
 	else if (yoffset < 1) { viewNSWE->target.zoom(1 / 0.8, mapCoord); }
 
-	viewNSWE->target.makeratio(1);
+	printf("%i %i\n", pLocationHistory->windowDimensions->height, pLocationHistory->windowDimensions->width);
+	viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions->height/ (float)pLocationHistory->windowDimensions->width);
+
 	viewNSWE->starttime = glfwGetTime();
 	viewNSWE->targettime = glfwGetTime() + 0.4;
 
