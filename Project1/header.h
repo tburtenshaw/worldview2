@@ -13,6 +13,7 @@ class NSWE;
 struct LOCATION;
 class Heatmap;
 class Shader;
+class FrameBufferObjectInfo;
 class BackgroundInfo;
 class MapPathInfo;
 class MapPointsInfo;
@@ -120,6 +121,7 @@ public:
 
 	std::vector<Region*> regions;
 
+	FrameBufferObjectInfo *fboInfo;
 	BackgroundInfo *bgInfo;
 	MapPathInfo *pathInfo;
 	MapPointsInfo *pointsInfo;
@@ -149,6 +151,20 @@ public:
 
 };
 
+
+class FrameBufferObjectInfo {
+public:
+	//FrameBufferObjectInfo();
+	//~FrameBufferObjectInfo();
+
+
+	unsigned int fbo;
+	unsigned int fboTexture;
+
+	BackgroundInfo fboBGInfo;	//so can use other functions
+};
+
+
 class MapPathInfo {
 public:
 	MapPathInfo();
@@ -174,6 +190,8 @@ public:
 
 };
 
+
+int StartGLProgram(LocationHistory* lh);
 
 void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);

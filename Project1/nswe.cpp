@@ -38,6 +38,11 @@ void NSWE::setvalues(float n, float s, float w, float e) {
 	constrainvalues();
 }
 
+void NSWE::setvalues(NSWE setToThis) {
+	north = setToThis.north; south = setToThis.south; west = setToThis.west; east = setToThis.east;
+	constrainvalues();
+}
+
 void NSWE::setto(NSWE *setthis) {
 	north = setthis->north;
 	south = setthis->south;

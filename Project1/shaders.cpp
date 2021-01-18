@@ -50,7 +50,8 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 	glCompileShader(shader);
 
 	if (int r=CheckForErrors(shader, GL_COMPILE_STATUS)) {
-		printf("\nShader: %i,result:%i Content:%s \nFile:%s\n", shader, r, data.c_str(),filename);
+		printf("\nShader: %i,result:%i, ",shader, r);
+		//printf("Content: % s \nFile : % s\n", data.c_str(), filename);
 	}
 
 	return shader;
@@ -136,11 +137,12 @@ GLboolean Shader::CheckForErrors(GLuint shader, GLuint type) {
 
 		//return false; // or exit or something
 	}
-	if (type == GL_COMPILE_STATUS) printf("Compile %i okay\n",shader);
+	if (type == GL_COMPILE_STATUS) printf("Compile %i okay\n", shader);
+	else if (type == GL_LINK_STATUS) printf("Link %i okay\n", shader);
 	else return GL_TRUE;
 	
-	if (type == GL_LINK_STATUS) printf("Link %i okay\n",shader);
-	else return GL_TRUE;
-
+	
 	return GL_FALSE;
+
+	
 }

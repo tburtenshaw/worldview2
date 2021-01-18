@@ -115,14 +115,13 @@ int StartGLProgram(LocationHistory * lh)
 	HighResManager *highres = new HighResManager;
 
 
-
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		return 1;
 	}
 
-	lh->windowDimensions->width = 1700;
+	lh->windowDimensions->width = 800;
 	lh->windowDimensions->height = 800;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -171,6 +170,7 @@ int StartGLProgram(LocationHistory * lh)
 	glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetFramebufferSizeCallback(window, size_callback);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -189,20 +189,25 @@ int StartGLProgram(LocationHistory * lh)
 	SetupPointsShaders(lh->pointsInfo);
 
 	//FBO
-	unsigned int fbo;
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	//unsigned int fbo;
+	lh->fboInfo = new FrameBufferObjectInfo();
 
-	unsigned int fboTexture;
-	glGenTextures(1, &fboTexture);
-	glBindTexture(GL_TEXTURE_2D, fboTexture);
 
+	glGenFramebuffers(1, &lh->fboInfo->fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
+
+	//unsigned int fboTexture;
+	glGenTextures(1, &lh->fboInfo->fboTexture);
+
+	
+	glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
+	printf("fbo texture %i\n", lh->fboInfo->fboTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lh->windowDimensions->width, lh->windowDimensions->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lh->fboInfo->fboTexture, 0);
 	
 	
 	
@@ -212,18 +217,18 @@ int StartGLProgram(LocationHistory * lh)
 		printf("framebuffer not finished\n");
 	else printf("fbo finished\n");
 
-	BackgroundInfo fboInfo;
+	
 	
 
-	SetupBackgroundVertices(&fboInfo);
-	fboInfo.shader->LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
-	fboInfo.shader->LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
-	fboInfo.shader->CreateProgram();
+	SetupBackgroundVertices(&lh->fboInfo->fboBGInfo);
+	lh->fboInfo->fboBGInfo.shader->LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
+	lh->fboInfo->fboBGInfo.shader->LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
+	lh->fboInfo->fboBGInfo.shader->CreateProgram();
 	printf("After create program. glGetError %i\n", glGetError());
 
 	
-	fboInfo.shader->UseMe();
-	int uniloc = glGetUniformLocation(fboInfo.shader->program, "screenTexture");
+	lh->fboInfo->fboBGInfo.shader->UseMe();
+	int uniloc = glGetUniformLocation(lh->fboInfo->fboBGInfo.shader->program, "screenTexture");
 	printf("After getuniloc. glGetError %i\n", glGetError());
 	glUniform1i(uniloc, 4);
 	printf("After uniform set. glGetError %i\n", glGetError());
@@ -233,9 +238,12 @@ int StartGLProgram(LocationHistory * lh)
 	
 	//values
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
-	lh->viewNSWE->makeratio(lh->windowDimensions->height / lh->windowDimensions->width);
-
+	lh->viewNSWE->target.makeratio((float)lh->windowDimensions->height/ (float)lh->windowDimensions->width);
+	lh->viewNSWE->setvalues(lh->viewNSWE->target);
 	lh->viewNSWE->movetowards(1000000000000);
+	
+
+	
 	lh->regions.push_back(new Region());
 
 	while (!glfwWindowShouldClose(window)) {
@@ -266,8 +274,8 @@ int StartGLProgram(LocationHistory * lh)
 
 		
 		//trying fbo
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
+		glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
+		//glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
 		DrawBackgroundAndHeatmap(lh);
 		if (options->showPaths) {
 			DrawPaths(lh->pathInfo);
@@ -283,15 +291,15 @@ int StartGLProgram(LocationHistory * lh)
 
 
 		//draw FBO
-		fboInfo.shader->UseMe();
-		fboInfo.shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+		lh->fboInfo->fboBGInfo.shader->UseMe();
+		lh->fboInfo->fboBGInfo.shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 
 		glActiveTexture(GL_TEXTURE0 + 4);
 
-		glBindTexture(GL_TEXTURE_2D, fboTexture);
+		glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
 
 		glDisable(GL_DEPTH_TEST);
-		glBindVertexArray(fboInfo.vao);
+		glBindVertexArray(lh->fboInfo->fboBGInfo.vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		//printf("After FBO. glGetError %i\n", glGetError());
 

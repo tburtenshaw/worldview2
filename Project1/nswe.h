@@ -21,6 +21,7 @@ public:
 
 	void constrainvalues();
 	void setvalues(float n, float s, float w, float e);
+	void setvalues(NSWE setToThis);
 	void setto(NSWE *setthis);
 	float width();
 	float height();

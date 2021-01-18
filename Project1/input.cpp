@@ -81,11 +81,26 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	if (yoffset > 0) { viewNSWE->target.zoom(0.8, mapCoord); }
 	else if (yoffset < 1) { viewNSWE->target.zoom(1 / 0.8, mapCoord); }
 
-	printf("%i %i\n", pLocationHistory->windowDimensions->height, pLocationHistory->windowDimensions->width);
+	//printf("%i %i\n", pLocationHistory->windowDimensions->height, pLocationHistory->windowDimensions->width);
 	viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions->height/ (float)pLocationHistory->windowDimensions->width);
 
 	viewNSWE->starttime = glfwGetTime();
 	viewNSWE->targettime = glfwGetTime() + 0.4;
+
+	return;
+}
+
+void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
+{
+	printf("Resize %i %i\t", windowNewWidth, windowNewHeight);
+	pLocationHistory->windowDimensions->height = windowNewHeight;
+	pLocationHistory->windowDimensions->width = windowNewWidth;
+	glViewport(0, 0, windowNewWidth, windowNewHeight);
+	glBindTexture(GL_TEXTURE_2D, pLocationHistory->fboInfo->fboTexture);
+	printf("fbo texture %i\n", pLocationHistory->fboInfo->fboTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	pLocationHistory->viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions->height / (float)pLocationHistory->windowDimensions->width);
 
 	return;
 }
@@ -194,6 +209,7 @@ MouseActions::MouseActions()
 	isDragging = 0;
 	dragStartXY.x = 0;
 	dragStartXY.y = 0;
+	dragStartLatLong = { 0 };
 	longlatMouse.latitude = 0;
 	longlatMouse.longitude = 0;
 }
