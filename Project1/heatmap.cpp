@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 
 extern LocationHistory* pLocationHistory;
 
@@ -41,6 +42,11 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	}
 	return;
 	*/
+	width = std::min(pLocationHistory->windowDimensions->width, 2048);
+	height = std::min(pLocationHistory->windowDimensions->height, 2048);
+
+	printf("Heatmap: W%i H%i\n",width,height);
+
 	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
 		double fx, fy;
@@ -305,15 +311,16 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 		//Blur vertically
 		float* secondsVert;
 		secondsVert = (float*)malloc(sizeof(float) * height);
+		
 		for (int x = xstart; x < xend; x++) {
 			//copying the vertically line.
-			for (int y = 0; y < width; y++) {
+			for (int y = 0; y < height; y++) {
 				secondsVert[y] = pixel[x + y * width];
 			}
 
 
 
-			for (int y =ystart; y < yend; y++) {
+			for (int y =ystart; y < yend-1; y++) {
 				//treat the actual position separately
 				coeffposition = 0;
 				factor = gaussianMatrix[matrixrow][coeffposition];
@@ -344,6 +351,8 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 
 		}
+		
+		printf("\nH%i W:%i sz:%i. xend %i, yend:%i\n", height, width, sizeof(secondsVert),xend, yend);
 		free(secondsVert);
 		
 	}
@@ -367,7 +376,7 @@ bool Heatmap::IsDirty()
 
 Heatmap::Heatmap()
 {
-	height=width = 1800;
+	height=width = 2048;
 	memset(pixel, 0, sizeof(pixel));
 
 	//width = height = 100;

@@ -442,7 +442,13 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {	
 	pLocationHistory->heatmap->CreateHeatmap(nswe, 0);
 
+	printf("Updated texture\n");
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1800, 1800, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
+	//**FIX
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, NULL);	//only need to do this if size changed
+	//we can probably just adjust the zooming in the shader, rather than resizing the texture
+	
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
