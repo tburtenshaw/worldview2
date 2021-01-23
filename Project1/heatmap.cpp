@@ -352,7 +352,7 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 		}
 		
-		printf("\nH%i W:%i sz:%i. xend %i, yend:%i\n", height, width, sizeof(secondsVert),xend, yend);
+		printf("\nH%i W:%i sz:%zi. xend %i, yend:%i\n", height, width, sizeof(secondsVert),xend, yend);
 		free(secondsVert);
 		
 	}

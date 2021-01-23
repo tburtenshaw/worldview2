@@ -30,7 +30,7 @@ HighResManager::HighResManager()
 	highresTexture = 0;
 
 	filename.push_back("Background");
-	nswe.push_back(NSWE(10000, 20000, 30000, 40000));	//should never be displayed
+	nswe.push_back(NSWE(10000.0f, 20000.0f, 30000.0f, 40000.0f));	//should never be displayed
 
 
 	filename.push_back("D:/n-34s-48w166e179.png"); //nz
@@ -148,7 +148,7 @@ void HighResManager::LoadBestTex()
 		glBindTexture(GL_TEXTURE_2D, highresTexture);
 		//if we try to load a whole image at once, it'll cause stutter, so we do a few lines at a time
 		int linesToLoad = std::min(height - subImageLinesLoaded, 512); //load at most 512 lines
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageLinesLoaded, width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData+subImageLinesLoaded*width* nrChannels);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageLinesLoaded, width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + subImageLinesLoaded*width* nrChannels);
 		subImageLinesLoaded += linesToLoad;
 
 		if (subImageLinesLoaded == height) {

@@ -49,8 +49,8 @@ struct RECTDIMENSION {
 
 class WORLDCOORD {
 public:
-	double latitude;
-	double longitude;
+	float latitude;	//these can be floats, as they're not really for data points
+	float longitude;
 
 	void SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *window);
 
@@ -198,6 +198,7 @@ void LoadBackgroundImageToTexture(unsigned int* texture);
 void MakeHighresImageTexture(unsigned int* texture);
 void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
 void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
+void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 

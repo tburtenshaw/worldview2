@@ -48,7 +48,6 @@ int OpenAndReadJSON(LocationHistory * lh)
 	lh->isFileChosen = true;
 	lh->isInitialised = false;
 
-	//jsonfile = CreateFile(_T("d:/lizzie.json"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	jsonfile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	
 	if (jsonfile == INVALID_HANDLE_VALUE) {
@@ -188,67 +187,23 @@ int StartGLProgram(LocationHistory * lh)
 	SetupPathsShaders(lh->pathInfo);
 	SetupPointsShaders(lh->pointsInfo);
 
-	//FBO
-	//unsigned int fbo;
+	//Set up the FBO that we draw onto
 	lh->fboInfo = new FrameBufferObjectInfo();
+	SetupFrameBufferObject(lh->fboInfo,lh->windowDimensions->width, lh->windowDimensions->height);
 
-
-	glGenFramebuffers(1, &lh->fboInfo->fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
-
-	//unsigned int fboTexture;
-	glGenTextures(1, &lh->fboInfo->fboTexture);
-
-	
-	glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
-	printf("fbo texture %i\n", lh->fboInfo->fboTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, lh->windowDimensions->width, lh->windowDimensions->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lh->fboInfo->fboTexture, 0);
-	
-	
-	
-
-	
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		printf("framebuffer not finished\n");
-	else printf("fbo finished\n");
-
-	
-	
-
-	SetupBackgroundVertices(&lh->fboInfo->fboBGInfo);
-	lh->fboInfo->fboBGInfo.shader->LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
-	lh->fboInfo->fboBGInfo.shader->LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
-	lh->fboInfo->fboBGInfo.shader->CreateProgram();
-	printf("After create program. glGetError %i\n", glGetError());
-
-	
-	lh->fboInfo->fboBGInfo.shader->UseMe();
-	int uniloc = glGetUniformLocation(lh->fboInfo->fboBGInfo.shader->program, "screenTexture");
-	printf("After getuniloc. glGetError %i\n", glGetError());
-	glUniform1i(uniloc, 4);
-	printf("After uniform set. glGetError %i\n", glGetError());
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	printf("After FBO all done. glGetError %i\n", glGetError());
-	
-	//values
+	//initial values
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
 	lh->viewNSWE->target.makeratio((float)lh->windowDimensions->height/ (float)lh->windowDimensions->width);
 	lh->viewNSWE->setvalues(lh->viewNSWE->target);
 	lh->viewNSWE->movetowards(1000000000000);
 	
 
-	
+	//make a new region
 	lh->regions.push_back(new Region());
 
 	while (!glfwWindowShouldClose(window)) {
 
-		if (!io.WantCaptureMouse) {
+		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
 			ManageMouseMoveClickAndDrag(window, lh);
 		}
 
@@ -267,18 +222,22 @@ int StartGLProgram(LocationHistory * lh)
 			printf("Initialising things that need file to be fully loaded\n");
 			SetupPathsBufferDataAndVertexAttribArrays(lh->pathInfo);
 			SetupPointsBufferDataAndVertexAttribArrays(lh->pointsInfo);
+			lh->heatmap->MakeDirty();
 			lh->isInitialised = true;
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		
-		//trying fbo
+		//Draw to fbo
 		glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
-		//glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
+
 		DrawBackgroundAndHeatmap(lh);
 		if (options->showPaths) {
 			DrawPaths(lh->pathInfo);
+		}
+		if (options->showPoints) {
+			DrawPoints(lh->pointsInfo);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
@@ -295,17 +254,11 @@ int StartGLProgram(LocationHistory * lh)
 		lh->fboInfo->fboBGInfo.shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 
 		glActiveTexture(GL_TEXTURE0 + 4);
-
 		glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
-
 		glDisable(GL_DEPTH_TEST);
 		glBindVertexArray(lh->fboInfo->fboBGInfo.vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		//printf("After FBO. glGetError %i\n", glGetError());
 
-
-
-		//DrawBackgroundAndHeatmap(lh);
 
 
 		if (lh->isInitialised && lh->isFullyLoaded) {
@@ -331,12 +284,12 @@ int StartGLProgram(LocationHistory * lh)
 				DrawPoints(lh->pointsInfo);
 			}
 
+			//DrawRegions(lh->regionsInfo);	//this draws the selection box, and the rectangle where regions are
+		}
+		if (lh->isLoadingFile == false)	{
 			Gui::MakeGUI(lh);	//make the ImGui stuff
 		}
-
-		
-
-		if (lh->isLoadingFile == true) {
+		else if (lh->isLoadingFile == true) {
 			Gui::ShowLoadingWindow(lh);
 		}
 		
@@ -344,8 +297,8 @@ int StartGLProgram(LocationHistory * lh)
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
-		//glfwPollEvents();
-		glfwWaitEventsTimeout(0.016);
+		//glfwPollEvents();	//this runs constantly
+		glfwWaitEventsTimeout(0.016);	//this runs constantly, but max of ~60fps
 		glfwSwapBuffers(window);
 	}
 
@@ -478,6 +431,43 @@ void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 	return;
 }
 
+void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height)
+{
+
+	glGenFramebuffers(1, &fboInfo->fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboInfo->fbo);
+	glGenTextures(1, &fboInfo->fboTexture);
+	glBindTexture(GL_TEXTURE_2D, fboInfo->fboTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboInfo->fboTexture, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		printf("framebuffer not finished\n");
+	else printf("fbo finished\n");
+
+	//this sets up the vertices and shaders for the FBO	
+	SetupBackgroundVertices(&fboInfo->fboBGInfo);
+	fboInfo->fboBGInfo.shader->LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
+	fboInfo->fboBGInfo.shader->LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
+	fboInfo->fboBGInfo.shader->CreateProgram();
+	printf("After create program. glGetError %i\n", glGetError());
+
+	fboInfo->fboBGInfo.shader->UseMe();
+	int uniloc = glGetUniformLocation(fboInfo->fboBGInfo.shader->program, "screenTexture");
+	printf("After getuniloc. glGetError %i\n", glGetError());
+	glUniform1i(uniloc, 4);
+	printf("After uniform set. glGetError %i\n", glGetError());
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	printf("After FBO all done. glGetError %i\n", glGetError());
+
+
+}
+
 void DrawFrameBuffer(LocationHistory* lh)
 {
 
@@ -597,7 +587,7 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 	glBindVertexArray(mapPointsInfo->vao);
 
 	//lat,long
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
+	glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
 	glEnableVertexAttribArray(0);
 
 	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
@@ -624,7 +614,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	//update uniform shader variables
 	mapPointsInfo->shader->UseMe();
 	mapPointsInfo->shader->SetUniformFromFloats("nswe", pLocationHistory->viewNSWE->north, pLocationHistory->viewNSWE->south, pLocationHistory->viewNSWE->west, pLocationHistory->viewNSWE->east);
-	mapPointsInfo->shader->SetUniformFromFloats("resolution", pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height);
+	mapPointsInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	mapPointsInfo->shader->SetUniformFromFloats("pointradius", pLocationHistory->globalOptions->pointradius);
 
 

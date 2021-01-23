@@ -156,7 +156,7 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 	if (latestday >= MAX_DAY_NUMBER-1) {
 		latestday = 0;
 	}
-	for (int i = earliestday; i <= latestday+1; i++) {
+	for (unsigned int i = earliestday; i <= latestday+1; i++) {
 		if (daynumbersince2010[i] > minimumsecondstobeincludedinday) {	//at least fifteen minutes
 			numberofdays++;
 			if (inrun == 0) {

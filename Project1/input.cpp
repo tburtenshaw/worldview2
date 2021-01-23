@@ -23,7 +23,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		return;
 	}
 
-	float step = 0.05;
+	float step = 0.05f;
 
 	int leftpressed, rightpressed, uppressed, downpressed;
 
@@ -55,10 +55,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 
 	if (key == GLFW_KEY_KP_ADD) {
-		viewNSWE->target.zoom(0.9, viewNSWE->target.centre());
+		viewNSWE->target.zoom(0.9f, viewNSWE->target.centre());
 	}
 	if (key == GLFW_KEY_KP_SUBTRACT) {
-		viewNSWE->target.zoom(1 / 0.9, viewNSWE->target.centre());
+		viewNSWE->target.zoom(1.0f / 0.9f, viewNSWE->target.centre());
 	}
 
 	viewNSWE->starttime = glfwGetTime();
@@ -68,7 +68,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	double xpos, ypos;
+	double xpos, ypos;	//this function uses doubles
 	glfwGetCursorPos(window, &xpos, &ypos);
 
 
@@ -76,10 +76,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	MovingTarget* viewNSWE;
 	viewNSWE = pLocationHistory->viewNSWE;
 
-	mapCoord.SetFromWindowXY(xpos, ypos, viewNSWE->target, pLocationHistory->windowDimensions);
+	mapCoord.SetFromWindowXY((float)xpos, (float)ypos, viewNSWE->target, pLocationHistory->windowDimensions);
 
-	if (yoffset > 0) { viewNSWE->target.zoom(0.8, mapCoord); }
-	else if (yoffset < 1) { viewNSWE->target.zoom(1 / 0.8, mapCoord); }
+	if (yoffset > 0.0) { viewNSWE->target.zoom(0.8f, mapCoord); }
+	else if (yoffset < 1.0) { viewNSWE->target.zoom(1.0f / 0.8f, mapCoord); }
 
 	//printf("%i %i\n", pLocationHistory->windowDimensions->height, pLocationHistory->windowDimensions->width);
 	viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions->height/ (float)pLocationHistory->windowDimensions->width);
@@ -217,8 +217,8 @@ MouseActions::MouseActions()
 
 void MouseActions::SetStartOfDrag()
 {
-	dragStartXY.x = xpos;
-	dragStartXY.y = ypos;
+	dragStartXY.x = (float)xpos;
+	dragStartXY.y = (float)ypos;
 	isDragging = 1;
 }
 

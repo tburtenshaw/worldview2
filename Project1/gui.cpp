@@ -32,7 +32,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 	GlobalOptions * options;
 	options = lh->globalOptions;
 
-	std::string sigfigs;
+	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
 	sigfigs = Gui::BestSigFigsFormat(lh->viewNSWE, lh->windowDimensions);
 	
@@ -47,7 +47,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 	ImGui::Text("File name: %s",displayfilename);
 	ImGui::Text("File size: %i", lh->filesize);
 
-	sCoords = "Long: " + sigfigs + ", Lat: " + sigfigs;
+	sCoords = "Cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->mouseInfo->longlatMouse.longitude, lh->mouseInfo->longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh->locations.size());
 
@@ -137,6 +137,17 @@ void Gui::MakeGUI(LocationHistory * lh)
 			lh->isInitialised = false;
 			lh->isLoadingFile = false;
 		}
+		lh->heatmap->MakeDirty();
+	}
+	if (ImGui::Button("Close")) {
+		lh->isFileChosen = false;
+		lh->isFullyLoaded = true;	//we're loaded with nothing
+		lh->isInitialised = false;
+		lh->isLoadingFile = false;
+		if (!lh->locations.empty()) {
+			lh->locations.clear();
+		}
+		lh->heatmap->MakeDirty();
 	}
 	if (ImGui::Button("Nav")) {
 		lh->mouseInfo->mouseMode = MouseMode::ScreenNavigation;
@@ -200,7 +211,7 @@ void Gui::ShowRegionInfo(Region* r)
 
 void Gui::ListDatesInRegion(Region* r)
 {
-	float hours = r->minimumsecondstobeincludedinday;
+	float hours = (float)r->minimumsecondstobeincludedinday;
 	hours /= 60 * 60;
 
 	std::vector<std::string> dates;

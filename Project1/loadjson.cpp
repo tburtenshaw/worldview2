@@ -169,8 +169,8 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 	double dx, dy;
 
 	double movedlongitude;	//this is an extra 360 deg
-	double proportionNew;	//proportion with the most recent
-	proportionNew = 0.5;
+	float proportionNew;	//proportion with the most recent
+	proportionNew = 0.5;	//at the moment, just said to 50%, so the time of the new point is between the old and new
 
 	if (!westwards) {
 		movedlongitude = 360 + jsr->oldlocation.longitude;
@@ -253,7 +253,7 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 		detail[i] = detail[0];
 	}
 
-	float power = 0.8;
+	float power = 0.8f;
 
 	printf("\nMax size: %zi, size: %zi", loc.max_size(), loc.size());
 
