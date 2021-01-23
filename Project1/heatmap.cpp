@@ -23,7 +23,11 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	
 	maxPixel = 0;
 	memset(pixel, 0, sizeof(pixel));
-		
+	
+	//this acts as a mask, so we don't try to blur nothing
+	memset(roughHeatmap, 0, sizeof(roughHeatmap));
+
+
 	unsigned long tsold;
 	long tsdiff;	//the difference between the timestamps
 
@@ -42,10 +46,13 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	}
 	return;
 	*/
-	width = std::min(pLocationHistory->windowDimensions->width, 2048);
-	height = std::min(pLocationHistory->windowDimensions->height, 2048);
+	
 
-	printf("Heatmap: W%i H%i\n",width,height);
+	//clamp to MAX_HEATMAP_DIMENSION
+	width = std::min(pLocationHistory->windowDimensions->width, MAX_HEATMAP_DIMENSION);
+	height = std::min(pLocationHistory->windowDimensions->height, MAX_HEATMAP_DIMENSION);
+
+	//printf("Heatmap: W%i H%i\n",width,height);
 
 	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
@@ -67,14 +74,20 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 		x = (int)(fx+0.5);
 		y = (int)(fy+0.5);
 
-		//x = round(fx);
-		//y = round(fy);
 
 		if ((x < width) && (x >= 0) && (y < height) && (y >= 0)) {	//if the point falls within the heatmap
 			
 			//Single pixel
 			if (iter->accuracy < options->minimumaccuracy) {
 				pixel[y * width + x] += (tsdiff * 10);
+
+				int roughPixel = (y / 24 * width/24 + x / 24);
+				//printf("%i %i: %i %i: %i\n", x,y,y/24,x/24,roughPixel);
+				roughHeatmap[std::max(roughPixel - 1,0)] = 1;
+				roughHeatmap[roughPixel] = 1;	//there's something there
+				roughHeatmap[std::min(roughPixel+1,(int)sizeof(roughHeatmap)-1)] = 1;
+				
+
 			}
 			
 
@@ -276,32 +289,40 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 			//then go through each pixel in the line
 			for (int x = xstart; x < xend; x++) {
-				//treat the actual position separately
-				coeffposition = 0;
-				factor = gaussianMatrix[matrixrow][coeffposition];
+				//test if we need to blur this bit
+				if (roughHeatmap[(y / 24) * width / 24 + (x / 24)]) {	//only blur if there's something there
+					
 
-				//fprintf(stdout,"factor %i, rad %i, pos %i\n", factor,radius,coeffposition);
+					//since we're blurring the rough area above and below might also need blurring
+					roughHeatmap[std::max((y / 24) * width / 24 + (x / 24) - width / 24,0)] = 1;
+					roughHeatmap[std::min((y / 24) * width / 24 + (x / 24) + width / 24,(int)sizeof(roughHeatmap)-1)] = 1;
 
-				pixel[x + y * width] = factor * secondsHoriz[x];
-				totalfactors = factor;
-
-				while (gaussianMatrix[matrixrow][coeffposition]) {//move out laterally left and rightwards
-					coeffposition++;
+					//treat the actual position separately
+					coeffposition = 0;
 					factor = gaussianMatrix[matrixrow][coeffposition];
 
-					if (x >= coeffposition) {	//don't do it if the pixel offset is lower than zero (this is the same as x-coeffpos>0);
-						pixel[x + y * width] += secondsHoriz[x - coeffposition] * factor;
-						totalfactors += factor;
+					//fprintf(stdout,"factor %i, rad %i, pos %i\n", factor,radius,coeffposition);
+
+					pixel[x + y * width] = factor * secondsHoriz[x];
+					totalfactors = factor;
+
+					while (gaussianMatrix[matrixrow][coeffposition]) {//move out laterally left and rightwards
+						coeffposition++;
+						factor = gaussianMatrix[matrixrow][coeffposition];
+
+						if (x >= coeffposition) {	//don't do it if the pixel offset is lower than zero (this is the same as x-coeffpos>0);
+							pixel[x + y * width] += secondsHoriz[x - coeffposition] * factor;
+							totalfactors += factor;
+						}
+
+						if (x + coeffposition < width) {
+							pixel[x + y * width] += secondsHoriz[x + coeffposition] * factor;
+							totalfactors += factor;
+						}
 					}
 
-					if (x + coeffposition < width) {
-						pixel[x + y * width] += secondsHoriz[x + coeffposition] * factor;
-						totalfactors += factor;
-					}
+					pixel[x + y * width] /= totalfactors;
 				}
-
-				pixel[x + y * width] /=totalfactors;
-
 			}
 
 		}
@@ -321,32 +342,36 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 
 			for (int y =ystart; y < yend-1; y++) {
+				
+				if (roughHeatmap[(y / 24) * width / 24 + (x / 24)]) {	//only blur if there's something there
+
 				//treat the actual position separately
-				coeffposition = 0;
-				factor = gaussianMatrix[matrixrow][coeffposition];
-
-				//fprintf(stdout,"factor %i, rad %i, pos %i\n", factor,radius,coeffposition);
-
-				pixel[x + y * width] = factor * secondsVert[y];
-				totalfactors = factor;
-
-				while (gaussianMatrix[matrixrow][coeffposition]) {//move out laterally left and rightwards
-					coeffposition++;
+					coeffposition = 0;
 					factor = gaussianMatrix[matrixrow][coeffposition];
 
-					if (y - coeffposition>= ystart) {	//don't do it if the pixel offset is lower than zero
-						pixel[x + y * width] += secondsVert[y - coeffposition] * factor;
-						totalfactors += factor;
+					//fprintf(stdout,"factor %i, rad %i, pos %i\n", factor,radius,coeffposition);
+
+					pixel[x + y * width] = factor * secondsVert[y];
+					totalfactors = factor;
+
+					while (gaussianMatrix[matrixrow][coeffposition]) {//move out laterally left and rightwards
+						coeffposition++;
+						factor = gaussianMatrix[matrixrow][coeffposition];
+
+						if (y - coeffposition >= ystart) {	//don't do it if the pixel offset is lower than zero
+							pixel[x + y * width] += secondsVert[y - coeffposition] * factor;
+							totalfactors += factor;
+						}
+
+						if (y + coeffposition < yend) {
+							pixel[x + y * width] += secondsVert[y + coeffposition] * factor;
+							totalfactors += factor;
+						}
 					}
 
-					if (y + coeffposition < yend) {
-						pixel[x + y * width] += secondsVert[y + coeffposition] * factor;
-						totalfactors += factor;
-					}
+					//divide at the end
+					pixel[x + y * width] /= totalfactors;
 				}
-				
-				//divide at the end
-				pixel[x + y * width] /= totalfactors;
 			}
 
 

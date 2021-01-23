@@ -395,7 +395,7 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 {	
 	pLocationHistory->heatmap->CreateHeatmap(nswe, 0);
 
-	printf("Updated texture\n");
+	//printf("Updated texture\n");
 	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1800, 1800, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
 	//**FIX
