@@ -21,6 +21,7 @@ class Region;
 class MovingTarget;
 class MouseActions;
 class HighResManager;
+class RGBA;
 
 //typedef struct sLocation ;
 
@@ -56,6 +57,13 @@ public:
 
 };
 
+class RGBA {
+public:
+	float r;
+	float g;
+	float b;
+	float a;
+};
 
 struct LOCATION {
 	unsigned long timestamp; //we'll use a long instead of the high precision of google (seconds rather than ms)	
@@ -69,6 +77,17 @@ struct LOCATION {
 	int heading;
 	int velocity;
 	int verticalaccuracy;
+};
+
+struct PathPlotLocation {	//this is the structure (a vector of them) sent to the GPU
+	float longitude;
+	float latitude;
+
+	RGBA rgba;
+
+	float detaillevel;
+
+
 };
 
 
@@ -99,10 +118,12 @@ public:
 	std::wstring filename;
 	unsigned long filesize;
 	
-	std::vector<LOCATION> locations;
+	std::vector<LOCATION> locations;	//this holds the raw data from the json file, double precision
 	unsigned long earliesttimestamp;
 	unsigned long latesttimestamp;
 	
+	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU
+
 	Heatmap* heatmap;
 
 	LocationHistory();

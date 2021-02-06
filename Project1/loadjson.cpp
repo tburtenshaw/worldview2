@@ -225,6 +225,7 @@ bool FurtherThan(LOCATION* p1, LOCATION* p2, float d) {
 	return false;
 }
 
+
 void OptimiseDetail(vector<LOCATION>& loc) {
 
 	int i;
@@ -262,7 +263,7 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 		float d = 2.0;
 		int notfound = 1;
 
-		if (iter->detaillevel < -1) {
+		if (iter->detaillevel < -1.0) {
 			iter->detaillevel = -1000.0;	//if we don't want to display it ever (i.e. moving across the map for the roundtheworlds)
 		}
 		else
@@ -293,6 +294,27 @@ void OptimiseDetail(vector<LOCATION>& loc) {
 	}
 	
 
+	return;
+}
+
+void CreatePathPlotLocations(LocationHistory* lh)
+{
+	PathPlotLocation pathPlotLoc;
+
+	for (std::vector<LOCATION>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
+
+		pathPlotLoc.latitude = (float)iter->latitude;
+		pathPlotLoc.longitude = (float)iter->longitude;
+		pathPlotLoc.rgba.r = 1.0f;
+		pathPlotLoc.rgba.g = 1.0f;
+		pathPlotLoc.rgba.b = 0.2f;
+		pathPlotLoc.rgba.a = 1.0f;
+
+		pathPlotLoc.detaillevel = iter->detaillevel;	//eventually, the original won't need this
+
+
+		lh->pathPlotLocations.push_back(pathPlotLoc);
+	}
 	return;
 }
 

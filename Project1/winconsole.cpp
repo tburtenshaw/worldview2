@@ -95,6 +95,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	CloseHandle(jsonfile);
 
 	printf("\nopt detail");
+	CreatePathPlotLocations(lh);
 	OptimiseDetail(lh->locations);
 
 	printf("\nfinished loading2");

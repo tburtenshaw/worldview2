@@ -71,15 +71,28 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 			fy = ((double)nswe->north - iter->latitude) / (double)nswe->height() * (double)height;
 		}
 		
-		x = (int)(fx+0.5);
-		y = (int)(fy+0.5);
+		x = (int)(fx);
+		y = (int)(fy);
+
+		float dx, dy;
+
 
 
 		if ((x < width) && (x >= 0) && (y < height) && (y >= 0)) {	//if the point falls within the heatmap
 			
 			//Single pixel
 			if (iter->accuracy < options->minimumaccuracy) {
-				pixel[y * width + x] += (tsdiff * 10);
+				//pixel[y * width + x] += (tsdiff * 10);
+
+				//antialias amongst four pixels based on rounding.
+				dx = (float)fx - (float)x;
+				dy = (float)fy - (float)y;
+				
+				pixel[y * width + x] += (float)(tsdiff * 10)*(1.0f-dx)*(1.0f-dy);
+				pixel[y * width + x+1] += (float)(tsdiff * 10) * dx * (1.0f - dy);
+				pixel[(y+1) * width + x] += (float)(tsdiff * 10) * (1.0f - dx) * (dy);
+				pixel[(y+1) * width + x+1] += (float)(tsdiff * 10) * (  dx) * (dy);
+
 
 				int roughPixel = (y / 24 * width/24 + x / 24);
 				//printf("%i %i: %i %i: %i\n", x,y,y/24,x/24,roughPixel);
