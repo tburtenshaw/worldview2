@@ -37,8 +37,8 @@ void main() {
 	float uvwidth =linewidth/resolution.x;
     float blur=min(3.0,linewidth)/resolution.x;
 
-    vec3 col = vec3(smoothstep(uvwidth+blur,uvwidth,dline( uv, pointa, pointb )));
+    float opacity = (smoothstep(uvwidth+blur,uvwidth,dline( uv, pointa, pointb ))); //this blurs the edges of the line (really a quadrilateral) to help avoid aliasing
 
     // Output to screen
-    frag_colour = vec4(fcol.xyz,col.x);
+    frag_colour = vec4(fcol.xyz,opacity*fcol.z);  
 }

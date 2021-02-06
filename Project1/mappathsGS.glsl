@@ -8,7 +8,7 @@ uniform float linewidth;
 uniform vec4 nswe;
 
 in VS_OUT {
-    vec3 color;
+    vec4 color;
 	float dontdraw;
 	vec2 origcoords;	//these are the map coords
 
@@ -69,7 +69,7 @@ void main()
 
 	vec2 extendlength = normalize(start-end)*thickness;
 
-	fcol = vec4(gs_in[0].color,1.0);
+	fcol = gs_in[0].color;
 	
 	gl_Position = gl_in[0].gl_Position + vec4(-thickness1, 0.0, 0.0) + vec4(extendlength, 0.0, 0.0);
 	EmitVertex();
@@ -78,7 +78,7 @@ void main()
     EmitVertex();
 
 
-	fcol = vec4(gs_in[1].color,1.0);
+	fcol = gs_in[1].color;
 	gl_Position = gl_in[1].gl_Position + vec4(-thickness1, 0.0, 0.0)- vec4(extendlength, 0.0, 0.0);
     EmitVertex();
 

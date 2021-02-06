@@ -11,7 +11,7 @@ uniform vec2 resolution;
 
 
 out VS_OUT {
-    vec3 color;
+    vec4 color;
 	float dontdraw;		//whether or not we draw the (?next) line
 	vec2 origcoords;	//these are the map coords
 } vs_out;
@@ -55,7 +55,7 @@ void main() {
 	//vs_out.color=rainbow(f);
 	//vs_out.color=hsv2rgb(vec3(f,1.0,1.0));
 	
-	vs_out.color=colour.rgb;
+	vs_out.color=colour;
 
 	float res;
 	vs_out.dontdraw=1.0;
