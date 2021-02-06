@@ -55,7 +55,7 @@ void main() {
 	//vs_out.color=rainbow(f);
 	//vs_out.color=hsv2rgb(vec3(f,1.0,1.0));
 	
-	vs_out.color=vec3(1.0,1.0,1.0);//colour.rgb;
+	vs_out.color=colour.rgb;
 
 	float res;
 	vs_out.dontdraw=1.0;

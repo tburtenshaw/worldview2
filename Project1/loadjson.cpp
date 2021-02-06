@@ -119,10 +119,12 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 					//Here we check whether the longitude spanned over 180, we make the assumption that if this occurred, we took the shortest route
 					//(i.e. if we travel from NZ at longitude (174) to Vancouver (-123) we wouldn't travel through the pacific
+					/*
 					if ((jsr->location.longitude - jsr->oldlocation.longitude >180.0)|| (jsr->location.longitude - jsr->oldlocation.longitude < -180.0)) {	//we can't do this just yet
 						BreakRoundTheWorlds(jsr, loc);
 					}
 					jsr->oldlocation= jsr->location;	//make the old this one
+					*/
 
 					//Write the new value into the Vector
 					loc.push_back(jsr->location);
@@ -137,7 +139,7 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 					//reset to defaults
 					jsr->location.altitude = -1;
-					jsr->location.detaillevel = 0;
+					//jsr->location.detaillevel = 0;
 
 					//printf("Loc:%i", jsr->locationnumber);
 				}
@@ -153,7 +155,7 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 	return 0;
 }
 
-void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
+void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<PathPlotLocation>& loc)
 {
 	int westwards = 0;
 	if (jsr->location.longitude < jsr->oldlocation.longitude) {
@@ -165,7 +167,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 	
 	//printf("old:%f %f, new:%f %f\n", jsr->oldlocation.longitude, jsr->oldlocation.latitude, jsr->location.longitude, jsr->location.latitude);
 	double newlat;
-	LOCATION newloc;
+	PathPlotLocation newloc;
 	double dx, dy;
 
 	double movedlongitude;	//this is an extra 360 deg
@@ -183,7 +185,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 		newloc.detaillevel = 0;//?don't draw
 		newloc.latitude = newlat;
 		newloc.longitude = -180;
-		newloc.timestamp = jsr->location.timestamp*(proportionNew)+ jsr->oldlocation.timestamp*(1-proportionNew);
+		//newloc.timestamp = jsr->location.timestamp*(proportionNew)+ jsr->oldlocation.timestamp*(1-proportionNew);
 		loc.push_back(newloc);
 
 		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
@@ -206,7 +208,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 		newloc.detaillevel = 0;
 		newloc.latitude = newlat;
 		newloc.longitude = 180;
-		newloc.timestamp = jsr->location.timestamp * (proportionNew)+jsr->oldlocation.timestamp * (1 - proportionNew);
+		//newloc.timestamp = jsr->location.timestamp * (proportionNew)+jsr->oldlocation.timestamp * (1 - proportionNew);
 		loc.push_back(newloc);
 
 		
@@ -218,107 +220,6 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc)
 	}
 }
 
-bool FurtherThan(LOCATION* p1, LOCATION* p2, float d) {
-	if (abs(p1->latitude - p2->latitude) > d)	return true;
-	if (abs(p1->longitude- p2->longitude) > d)	return true;
-
-	return false;
-}
-
-
-void OptimiseDetail(vector<LOCATION>& loc) {
-
-	int i;
-	LOCATION detail0;
-	LOCATION detail1;
-	LOCATION detail2;
-	LOCATION detail3;
-	LOCATION detail4;
-	LOCATION detail5;
-
-	detail0.latitude = -500.0;	//these are deliberately out of bounds
-	detail0.longitude = -500.0;
-	detail1 = detail2 = detail3 = detail4 = detail5 = detail0;
-
-	const int detaillevels=80;
-
-	vector<LOCATION> detail;
-	vector<int> count;
-
-	detail.resize(detaillevels);
-	count.resize(detaillevels);
-
-	detail[0].longitude = -500.0;
-	detail[0].latitude = -500.0;
-	for (i = 1; i < detaillevels; i++) {
-		detail[i] = detail[0];
-	}
-
-	float power = 0.8f;
-
-	printf("\nMax size: %zi, size: %zi", loc.max_size(), loc.size());
-
-
-	for (vector<LOCATION>::iterator iter = loc.begin(); iter != loc.end(); ++iter) {
-		float d = 2.0;
-		int notfound = 1;
-
-		if (iter->detaillevel < -1.0) {
-			iter->detaillevel = -1000.0;	//if we don't want to display it ever (i.e. moving across the map for the roundtheworlds)
-		}
-		else
-		{
-			for (i = 0; ((i < detaillevels) && (notfound)); i++) {	//go through all detail levels
-				//printf("Testing %i %f.", i,d);
-				if (FurtherThan(&detail[i], iter._Ptr, d)) {
-					//printf(" %f.", d);
-					detail[i].longitude = iter->longitude;
-					detail[i].latitude = iter->latitude;
-
-					for (int e = i + 1; e < detaillevels; e++) {
-						detail[e] = detail[i];
-					}
-					iter->detaillevel = d/power;//we'll move up
-					count[i]++;
-					notfound = 0;
-				}
-				d *= power;
-			}
-			if (notfound) {	//set the lowest level
-				iter->detaillevel = 0;// d / power;
-			}
-		}
-
-		//printf("\n%f, %f. %f", iter->longitude, iter->latitude, iter->detaillevel);
-		
-	}
-	
-
-	return;
-}
-
-void CreatePathPlotLocations(LocationHistory* lh)
-{
-	PathPlotLocation pathPlotLoc;
-
-	for (std::vector<LOCATION>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
-
-		pathPlotLoc.latitude = (float)iter->latitude;
-		pathPlotLoc.longitude = (float)iter->longitude;
-		pathPlotLoc.rgba.r = 1.0f;
-		pathPlotLoc.rgba.g = 1.0f;
-		pathPlotLoc.rgba.b = 0.2f;
-		pathPlotLoc.rgba.a = 1.0f;
-
-		pathPlotLoc.detaillevel = iter->detaillevel;	//eventually, the original won't need this
-
-
-		lh->pathPlotLocations.push_back(pathPlotLoc);
-
-		//printf("%f %f %f %f\t",iter->latitude, pathPlotLoc.latitude);
-	}
-	return;
-}
 
 double fast_strtolatlongdouble(char* str)
 {

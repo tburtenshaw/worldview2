@@ -59,10 +59,10 @@ public:
 
 class RGBA {
 public:
-	float r;
-	float g;
-	float b;
-	float a;
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+	unsigned char a;
 };
 
 struct LOCATION {
@@ -70,7 +70,7 @@ struct LOCATION {
 	double longitude;	//using a float rather than a double means an imprecision of less than 2metres
 	double latitude;		//longitude first as it's x
 
-	float detaillevel;
+	//float detaillevel;
 
 	int accuracy;
 	int altitude;
@@ -83,6 +83,7 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 	float longitude;
 	float latitude;
 
+	unsigned long timestamp;
 	RGBA rgba;
 
 	float detaillevel;

@@ -21,6 +21,7 @@
 #include "header.h"
 #include "nswe.h"
 #include "loadjson.h"
+#include "processlocations.h"
 #include "input.h"
 #include "heatmap.h"
 #include "regions.h"
@@ -95,9 +96,9 @@ int OpenAndReadJSON(LocationHistory * lh)
 	CloseHandle(jsonfile);
 
 	printf("\nopt detail");
-	//CreatePathPlotLocations(lh);
-	OptimiseDetail(lh->locations);
 	CreatePathPlotLocations(lh);
+	
+	//CreatePathPlotLocations(lh);
 
 	printf("\nfinished loading2");
 	lh->isLoadingFile=false;
@@ -541,7 +542,7 @@ void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
 	glEnableVertexAttribArray(0);
 
 	//rgba colour
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
 	glEnableVertexAttribArray(1);
 
 	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
@@ -605,8 +606,8 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 	glEnableVertexAttribArray(1);
 
 	//detail level
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
-	glEnableVertexAttribArray(2);
+	//glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
+	//glEnableVertexAttribArray(2);
 
 	return;
 }

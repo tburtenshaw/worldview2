@@ -154,6 +154,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -176,6 +178,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="mytimezone.cpp" />
     <ClCompile Include="nswe.cpp" />
+    <ClCompile Include="processlocations.cpp" />
     <ClCompile Include="shaders.cpp" />
     <ClCompile Include="regions.cpp" />
     <ClCompile Include="highresmanager.cpp" />
@@ -191,6 +194,7 @@
     <ClInclude Include="loadjson.h" />
     <ClInclude Include="mytimezone.h" />
     <ClInclude Include="nswe.h" />
+    <ClInclude Include="processlocations.h" />
     <ClInclude Include="regions.h" />
     <ClInclude Include="shaders.h" />
   </ItemGroup>

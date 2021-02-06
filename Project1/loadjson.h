@@ -29,7 +29,3 @@ typedef struct json_reader_state {
 int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION> &loc, LocationHistory* lh);
 int AssignValueToName(JSON_READER_STATE* jsr);
 void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc);
-void OptimiseDetail(vector<LOCATION>& loc);
-void CreatePathPlotLocations(LocationHistory *lh);
-
-bool FurtherThan(LOCATION* p1, LOCATION* p2, float d);
