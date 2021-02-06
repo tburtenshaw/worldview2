@@ -314,6 +314,8 @@ void CreatePathPlotLocations(LocationHistory* lh)
 
 
 		lh->pathPlotLocations.push_back(pathPlotLoc);
+
+		//printf("%f %f %f %f\t",iter->latitude, pathPlotLoc.latitude);
 	}
 	return;
 }

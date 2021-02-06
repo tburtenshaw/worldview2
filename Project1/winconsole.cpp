@@ -95,8 +95,9 @@ int OpenAndReadJSON(LocationHistory * lh)
 	CloseHandle(jsonfile);
 
 	printf("\nopt detail");
-	CreatePathPlotLocations(lh);
+	//CreatePathPlotLocations(lh);
 	OptimiseDetail(lh->locations);
+	CreatePathPlotLocations(lh);
 
 	printf("\nfinished loading2");
 	lh->isLoadingFile=false;
@@ -530,23 +531,31 @@ void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
 {
 	glGenBuffers(1, &mapPathInfo->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->locations.size() * sizeof(LOCATION), &pLocationHistory->locations.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front(), GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &mapPathInfo->vao);
 	glBindVertexArray(mapPathInfo->vao);
 
 	//lat,long
-	glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
 	glEnableVertexAttribArray(0);
 
-	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
+	//rgba colour
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
 	glEnableVertexAttribArray(1);
 
+	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
+	//glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
+	//glEnableVertexAttribArray(1);
+
 	//detail level
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, detaillevel));
 	glEnableVertexAttribArray(2);
 	
+	//for (auto& element : pLocationHistory->pathPlotLocations) {
+//		printf("%f ",element.detaillevel);
+	//}
+
 	return;
 }
 
@@ -573,7 +582,7 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 
 	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
 	glBindVertexArray(mapPathInfo->vao);
-	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->locations.size());
+	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
 	
 	return;
 }

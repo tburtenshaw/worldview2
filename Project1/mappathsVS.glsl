@@ -1,6 +1,7 @@
 #version 330
 layout (location = 0) in vec2 vp;
-layout (location = 1) in uint ts;
+//layout (location = 1) in uint ts;
+layout (location = 1) in vec4 colour;
 layout (location = 2) in float detail;
 
 uniform float seconds;
@@ -42,18 +43,19 @@ void main() {
 	
 	gl_Position = vec4(((vp.x-midx)/width*2),(vp.y-midy)/height*2,0,1.0);
 	
-	uint m;
-	float f;
+	//uint m;
+	//float f;
 	
-	m = (ts - uint(seconds)) % uint(cycle); 
+	//m = (ts - uint(seconds)) % uint(cycle); 
 
 
-	f = float(m)/cycle;
+	//f = float(m)/cycle;
 	
 
-	vs_out.color=rainbow(f);
+	//vs_out.color=rainbow(f);
 	//vs_out.color=hsv2rgb(vec3(f,1.0,1.0));
 	
+	vs_out.color=vec3(1.0,1.0,1.0);//colour.rgb;
 
 	float res;
 	vs_out.dontdraw=1.0;
