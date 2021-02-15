@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+
 #define READ_BUFFER_SIZE 1024*256
 #define MAX_JSON_STRING 1024
 
@@ -63,11 +64,18 @@ public:
 	unsigned char g;
 	unsigned char b;
 	unsigned char a;
+
+	void operator=(const RGBA other) {
+		r = other.r;
+		g = other.g;
+		b = other.b;
+		a = other.a;
+	}
 };
 
 struct LOCATION {
 	unsigned long timestamp; //we'll use a long instead of the high precision of google (seconds rather than ms)	
-	double longitude;	//using a float rather than a double means an imprecision of less than 2metres
+	double longitude;	//tried using a float rather than a double means an imprecision of less than 2metres, but keeping doubles
 	double latitude;		//longitude first as it's x
 
 	//float detaillevel;
@@ -100,10 +108,26 @@ public:
 	bool showHeatmap;
 	float seconds;
 
+	//paths
 	float linewidth;
 	float cycle;
+	RGBA paletteDayOfWeek[7]
+	
+	{ {0x32,0x51,0xA7,0xff },
+	  {0xc0,0x46,0x54,0xff },
+	  {0xff,0x60,0x3d,0xff },
+	  {0xe4,0xb7,0x4a,0xff },
+	  {0xa1,0xfc,0x58,0xff },
+	  {0x96,0x54,0xa9,0xff },
+	  {0x00,0x82,0x94,0xff } };
+	
+	RGBA paletteMonthOfYear[12];
+	bool regenPathColours;
 
+
+	//points
 	float pointradius;
+
 
 	//heatmap
 	int palette; //viridis = 1, inferno = 2

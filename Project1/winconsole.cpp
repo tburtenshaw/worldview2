@@ -237,6 +237,12 @@ int StartGLProgram(LocationHistory * lh)
 
 		DrawBackgroundAndHeatmap(lh);
 		if (options->showPaths) {
+			if (options->regenPathColours) {
+				printf("regen pathplot\n");
+				ColourPathPlot(lh);
+				glBindBuffer(GL_ARRAY_BUFFER, lh->pathInfo->vbo);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
+			}
 			DrawPaths(lh->pathInfo);
 		}
 		if (options->showPoints) {

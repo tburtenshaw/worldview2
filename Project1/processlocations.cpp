@@ -87,16 +87,9 @@ void CreatePathPlotLocations(LocationHistory* lh)	//this shouldn't be in the loa
 
 		pathPlotLoc.latitude = (float)iter->latitude;
 		pathPlotLoc.longitude = (float)iter->longitude;
-		pathPlotLoc.rgba.r = 255;
-		pathPlotLoc.rgba.g = 255;
-		pathPlotLoc.rgba.b = 100;
-		pathPlotLoc.rgba.a = 255;
+
 
 		pathPlotLoc.timestamp = iter->timestamp;
-		pathPlotLoc.rgba = ColourByDayOfWeek(pathPlotLoc.timestamp);
-
-		//pathPlotLoc.detaillevel = iter->detaillevel;	//eventually, the original won't need this
-
 
 		lh->pathPlotLocations.push_back(pathPlotLoc);
 
@@ -104,30 +97,41 @@ void CreatePathPlotLocations(LocationHistory* lh)	//this shouldn't be in the loa
 	}
 
 	OptimiseDetail(lh->pathPlotLocations);
-
+	ColourPathPlot(lh);
 	return;
 }
 
-RGBA ColourByDayOfWeek(unsigned long ts)
+void ColourPathPlot(LocationHistory* lh)
+{
+	
+	int i = 0;
+	for (std::vector <PathPlotLocation> ::iterator it = lh->pathPlotLocations.begin(); it != lh->pathPlotLocations.end(); ++it) {
+		it->rgba = ColourByDayOfWeek(it->timestamp, lh);
+	}
+		
+	lh->globalOptions->regenPathColours = false;
+	
+	return;
+}
+
+
+/*
+{ {0x32, 0x51, 0xA7, 0xFF},
+	{ 0xc0,0x46,0x54,0xFF },
+	{ 0xe1,0x60,0x3d,0x3F },
+	{ 0xe4,0xb7,0x4a,0x0F },
+	{ 0xa1,0xfc,0x58,0x0F },
+	{ 0x96,0x54,0xa9,0x0F },
+	{ 0x00,0x82,0x94,0x0F } }
+*/
+
+RGBA ColourByDayOfWeek(unsigned long ts, LocationHistory* lh)
 {
 	RGBA colour;
-	//colour.a = 255;
-	
-	const RGBA cpd[7] = { {0x32,0x51,0xA7,0xFF},
-{0xc0,0x46,0x54,0xFF},
-{0xe1,0x60,0x3d,0x3F},
-{0xe4,0xb7,0x4a,0x0F},
-{0xa1,0xfc,0x58,0x0F},
-{0x96,0x54,0xa9,0x0F},
-{0x00,0x82,0x94,0x0F} };
-
-
+		
 	unsigned long dayofweek=	(ts / 86400 + 4) % 7;
-	
-	
-	//printf("d%i ", dayofweek);
 
-	colour = cpd[dayofweek];
+	colour = lh->globalOptions->paletteDayOfWeek[dayofweek];
 
 	return colour;
 }

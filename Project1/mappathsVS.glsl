@@ -43,18 +43,6 @@ void main() {
 	
 	gl_Position = vec4(((vp.x-midx)/width*2),(vp.y-midy)/height*2,0,1.0);
 	
-	//uint m;
-	//float f;
-	
-	//m = (ts - uint(seconds)) % uint(cycle); 
-
-
-	//f = float(m)/cycle;
-	
-
-	//vs_out.color=rainbow(f);
-	//vs_out.color=hsv2rgb(vec3(f,1.0,1.0));
-	
 	vs_out.color=colour;
 
 	float res;
