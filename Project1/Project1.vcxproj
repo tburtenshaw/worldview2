@@ -170,6 +170,7 @@
     <ClCompile Include="..\..\imgui-master\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\imgui-master\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\imgui-master\imgui.cpp" />
+    <ClCompile Include="..\..\imgui-master\imgui_demo.cpp" />
     <ClCompile Include="..\..\imgui-master\imgui_draw.cpp" />
     <ClCompile Include="..\..\imgui-master\imgui_widgets.cpp" />
     <ClCompile Include="gui.cpp" />

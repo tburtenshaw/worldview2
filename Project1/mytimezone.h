@@ -18,6 +18,9 @@ namespace MyTimeZone {
 	};
 
 
+	const std::string daynames[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+	const std::string monthnames[] = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
+
 	unsigned long FixToLocalTime(unsigned long unixtime);
 	long tz_offset_second(time_t t);
 	unsigned long AdjustBasedOnLongitude(unsigned long unixtime, float longitude);

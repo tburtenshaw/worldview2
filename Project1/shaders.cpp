@@ -37,6 +37,21 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 	
 	std::ifstream file;
 	file.open(filename);
+	if (!file.is_open())
+	{
+		printf("Shader file %s not loadable\n", filename);
+
+		char differentfolder[1000];
+		sprintf_s(differentfolder, "..\\%s", filename);
+
+		printf("Trying a directory up %s\n",differentfolder);
+		file.open(differentfolder);
+
+		if (!file.is_open()) {
+			printf("nope\n");
+			return 0;
+		}
+	}
 
 	std::stringstream strStream;
 	strStream << file.rdbuf(); //read the file
@@ -48,7 +63,7 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 
 	glShaderSource(shader, 1, &c_str, NULL);
 	glCompileShader(shader);
-
+	printf("Shader file: %s\n", filename);
 	if (int r=CheckForErrors(shader, GL_COMPILE_STATUS)) {
 		printf("\nShader: %i,result:%i, ",shader, r);
 		//printf("Content: % s \nFile : % s\n", data.c_str(), filename);
@@ -60,17 +75,18 @@ GLuint Shader::LoadShaderFromFile(const char* filename, GLenum type) {
 GLuint Shader::CreateProgram()
 {
 	program= glCreateProgram();
-	printf("v");
+	printf("Attaching: Ver..");
 	glAttachShader(program, vertexShader);
-	printf("f");
+	printf("Frag..");
 	glAttachShader(program, fragmentShader);
 	if (geometryShader) {
-		printf("g");
+		printf("Geo..");
 		glAttachShader(program, geometryShader);
 	}
-	printf("l");
+	printf("\nlinking program %i...\n",program);
 	glLinkProgram(program);
 
+	printf("Checking for linking errors:\n");
 	CheckForErrors(program, GL_LINK_STATUS);
 
 	return program;
@@ -132,7 +148,7 @@ GLboolean Shader::CheckForErrors(GLuint shader, GLuint type) {
 		char shader_log[2048];
 		if (type == GL_COMPILE_STATUS)	glGetShaderInfoLog(shader, max_length, &actual_length, shader_log);
 		if (type == GL_LINK_STATUS)	glGetProgramInfoLog(shader, max_length, &actual_length, shader_log);
-		printf("shader info log for GL index %u:\n%s\n", shader, shader_log);
+		printf("Shader %s info log for GL index %u:\n%s\n", (type==GL_LINK_STATUS)?"link":"compile", shader, shader_log);
 		return GL_TRUE;
 
 		//return false; // or exit or something

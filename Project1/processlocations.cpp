@@ -1,5 +1,6 @@
 #include "header.h"
 #include "processlocations.h"
+#include "mytimezone.h"
 
 bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {
 	if (abs(p1->latitude - p2->latitude) > d)	return true;
@@ -106,7 +107,7 @@ void ColourPathPlot(LocationHistory* lh)
 	
 	int i = 0;
 	for (std::vector <PathPlotLocation> ::iterator it = lh->pathPlotLocations.begin(); it != lh->pathPlotLocations.end(); ++it) {
-		it->rgba = ColourByDayOfWeek(it->timestamp, lh);
+		it->rgba = ColourByHourOfDay(it->timestamp, lh);
 	}
 		
 	lh->globalOptions->regenPathColours = false;
@@ -114,24 +115,31 @@ void ColourPathPlot(LocationHistory* lh)
 	return;
 }
 
-
-/*
-{ {0x32, 0x51, 0xA7, 0xFF},
-	{ 0xc0,0x46,0x54,0xFF },
-	{ 0xe1,0x60,0x3d,0x3F },
-	{ 0xe4,0xb7,0x4a,0x0F },
-	{ 0xa1,0xfc,0x58,0x0F },
-	{ 0x96,0x54,0xa9,0x0F },
-	{ 0x00,0x82,0x94,0x0F } }
-*/
-
 RGBA ColourByDayOfWeek(unsigned long ts, LocationHistory* lh)
 {
 	RGBA colour;
 		
-	unsigned long dayofweek=	(ts / 86400 + 4) % 7;
+	unsigned long dayofweek=	(MyTimeZone::FixToLocalTime(ts) / 86400 + 4) % 7;
 
 	colour = lh->globalOptions->paletteDayOfWeek[dayofweek];
 
 	return colour;
 }
+
+RGBA ColourByHourOfDay(unsigned long ts, LocationHistory* lh)
+{
+	RGBA colour;
+
+	unsigned long fixedTS = MyTimeZone::FixToLocalTime(ts);
+
+	unsigned long secondsthroughday = fixedTS % (3600* 24);
+
+	colour.a = 10;
+	colour.r = 255;
+	colour.g = (256*secondsthroughday / (3600 * 24));
+	colour.b = 0;
+
+
+	return colour;
+}
+

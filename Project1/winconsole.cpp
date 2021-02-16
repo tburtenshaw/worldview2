@@ -166,6 +166,13 @@ int StartGLProgram(LocationHistory * lh)
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	
+//	ImFont* pFont1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 16);
+//	ImFont* pFont2 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 24);
+
+//	ImFont* pFont3 = io.Fonts->AddFontFromFileTTF("C:\\Users\\GGPC\\AppData\\Local\\Microsoft\\Windows\\Fonts\\OpenSans-Light.ttf", 18);
+	ImFont* pFont4 = io.Fonts->AddFontFromFileTTF("C:\\Users\\GGPC\\AppData\\Local\\Microsoft\\Windows\\Fonts\\OpenSans-Regular.ttf", 16);
+
+	
 	//glEnable(GL_DEPTH_TEST); // enable depth-testing (don't do this, as breask alpha)
 	//glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 
@@ -238,7 +245,7 @@ int StartGLProgram(LocationHistory * lh)
 		DrawBackgroundAndHeatmap(lh);
 		if (options->showPaths) {
 			if (options->regenPathColours) {
-				printf("regen pathplot\n");
+				//printf("regen pathplot\n");
 				ColourPathPlot(lh);
 				glBindBuffer(GL_ARRAY_BUFFER, lh->pathInfo->vbo);
 				glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
@@ -306,8 +313,10 @@ int StartGLProgram(LocationHistory * lh)
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
-		//glfwPollEvents();	//this runs constantly
-		glfwWaitEventsTimeout(0.016);	//this runs constantly, but max of ~60fps
+		
+		if (!lh->viewNSWE->isMoving())	glfwWaitEventsTimeout(1.0f/60.0f);	//this runs constantly, but max of ~60fps
+		else glfwPollEvents();	
+		
 		glfwSwapBuffers(window);
 	}
 

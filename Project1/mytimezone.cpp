@@ -29,7 +29,7 @@ unsigned long MyTimeZone::AdjustBasedOnLongitude(unsigned long unixtime, float l
 {
     int naivetz;
 
-    naivetz = ((longitude + 7.5) / 15.0);
+    naivetz = (int)((longitude + 7.5f) / 15.0f);
  
     return unixtime+naivetz*3600;
 }
@@ -38,8 +38,7 @@ std::string MyTimeZone::FormatUnixTime(unsigned long unixtime, int flags)
 {
     std::string output;
 
-    std::string daynames[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-    std::string monthnames[] = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
+
     
     struct std::tm *corrected;
 

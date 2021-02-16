@@ -69,6 +69,9 @@
     <ClCompile Include="processlocations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\imgui-master\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loadjson.h">

@@ -76,6 +76,10 @@ void Gui::MakeGUI(LocationHistory * lh)
 	}
 
 
+	ImGui::ShowDemoWindow();
+	//ImGui::ShowStyleEditor();
+
+
 	ImGui::Begin("Path drawing");
 	ImGui::Checkbox("Show paths", &options->showPaths);
 	ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
@@ -95,7 +99,8 @@ void Gui::MakeGUI(LocationHistory * lh)
 		}
 	}
 
-	const char* daynames[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+
+
 	static ImVec4 color[7] = { ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
 	for (int i = 0; i < 7; i++) {
 		if (color[i].x < 0.0f) {
@@ -106,7 +111,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 			color[i].w = (float)options->paletteDayOfWeek[i].a / 255.0f;
 		}
 
-		if (ImGui::ColorEdit4(daynames[i], (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
+		if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
 			options->paletteDayOfWeek[i].r = (unsigned char)(color[i].x * 255.0f);
 			options->paletteDayOfWeek[i].g = (unsigned char)(color[i].y * 255.0f);
 			options->paletteDayOfWeek[i].b = (unsigned char)(color[i].z * 255.0f);

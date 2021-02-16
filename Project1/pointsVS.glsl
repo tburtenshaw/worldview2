@@ -1,4 +1,4 @@
-#version 400
+#version 330
 layout (location = 0) in vec2 vp;
 
 uniform vec4 nswe;
