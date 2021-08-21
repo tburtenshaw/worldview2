@@ -96,7 +96,8 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 
 	float detaillevel;
 
-
+	PathPlotLocation();
+	PathPlotLocation(float lat, float lon, unsigned long ts);
 };
 
 
@@ -111,6 +112,7 @@ public:
 	//paths
 	float linewidth;
 	float cycle;
+	int colourby;
 	RGBA paletteDayOfWeek[7]
 	
 	{ {0x32,0x51,0xA7,0xff },

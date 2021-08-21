@@ -99,6 +99,9 @@ void Gui::MakeGUI(LocationHistory * lh)
 		}
 	}
 
+	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year"};
+	ImGui::Combo("Colour by", &options->colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
+
 
 
 	static ImVec4 color[7] = { ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded

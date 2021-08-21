@@ -54,6 +54,20 @@ LocationHistory::~LocationHistory()
 	delete heatmap;
 }
 
+PathPlotLocation::PathPlotLocation()
+	:longitude(0.0f), latitude(0.0f), timestamp(0),  detaillevel(0.0f)
+{
+
+}
+
+PathPlotLocation::PathPlotLocation(float lat, float lon, unsigned long ts)	//constructor
+{
+	latitude = lat;
+	longitude = lon;
+	timestamp = ts;
+
+}
+
 GlobalOptions::GlobalOptions()
 {
 	seconds = 0;

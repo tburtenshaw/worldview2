@@ -6,6 +6,7 @@ class Region;
 struct RECTDIMENSION;
 
 
+
 namespace Gui {
 	void ShowLoadingWindow(LocationHistory* lh);
 	void MakeGUI(LocationHistory* lh);

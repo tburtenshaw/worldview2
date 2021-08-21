@@ -76,6 +76,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	BOOL rf;
 	int result;	//zero if no problems.
 	lh->totalbytesread = 0;
+	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing) 
 
 	readbytes = 1;
 	while (readbytes) {

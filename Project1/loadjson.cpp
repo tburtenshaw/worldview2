@@ -182,9 +182,9 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<PathPlotLocation>& loc)
 
 		newlat = (dy / dx) * (180 - jsr->location.longitude) + jsr->location.latitude;
 
-		newloc.detaillevel = 0;//?don't draw
+		newloc.detaillevel = 0.0;//?don't draw
 		newloc.latitude = newlat;
-		newloc.longitude = -180;
+		newloc.longitude = -180.0;
 		//newloc.timestamp = jsr->location.timestamp*(proportionNew)+ jsr->oldlocation.timestamp*(1-proportionNew);
 		loc.push_back(newloc);
 
