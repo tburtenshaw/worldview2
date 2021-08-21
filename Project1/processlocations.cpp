@@ -41,11 +41,13 @@ void OptimiseDetail(std::vector<PathPlotLocation>& loc) {
 				//printf("Testing %i %f.", i,distanceToTest);
 				if (FurtherThan(&detail[i], iter._Ptr, distanceToTest)) {
 					//printf(" %f.", distanceToTest);
-					detail[i].longitude = iter->longitude;
-					detail[i].latitude = iter->latitude;
+					
 
-					for (int e = i + 1; e < numberOfDetailLevels; e++) {
-						detail[e] = detail[i];
+					for (int e = i; e < numberOfDetailLevels; e++) {	//once we've found a point, this is propagated along all the other high detail levels
+						detail[i].longitude = iter->longitude;
+						detail[i].latitude = iter->latitude;
+
+						//detail[e] = detail[i];
 					}
 					iter->detaillevel = distanceToTest / power;//we'll move up
 					//count[i]++;

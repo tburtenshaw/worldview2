@@ -36,17 +36,6 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	float p;
 	p = 0;
 	
-	/*
-	for (int x = 0; x < pLocationHistory->heatmap->width; x++) {
-		for (int y = 0; y < pLocationHistory->heatmap->height; y++) {
-			if (y % 2) { pixel[x + y * width] = x - y % 2; }
-			else pixel[x + y * width] = 1;
-			maxPixel = x;
-		}
-	}
-	return;
-	*/
-	
 
 	//clamp to MAX_HEATMAP_DIMENSION
 	width = std::min(pLocationHistory->windowDimensions->width, MAX_HEATMAP_DIMENSION);
@@ -169,6 +158,9 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 	if (matrixrow > 100) { matrixrow = 100; }
 	if (matrixrow < 4) { return; }	//as sigma less than 0.4 doesn't blur
 
+	if (height < 3) { return; } //no point if the screen is tiny
+	if (width < 3) { return; }
+
 	//I left the matrix as int, as I'm more confident that it'll be stopped at zero.
 	//As the the shader taking the loga
 	static const int gaussianMatrix[101][44] = {	
@@ -276,11 +268,11 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 	};
 
-	float factor;
-	float totalfactors;
+	long factor;
+	long totalfactors;
 	int coeffposition;
 
-	float cropfactor=1;//choosing 2, makes the blurred part half the width and height
+	float cropfactor=1.0;//choosing 2, makes the blurred part half the width and height
 
 	cropfactor = overdrawfactor;
 
@@ -291,7 +283,7 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 	int xend = width / 2 + width / (2.0 * cropfactor);
 
 
-	if (matrixrow > 3) {	//no blur less than this.
+	//if (matrixrow > 3) {	//no blur less than this. (shouldn't need, as already returned above
 		//blur horizontal
 		float* secondsHoriz;
 
@@ -334,7 +326,7 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 						}
 					}
 
-					pixel[x + y * width] /= totalfactors;
+					pixel[x + y * width] /= (float)totalfactors;
 				}
 			}
 
@@ -390,10 +382,10 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 		}
 		
-		printf("\nH%i W:%i sz:%zi. xend %i, yend:%i\n", height, width, sizeof(secondsVert),xend, yend);
+		//printf("\nH%i W:%i sz:%zi. xend %i, yend:%i\n", height, width, sizeof(secondsVert),xend, yend);
 		free(secondsVert);
 		
-	}
+	//}
 }
 
 void Heatmap::MakeDirty()

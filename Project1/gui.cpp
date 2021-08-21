@@ -15,9 +15,14 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 {
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
 	ImGui::SetNextWindowPos(ImVec2(200.0f, 300.0f));
-	ImGui::Begin("Loading", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+	ImGui::Begin("Loading Location History", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 	float p = (float)lh->totalbytesread / (float)lh->filesize;
 	if (lh->totalbytesread < lh->filesize) {
+		char displayfilename[260];
+		size_t i;
+		wcstombs_s(&i, displayfilename, 260, lh->filename.c_str(), 259);
+
+		ImGui::Text("File name: %s", displayfilename);
 		ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh->totalbytesread / 0x100000, (float)lh->filesize / 0x100000);
 	}
 	else {
@@ -42,7 +47,7 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	char displayfilename[260];
 	size_t i;
-	wcstombs_s(&i, displayfilename,260, lh->filename.c_str(), 260);
+	wcstombs_s(&i, displayfilename,260, lh->filename.c_str(), 259);
 
 	ImGui::Text("File name: %s",displayfilename);
 	ImGui::Text("File size: %i", lh->filesize);
@@ -284,7 +289,7 @@ bool Gui::ChooseFile(LocationHistory * lh)
 	ofn.nMaxFile = sizeof(filename);
 	ofn.lpstrTitle = L"Import";
 	ofn.nFilterIndex = 1;
-	//strcpy(filename, "*.json;");
+	
 #pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
 	std::mbstowcs(filename, "*.json;", 7);
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY |OFN_EXPLORER;

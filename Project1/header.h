@@ -247,6 +247,7 @@ void MakeHighresImageTexture(unsigned int* texture);
 void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
 void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
+void DrawFrameBuffer(LocationHistory* lh);
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 
@@ -261,3 +262,5 @@ void DrawPaths(MapPathInfo* mapPathInfo);
 void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
 void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
+
+

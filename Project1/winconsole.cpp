@@ -65,7 +65,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(jsonfile, &filesize);
 	lh->filesize = filesize.QuadPart;
-	printf("filesize: %i\n", lh->filesize);
+	printf("File size: %i\n", lh->filesize);
 
 
 	memset(&jrs, 0, sizeof(jrs));
@@ -82,7 +82,7 @@ int OpenAndReadJSON(LocationHistory * lh)
 	while (readbytes) {
 		rf = ReadFile(jsonfile, buffer, READ_BUFFER_SIZE - 1, &readbytes, NULL);
 		if (rf == false) {
-			printf("failed reading the file");
+			printf("Failed reading the file.\n");
 			return 1;
 		}
 		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations, lh);
@@ -91,17 +91,13 @@ int OpenAndReadJSON(LocationHistory * lh)
 			readbytes = 0;	//trick the loading loop into ending
 		}
 	}
-	printf("\nfinished loading1");
+	printf("Finished loading\n");
 
 	delete[] buffer;
 	CloseHandle(jsonfile);
 
-	printf("\nopt detail");
-	CreatePathPlotLocations(lh);
-	
-	//CreatePathPlotLocations(lh);
+	CreatePathPlotLocations(lh);	//points for OpenGL are stored on another vector
 
-	printf("\nfinished loading2");
 	lh->isLoadingFile=false;
 	lh->isFullyLoaded = true;
 	lh->isInitialised = false;
@@ -266,16 +262,9 @@ int StartGLProgram(LocationHistory * lh)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-		//draw FBO
-		lh->fboInfo->fboBGInfo.shader->UseMe();
-		lh->fboInfo->fboBGInfo.shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 
-		glActiveTexture(GL_TEXTURE0 + 4);
-		glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
-		glDisable(GL_DEPTH_TEST);
-		glBindVertexArray(lh->fboInfo->fboBGInfo.vao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
+		//draw the FBO onto the screen
+		DrawFrameBuffer(lh);
 
 
 		if (lh->isInitialised && lh->isFullyLoaded) {
@@ -489,7 +478,14 @@ void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int heigh
 
 void DrawFrameBuffer(LocationHistory* lh)
 {
+	lh->fboInfo->fboBGInfo.shader->UseMe();
+	lh->fboInfo->fboBGInfo.shader->SetUniformFromFloats("resolution", (float)lh->windowDimensions->width, (float)lh->windowDimensions->height);
 
+	glActiveTexture(GL_TEXTURE0 + 4);
+	glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
+	glDisable(GL_DEPTH_TEST);
+	glBindVertexArray(lh->fboInfo->fboBGInfo.vao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	return;
 }
@@ -658,10 +654,10 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 
 int main(int argc, char** argv)
 {
-    std::cout << "Hello World!\n";
-	pLocationHistory = new LocationHistory;
+	//pLocationHistory = new LocationHistory;
+	LocationHistory locationHistory;
+	pLocationHistory = &locationHistory;
 
-	
 	pLocationHistory->isFileChosen = true;
 	if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
 		std::thread loadingthread(OpenAndReadJSON, pLocationHistory);
