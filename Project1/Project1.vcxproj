@@ -210,6 +210,9 @@
     <None Include="pointsFS.glsl" />
     <None Include="pointsGS.glsl" />
     <None Include="pointsVS.glsl" />
+    <None Include="regionsFS.glsl" />
+    <None Include="regionsGS.glsl" />
+    <None Include="regionsVS.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

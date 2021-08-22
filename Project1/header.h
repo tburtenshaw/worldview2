@@ -18,6 +18,7 @@ class FrameBufferObjectInfo;
 class BackgroundInfo;
 class MapPathInfo;
 class MapPointsInfo;
+class MapRegionsInfo;
 class Region;
 class MovingTarget;
 class MouseActions;
@@ -173,6 +174,7 @@ public:
 	BackgroundInfo *bgInfo;
 	MapPathInfo *pathInfo;
 	MapPointsInfo *pointsInfo;
+	MapRegionsInfo* regionsInfo;
 
 	HighResManager* highres;
 
@@ -238,8 +240,14 @@ public:
 
 };
 
+class MapRegionsInfo {
+public:
+
+};
+
 
 int StartGLProgram(LocationHistory* lh);
+void DisplayIfGLError(const char* message, bool alwaysshow);
 
 void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);
@@ -264,3 +272,5 @@ void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
 
 
+//regions
+void DrawRegions(MapRegionsInfo* mapRegionsInfo);

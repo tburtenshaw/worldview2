@@ -139,5 +139,14 @@
     <None Include="fboVS.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="regionsFS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="regionsGS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="regionsVS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

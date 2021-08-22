@@ -32,24 +32,23 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::MakeGUI(LocationHistory * lh)
+void Gui::MakeGUI(LocationHistory* lh)
 {
-	GlobalOptions * options;
+	GlobalOptions* options;
 	options = lh->globalOptions;
 
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
 	sigfigs = Gui::BestSigFigsFormat(lh->viewNSWE, lh->windowDimensions);
-	
+
 	ImGui::Begin("Map information");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	
 
 	char displayfilename[260];
 	size_t i;
-	wcstombs_s(&i, displayfilename,260, lh->filename.c_str(), 259);
+	wcstombs_s(&i, displayfilename, 260, lh->filename.c_str(), 259);
 
-	ImGui::Text("File name: %s",displayfilename);
+	ImGui::Text("File name: %s", displayfilename);
 	ImGui::Text("File size: %i", lh->filesize);
 
 	sCoords = "Cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
@@ -59,17 +58,14 @@ void Gui::MakeGUI(LocationHistory * lh)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->viewNSWE->north, lh->viewNSWE->south, lh->viewNSWE->west, lh->viewNSWE->east);
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->earliesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME| MyTimeZone::FormatFlags::DMY).c_str());
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->earliesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->latesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-
 	Gui::ShowRegionInfo(lh->regions[0]);
-
 
 	ImGui::End();
 
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
-		
 		if (lh->regions[i]->toDelete) {
 			lh->regions.erase(lh->regions.begin() + i);
 		}
@@ -80,21 +76,19 @@ void Gui::MakeGUI(LocationHistory * lh)
 		}
 	}
 
-
 	ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
-
 
 	ImGui::Begin("Path drawing");
 	ImGui::Checkbox("Show paths", &options->showPaths);
 	ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
 
 	const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years", "Other" };
-	const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f};
-	
+	const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f };
+
 	static int uiCycleSelect = 0;
 	ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames));
-	if (uiCycleSelect < IM_ARRAYSIZE(cyclenames)-1) {
+	if (uiCycleSelect < IM_ARRAYSIZE(cyclenames) - 1) {
 		options->cycle = cycleresults[uiCycleSelect];
 	}
 	ImGui::SliderFloat("Cycle", &options->cycle, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f", 6.0f);
@@ -104,10 +98,8 @@ void Gui::MakeGUI(LocationHistory * lh)
 		}
 	}
 
-	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year"};
+	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year" };
 	ImGui::Combo("Colour by", &options->colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
-
-
 
 	static ImVec4 color[7] = { ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
 	for (int i = 0; i < 7; i++) {
@@ -131,18 +123,18 @@ void Gui::MakeGUI(LocationHistory * lh)
 
 	ImGui::End();
 
-	static float oldBlur=0;
+	static float oldBlur = 0;
 	static float oldMinimumaccuracy = 0;
 	static float oldBlurperaccurary = 0;
 	ImGui::Begin("Heatmap");
 	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
-	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur,0.0f,10.0f, "%.1f");	
+	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 10.0f, "%.1f");
 	ImGui::Checkbox("_Predict paths", &options->predictpath);
 	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
 	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
 	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
-	
+
 	if (options->blurperaccuracy != oldBlurperaccurary) {
 		oldBlurperaccurary = options->blurperaccuracy;
 		lh->heatmap->MakeDirty();
@@ -194,9 +186,6 @@ void Gui::MakeGUI(LocationHistory * lh)
 		lh->mouseInfo->mouseMode = MouseMode::RegionSelect;
 	}
 
-
-
-
 	ImGui::End();
 
 	return;
@@ -206,7 +195,7 @@ void Gui::ShowRegionInfo(Region* r)
 {
 	ImGui::Text("N:%.4f S:%.4f W:%.4f E:%.4f", r->nswe.north, r->nswe.south, r->nswe.west, r->nswe.east);
 	ImGui::Text("Height: %.2f Width:%.2f", r->nswe.height(), r->nswe.width());
-	
+
 	{
 		float maxhour = 0;
 		float fhours[24];
@@ -254,7 +243,7 @@ void Gui::ListDatesInRegion(Region* r)
 	std::vector<const char*> cstrings{};
 	for (const auto& string : dates)
 		cstrings.push_back(string.c_str());
-	
+
 	int i;
 	//ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
 	r->minimumsecondstobeincludedinday = hours * 60 * 60;
@@ -262,10 +251,10 @@ void Gui::ListDatesInRegion(Region* r)
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 
-const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION *rect)
+const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION* rect)
 {
 	float dpp;	//degrees per pixel
-	dpp = nswe->width()/rect->width;
+	dpp = nswe->width() / rect->width;
 
 	if (dpp > 1)	return "%.0f";
 	if (dpp > 0.1)	return "%.1f";
@@ -275,9 +264,9 @@ const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION *rect)
 	return "%.5f";
 }
 
-bool Gui::ChooseFile(LocationHistory * lh)
+bool Gui::ChooseFile(LocationHistory* lh)
 {
-	OPENFILENAME ofn;	
+	OPENFILENAME ofn;
 	wchar_t filename[MAX_PATH];
 
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -289,15 +278,15 @@ bool Gui::ChooseFile(LocationHistory * lh)
 	ofn.nMaxFile = sizeof(filename);
 	ofn.lpstrTitle = L"Import";
 	ofn.nFilterIndex = 1;
-	
+
 #pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
 	std::mbstowcs(filename, "*.json;", 7);
-	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY |OFN_EXPLORER;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_EXPLORER;
 	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0All Supported Files (*.json)\0*.json\0Google History JSON Files (*.json)\0*.json\0\0";
 
 	bool result;
 	result = GetOpenFileName(&ofn);
-	
+
 	if (result) {
 		wprintf(L"Filename: %s\n", filename);
 		lh->filename = filename;

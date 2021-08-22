@@ -11,10 +11,9 @@ bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {
 }
 
 void OptimiseDetail(std::vector<PathPlotLocation>& loc) {
-
 	constexpr int numberOfDetailLevels = 80;
 
-	std::array<PathPlotLocation,numberOfDetailLevels> detail;
+	std::array<PathPlotLocation, numberOfDetailLevels> detail;
 	//std::array<int, numberOfDetailLevels> count; //count is only used for my info when deciding best sizes.
 
 	detail[0].longitude = -500.0f;
@@ -26,7 +25,6 @@ void OptimiseDetail(std::vector<PathPlotLocation>& loc) {
 	const float power = 0.8f;
 
 	//printf("\nMax size: %zi, size: %zi", loc.max_size(), loc.size());
-
 
 	for (std::vector<PathPlotLocation>::iterator iter = loc.begin(); iter != loc.end(); ++iter) {
 		float distanceToTest = 2.0;
@@ -41,7 +39,6 @@ void OptimiseDetail(std::vector<PathPlotLocation>& loc) {
 				//printf("Testing %i %f.", i,distanceToTest);
 				if (FurtherThan(&detail[i], iter._Ptr, distanceToTest)) {
 					//printf(" %f.", distanceToTest);
-					
 
 					for (int e = i; e < numberOfDetailLevels; e++) {	//once we've found a point, this is propagated along all the other high detail levels
 						detail[i].longitude = iter->longitude;
@@ -61,30 +58,24 @@ void OptimiseDetail(std::vector<PathPlotLocation>& loc) {
 		}
 
 		//printf("\n%f, %f. %f", iter->longitude, iter->latitude, iter->detaillevel);
-
 	}
-
 
 	return;
 }
 
 void CreatePathPlotLocations(LocationHistory* lh)	//this shouldn't be in the loading .cpp, as it's more a processing step
 {
-//	PathPlotLocation pathPlotLoc;
-	
+	//	PathPlotLocation pathPlotLoc;
+
 	lh->pathPlotLocations.reserve(lh->locations.size());	//it'll be as big as the number of locations
 	for (std::vector<LOCATION>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
+		//		pathPlotLoc.latitude = (float)iter->latitude;
+			//	pathPlotLoc.longitude = (float)iter->longitude;
 
-//		pathPlotLoc.latitude = (float)iter->latitude;
-	//	pathPlotLoc.longitude = (float)iter->longitude;
+				//pathPlotLoc.timestamp = iter->timestamp;
 
-
-		//pathPlotLoc.timestamp = iter->timestamp;
-
-		//lh->pathPlotLocations.push_back(pathPlotLoc);
+				//lh->pathPlotLocations.push_back(pathPlotLoc);
 		lh->pathPlotLocations.emplace_back((float)iter->latitude, (float)iter->longitude, iter->timestamp);
-
-
 	}
 
 	OptimiseDetail(lh->pathPlotLocations);
@@ -94,23 +85,22 @@ void CreatePathPlotLocations(LocationHistory* lh)	//this shouldn't be in the loa
 
 void ColourPathPlot(LocationHistory* lh)
 {
-	
 	int i = 0;
 	for (std::vector <PathPlotLocation> ::iterator it = lh->pathPlotLocations.begin(); it != lh->pathPlotLocations.end(); ++it) {
 		//it->rgba = ColourByHourOfDay(it->timestamp, lh);
 		it->rgba = ColourByDayOfWeek(it->timestamp, lh);
 	}
-		
+
 	lh->globalOptions->regenPathColours = false;
-	
+
 	return;
 }
 
 RGBA ColourByDayOfWeek(unsigned long ts, LocationHistory* lh)
 {
 	RGBA colour;
-		
-	unsigned long dayofweek=	(MyTimeZone::FixToLocalTime(ts) / 86400 + 4) % 7;
+
+	unsigned long dayofweek = (MyTimeZone::FixToLocalTime(ts) / 86400 + 4) % 7;
 
 	colour = lh->globalOptions->paletteDayOfWeek[dayofweek];
 
@@ -123,14 +113,12 @@ RGBA ColourByHourOfDay(unsigned long ts, LocationHistory* lh)
 
 	unsigned long fixedTS = MyTimeZone::FixToLocalTime(ts);
 
-	unsigned long secondsthroughday = fixedTS % (3600* 24);
+	unsigned long secondsthroughday = fixedTS % (3600 * 24);
 
 	colour.a = 10;
 	colour.r = 255;
-	colour.g = (256*secondsthroughday / (3600 * 24));
+	colour.g = (256 * secondsthroughday / (3600 * 24));
 	colour.b = 0;
-
 
 	return colour;
 }
-
