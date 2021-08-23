@@ -197,11 +197,17 @@ int StartGLProgram(LocationHistory* lh)
 	//make a new region
 	lh->regions.push_back(new Region());
 
-	/*REGIONS*/
+	class DisplayRegion {
+	public:
+		float north, south, west, east;
+		RGBA colour;
+	};
 
-	static const GLfloat g_vertex_buffer_data[] = {
-		-180.0f,-180.0f, 178.0f,179.1f,
-		-0.1f, 0.0f, 0.5f, 1.0f,
+	/*REGIONS*/
+	/*
+	GLfloat g_vertex_buffer_data[] = {
+		-80.0f,-180.0f, 178.0f, 179.1f,
+		174.0f, -36.0f, 176.0f, -37.0f,
 
 		-0.12f,0.0,0.2,0.5,
 		0.1,0.01,200,201,
@@ -211,8 +217,32 @@ int StartGLProgram(LocationHistory* lh)
 		0.1,-0.2,20,14,
 		0.2,0.2,0.3,0.3
 	
-	
 	};
+	*/
+
+	GLfloat g_vertex_buffer_data[] = {
+0,1,2,3,
+1,2,20,30,
+3,4,30,40,
+5,6,50,60,
+
+7,8,70,80,
+17,18,90,100,
+25,28,120,140,
+30,31,130,131,
+
+0,-1,2,-3,
+1,-2,20,-30,
+3,-4,30,-40,
+5,-6,50,-60,
+
+7,-8,70,-80,
+17,-18,90,-100,
+25,-28,120,-140,
+30,-31,130,-131
+
+	};
+	
 
 	unsigned int regionsVAO;
 
@@ -302,8 +332,32 @@ int StartGLProgram(LocationHistory* lh)
 			s.SetUniformFromFloats("resolution", (float)lh->windowDimensions->width, (float)lh->windowDimensions->height);
 			s.SetUniformFromNSWE("nswe", lh->viewNSWE);
 			glBindBuffer(GL_ARRAY_BUFFER, regionsVBO);
+			
+			//update
+			
+			//Needs to happen only if regions have changed
+			int lastRegion = lh->regions.size() - 1;
+			
+			if (lastRegion > 0) {
+				for (int r = 1; r <= lastRegion;r++) {
+					if (r == 3) {
+						r = 3;
+					}
+					g_vertex_buffer_data[4 * (r-1) + 0 ] = lh->regions[r]->nswe.west;
+					g_vertex_buffer_data[4 * (r-1) + 1 ] = lh->regions[r]->nswe.north;
+					g_vertex_buffer_data[4 * (r-1) + 2 ] = lh->regions[r]->nswe.east;
+					g_vertex_buffer_data[4 * (r-1) + 3 ] = lh->regions[r]->nswe.south;
+
+					//printf("%i %i ", lastRegion * sizeof(GL_FLOAT) * 4, sizeof(g_vertex_buffer_data));
+					glBufferSubData(GL_ARRAY_BUFFER, ((long)r - 1) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT), &g_vertex_buffer_data[(r-1)* 4]);
+				}
+			}
+
+
+			
+			
 			glBindVertexArray(regionsVAO);
-			glDrawArrays(GL_LINES, 0, 8);//(long)options->seconds % 9);
+			glDrawArrays(GL_LINES, 0, 32);//needs to be the number of vertices (not lines)
 			glBindVertexArray(0);
 			DisplayIfGLError("After DrawRegions.", false);
 		}

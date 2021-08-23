@@ -145,12 +145,12 @@ void RegionSelect(MouseActions* mouse, MovingTarget* viewNSWE, LocationHistory* 
 
 			lh->regions.push_back(new Region());
 		}
-		else {
+		//else {
 			
 			lh->regions.back()->SetNSWE(mouse->longlatMouse.latitude,  mouse->dragStartLatLong.latitude, mouse->longlatMouse.longitude, mouse->dragStartLatLong.longitude);
 			
 			lh->regions.back()->Populate(lh);
-		}
+		//}
 	}
 	if (mouse->lmbState == GLFW_RELEASE) {
 		if (mouse->IsDragging()) {
