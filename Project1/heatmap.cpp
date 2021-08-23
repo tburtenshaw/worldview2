@@ -41,7 +41,7 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	width = std::min(pLocationHistory->windowDimensions->width, MAX_HEATMAP_DIMENSION);
 	height = std::min(pLocationHistory->windowDimensions->height, MAX_HEATMAP_DIMENSION);
 
-	//printf("Heatmap: W%i H%i\n",width,height);
+	printf("Heatmap pixel size: W%i H%i. West: %f, East: %f, Map width: %f\n",width,height,nswe->west,nswe->east,nswe->width());
 
 	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
@@ -51,14 +51,22 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 		if (tsdiff > 60*60*24*365) { tsdiff = 0; }	//if the change in time is over a year
 		if (tsdiff < 0) { tsdiff = 0; }	//or negative, then we don't use it
 
-		if (options->blurperaccuracy) {	//this reduces precision to float
-			fx = ((float)iter->longitude - (float)nswe->west) / (float)nswe->width() * (float)width;
-			fy = ((float)nswe->north - (float)iter->latitude) / (float)nswe->height() * (float)height;
+		double wrappedLongitude;
+		wrappedLongitude = iter->longitude;
+
+		//if the viewport is too far west, then move data over
+		if ((nswe->width() < 360.0) && (nswe->west <= -180.0) &&(wrappedLongitude > nswe->east))	{
+					wrappedLongitude -= 360.0;
 		}
-		else {
-			fx = (iter->longitude - (double)nswe->west) / (double)nswe->width() * (double)width;
-			fy = ((double)nswe->north - iter->latitude) / (double)nswe->height() * (double)height;
+
+		//same with the eastern data
+		if ((nswe->width() < 360.0) && (nswe->east >= 180.0) && (wrappedLongitude < nswe->west)) {
+			wrappedLongitude += 360.0;
 		}
+
+		fx = (wrappedLongitude - (double)nswe->west) / (double)nswe->width() * (double)width;
+		fy = ((double)nswe->north - iter->latitude) / (double)nswe->height() * (double)height;
+		
 		
 		x = (int)(fx);
 		y = (int)(fy);
