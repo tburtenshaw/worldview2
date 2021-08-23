@@ -199,26 +199,11 @@ int StartGLProgram(LocationHistory* lh)
 
 	class DisplayRegion {
 	public:
-		float north, south, west, east;
+		float west, north, east, south;
 		RGBA colour;
 	};
 
 	/*REGIONS*/
-	/*
-	GLfloat g_vertex_buffer_data[] = {
-		-80.0f,-180.0f, 178.0f, 179.1f,
-		174.0f, -36.0f, 176.0f, -37.0f,
-
-		-0.12f,0.0,0.2,0.5,
-		0.1,0.01,200,201,
-		0.2,0.2,0.3,0.3,
-	
-		0.1,0.3,0.7,0.5,
-		0.1,-0.2,20,14,
-		0.2,0.2,0.3,0.3
-	
-	};
-	*/
 
 	GLfloat g_vertex_buffer_data[] = {
 0,1,2,3,
@@ -240,9 +225,7 @@ int StartGLProgram(LocationHistory* lh)
 17,-18,90,-100,
 25,-28,120,-140,
 30,-31,130,-131
-
 	};
-	
 
 	unsigned int regionsVAO;
 
@@ -320,11 +303,11 @@ int StartGLProgram(LocationHistory* lh)
 					glBindBuffer(GL_ARRAY_BUFFER, lh->pathInfo->vbo);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
 				}
-				//DrawPaths(lh->pathInfo);
+				DrawPaths(lh->pathInfo);
 			}
 
 			if (options->showPoints) {
-				//DrawPoints(lh->pointsInfo);
+				DrawPoints(lh->pointsInfo);
 			}
 
 			DrawRegions(lh->regionsInfo);	//this draws the selection box, and the rectangle where regions are
@@ -332,30 +315,27 @@ int StartGLProgram(LocationHistory* lh)
 			s.SetUniformFromFloats("resolution", (float)lh->windowDimensions->width, (float)lh->windowDimensions->height);
 			s.SetUniformFromNSWE("nswe", lh->viewNSWE);
 			glBindBuffer(GL_ARRAY_BUFFER, regionsVBO);
-			
+
 			//update
-			
+
 			//Needs to happen only if regions have changed
 			int lastRegion = lh->regions.size() - 1;
-			
+
 			if (lastRegion > 0) {
-				for (int r = 1; r <= lastRegion;r++) {
+				for (int r = 1; r <= lastRegion; r++) {
 					if (r == 3) {
 						r = 3;
 					}
-					g_vertex_buffer_data[4 * (r-1) + 0 ] = lh->regions[r]->nswe.west;
-					g_vertex_buffer_data[4 * (r-1) + 1 ] = lh->regions[r]->nswe.north;
-					g_vertex_buffer_data[4 * (r-1) + 2 ] = lh->regions[r]->nswe.east;
-					g_vertex_buffer_data[4 * (r-1) + 3 ] = lh->regions[r]->nswe.south;
+					g_vertex_buffer_data[4 * (r - 1) + 0] = lh->regions[r]->nswe.west;
+					g_vertex_buffer_data[4 * (r - 1) + 1] = lh->regions[r]->nswe.north;
+					g_vertex_buffer_data[4 * (r - 1) + 2] = lh->regions[r]->nswe.east;
+					g_vertex_buffer_data[4 * (r - 1) + 3] = lh->regions[r]->nswe.south;
 
 					//printf("%i %i ", lastRegion * sizeof(GL_FLOAT) * 4, sizeof(g_vertex_buffer_data));
-					glBufferSubData(GL_ARRAY_BUFFER, ((long)r - 1) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT), &g_vertex_buffer_data[(r-1)* 4]);
+					glBufferSubData(GL_ARRAY_BUFFER, ((long)r - 1) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT), &g_vertex_buffer_data[(r - 1) * 4]);
 				}
 			}
 
-
-			
-			
 			glBindVertexArray(regionsVAO);
 			glDrawArrays(GL_LINES, 0, 32);//needs to be the number of vertices (not lines)
 			glBindVertexArray(0);
@@ -466,7 +446,7 @@ void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, NULL);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	//we don't wrap this at the moment, as funny things happen when zooming
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);	//this is the poles
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

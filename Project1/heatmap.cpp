@@ -55,12 +55,12 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 		wrappedLongitude = iter->longitude;
 
 		//if the viewport is too far west, then move data over
-		if ((nswe->width() < 360.0) && (nswe->west <= -180.0) &&(wrappedLongitude > nswe->east))	{
+		if ((nswe->east< 180.0) && (nswe->west <= -180.0) &&(wrappedLongitude > nswe->east))	{
 					wrappedLongitude -= 360.0;
 		}
 
 		//same with the eastern data
-		if ((nswe->width() < 360.0) && (nswe->east >= 180.0) && (wrappedLongitude < nswe->west)) {
+		if ((nswe->west > -180.0) && (nswe->east >= 180.0) && (wrappedLongitude < nswe->west)) {
 			wrappedLongitude += 360.0;
 		}
 
