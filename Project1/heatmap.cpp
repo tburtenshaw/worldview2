@@ -41,7 +41,7 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	width = std::min(pLocationHistory->windowDimensions->width, MAX_HEATMAP_DIMENSION);
 	height = std::min(pLocationHistory->windowDimensions->height, MAX_HEATMAP_DIMENSION);
 
-	printf("Heatmap pixel size: W%i H%i. West: %f, East: %f, Map width: %f\n",width,height,nswe->west,nswe->east,nswe->width());
+	//printf("Heatmap pixel size: W%i H%i. West: %f, East: %f, Map width: %f\n",width,height,nswe->west,nswe->east,nswe->width());
 
 	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
@@ -431,7 +431,7 @@ Heatmap::~Heatmap()
 	return;
 }
 
-
+/* The below have nothing directly to do with heatmaps, I need to move them!*/
 BackgroundInfo::BackgroundInfo()
 {
 	vao = 0;
@@ -475,3 +475,4 @@ MapPointsInfo::~MapPointsInfo()
 {
 	delete shader;
 }
+

@@ -24,6 +24,7 @@ class MovingTarget;
 class MouseActions;
 class HighResManager;
 class RGBA;
+class DisplayRegion;
 
 //typedef struct sLocation ;
 
@@ -228,6 +229,13 @@ public:
 };
 
 
+class DisplayRegion {	//used for holding the opengl buffer 
+public:
+	//float west, north, east, south;
+	float f[4];
+	//RGBA colour;
+};
+
 class MapPointsInfo {
 public:
 	MapPointsInfo();
@@ -237,12 +245,18 @@ public:
 	unsigned int vbo;
 
 	Shader* shader;
-
 };
 
 class MapRegionsInfo {
 public:
+	MapRegionsInfo();
+	~MapRegionsInfo();
 
+	unsigned int vao;
+	unsigned int vbo;
+	Shader* shader;
+
+	std::vector<DisplayRegion> displayRegions;
 };
 
 
@@ -273,4 +287,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo);
 
 
 //regions
+void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo);
+void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
+void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
 void DrawRegions(MapRegionsInfo* mapRegionsInfo);

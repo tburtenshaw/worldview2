@@ -36,6 +36,7 @@ LocationHistory::LocationHistory()
 	bgInfo = new BackgroundInfo;
 	pathInfo = new MapPathInfo;
 	pointsInfo = new MapPointsInfo;
+	regionsInfo = new MapRegionsInfo;
 
 	highres = new HighResManager;
 
@@ -55,7 +56,7 @@ LocationHistory::~LocationHistory()
 }
 
 PathPlotLocation::PathPlotLocation()
-	:longitude(0.0f), latitude(0.0f), timestamp(0),  detaillevel(0.0f)
+	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f)
 {
 
 }

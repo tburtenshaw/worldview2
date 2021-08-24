@@ -196,13 +196,12 @@ int StartGLProgram(LocationHistory* lh)
 
 	//make a new region
 	lh->regions.push_back(new Region());
+	lh->regionsInfo->displayRegions.resize(1);
 
-	class DisplayRegion {
-	public:
-		float west, north, east, south;
-		RGBA colour;
-	};
 
+	SetupRegionsBufferDataAndVertexAttribArrays(lh->regionsInfo);
+
+	SetupRegionsShaders(lh->regionsInfo);
 	/*REGIONS*/
 
 	GLfloat g_vertex_buffer_data[] = {
@@ -227,29 +226,8 @@ int StartGLProgram(LocationHistory* lh)
 30,-31,130,-131
 	};
 
-	unsigned int regionsVAO;
 
-	glGenVertexArrays(1, &regionsVAO);
-	glBindVertexArray(regionsVAO);
 
-	unsigned int regionsVBO;
-
-	glGenBuffers(1, &regionsVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, regionsVBO);
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	Shader s;
-	s.LoadShaderFromFile("regionsVS.glsl", GL_VERTEX_SHADER);
-	s.LoadShaderFromFile("regionsFS.glsl", GL_FRAGMENT_SHADER);
-	s.LoadShaderFromFile("regionsGS.glsl", GL_GEOMETRY_SHADER);
-
-	s.CreateProgram();
-
-	DisplayIfGLError("After create program.", true);
 
 	while (!glfwWindowShouldClose(window)) {
 		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
@@ -276,10 +254,11 @@ int StartGLProgram(LocationHistory* lh)
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Draw to fbo
+		//Set the FBO as the draw surface
 		glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
 
 		DrawBackgroundAndHeatmap(lh);
+
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
@@ -310,36 +289,9 @@ int StartGLProgram(LocationHistory* lh)
 				DrawPoints(lh->pointsInfo);
 			}
 
+			UpdateDisplayRegions(lh->regionsInfo);
 			DrawRegions(lh->regionsInfo);	//this draws the selection box, and the rectangle where regions are
-			s.UseMe();
-			s.SetUniformFromFloats("resolution", (float)lh->windowDimensions->width, (float)lh->windowDimensions->height);
-			s.SetUniformFromNSWE("nswe", lh->viewNSWE);
-			glBindBuffer(GL_ARRAY_BUFFER, regionsVBO);
 
-			//update
-
-			//Needs to happen only if regions have changed
-			int lastRegion = lh->regions.size() - 1;
-
-			if (lastRegion > 0) {
-				for (int r = 1; r <= lastRegion; r++) {
-					if (r == 3) {
-						r = 3;
-					}
-					g_vertex_buffer_data[4 * (r - 1) + 0] = lh->regions[r]->nswe.west;
-					g_vertex_buffer_data[4 * (r - 1) + 1] = lh->regions[r]->nswe.north;
-					g_vertex_buffer_data[4 * (r - 1) + 2] = lh->regions[r]->nswe.east;
-					g_vertex_buffer_data[4 * (r - 1) + 3] = lh->regions[r]->nswe.south;
-
-					//printf("%i %i ", lastRegion * sizeof(GL_FLOAT) * 4, sizeof(g_vertex_buffer_data));
-					glBufferSubData(GL_ARRAY_BUFFER, ((long)r - 1) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT), &g_vertex_buffer_data[(r - 1) * 4]);
-				}
-			}
-
-			glBindVertexArray(regionsVAO);
-			glDrawArrays(GL_LINES, 0, 32);//needs to be the number of vertices (not lines)
-			glBindVertexArray(0);
-			DisplayIfGLError("After DrawRegions.", false);
 		}
 
 		//		glBindFramebuffer(GL_FRAMEBUFFER, 0);	//Get out of the FBO
@@ -692,10 +644,120 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	return;
 }
 
-void DrawRegions(MapRegionsInfo* mapRegionsInfo)
+void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
 {
+	glGenVertexArrays(1, &mapRegionsInfo->vao);
+	glBindVertexArray(mapRegionsInfo->vao);
+	
+	glGenBuffers(1, &mapRegionsInfo->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size()*sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion)/2, 0);
+	glEnableVertexAttribArray(0);
+
+	//glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
+	//glEnableVertexAttribArray(1);
+
+
 	return;
 }
+
+void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo)
+{
+	mapRegionsInfo->shader->LoadShaderFromFile("regionsVS.glsl", GL_VERTEX_SHADER);
+	mapRegionsInfo->shader->LoadShaderFromFile("regionsFS.glsl", GL_FRAGMENT_SHADER);
+	mapRegionsInfo->shader->LoadShaderFromFile("regionsGS.glsl", GL_GEOMETRY_SHADER);
+	mapRegionsInfo->shader->CreateProgram();
+
+	return;
+}
+
+void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
+{
+	int sizeOfRegionVector = pLocationHistory->regions.size();
+
+	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
+
+	if (sizeOfRegionVector > 1) {
+
+		if (mapRegionsInfo->displayRegions.size() < sizeOfRegionVector-1) {
+			mapRegionsInfo->displayRegions.resize(sizeOfRegionVector);
+			printf("increasing displayregions size to: %i\n",sizeOfRegionVector);
+			//mapRegionsInfo->displayRegions.push_back({});
+		}
+
+		for (int r = 1; r < sizeOfRegionVector; r++) {
+			printf("r:%i of %i.\t", r, sizeOfRegionVector);
+
+			
+			mapRegionsInfo->displayRegions[r - 1].f[0]= pLocationHistory->regions[r]->nswe.west;
+			mapRegionsInfo->displayRegions[r - 1].f[1] = pLocationHistory->regions[r]->nswe.north;
+			mapRegionsInfo->displayRegions[r - 1].f[2] = pLocationHistory->regions[r]->nswe.east;
+			mapRegionsInfo->displayRegions[r - 1].f[3] = pLocationHistory->regions[r]->nswe.south;
+
+			//mapRegionsInfo->displayRegions[r - 1].colour.r = 0xff;
+			//mapRegionsInfo->displayRegions[r - 1].colour.g = 0xee;
+			//mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
+			//mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
+
+			printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
+			//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
+
+		}
+	}
+	//copy the whole thing at first
+	//glBufferData(GL_ARRAY_BUFFER, (0) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT) * sizeOfRegionVector, &mapRegionsInfo->displayRegions.front());
+	
+	//As we'll usually increase the size, we won't muck around with buffersubdata (wasted a day on this!)
+	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
+	
+
+	//printf("count: %i*%i=%i.\n", mapRegionsInfo->displayRegions.size(), sizeof(DisplayRegion), mapRegionsInfo->displayRegions.size() *sizeof(DisplayRegion));
+	
+
+
+	//glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), 0);
+	//glEnableVertexAttribArray(0);
+
+
+	return;
+}
+
+void DrawRegions(MapRegionsInfo* mapRegionsInfo)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
+	mapRegionsInfo->shader->UseMe();
+	mapRegionsInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+	mapRegionsInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
+	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
+
+
+	glBindVertexArray(mapRegionsInfo->vao);
+ 	glDrawArrays(GL_LINES, 0, mapRegionsInfo->displayRegions.size()*40);//needs to be the number of vertices (not lines)
+	glBindVertexArray(0);
+	DisplayIfGLError("After DrawRegions.", false);
+	
+	return;
+}
+
+MapRegionsInfo::MapRegionsInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+
+	displayRegions = {};
+
+}
+
+MapRegionsInfo::~MapRegionsInfo()
+{
+	delete shader;
+}
+
 
 void DisplayIfGLError(const char* message, bool alwaysshow)
 {
