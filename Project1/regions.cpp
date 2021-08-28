@@ -24,6 +24,7 @@ Region::Region(float n, float s, float w, float e)
 	displayname = "Region " + std::to_string(id);
 	shouldShowWindow = true;
 	toDelete = false;
+	needsRedraw = false;
 	//printf(displayname.c_str());
 
 	numberOfNextRegion++;
@@ -78,6 +79,7 @@ void Region::SetNSWE(float n, float s, float w, float e)
 		nswe.west = e;
 		nswe.east = w;
 	}
+	needsRedraw = true;
 }
 
 void Region::Populate(LocationHistory* lh)

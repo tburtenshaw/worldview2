@@ -28,6 +28,8 @@ public:
 	std::string displayname;
 	int id;
 
+	bool needsRedraw;	//if the region drawing routine needs to redraw it
+
 	bool completed;
 	bool shouldShowWindow;
 	bool toDelete;	//the next function that can, will delete this region.

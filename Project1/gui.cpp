@@ -65,10 +65,16 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	ImGui::End();
 
+	//delete any regions marked to be deleted
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->toDelete) {
 			lh->regions.erase(lh->regions.begin() + i);
+			
+			lh->regions[i-1]->needsRedraw = true;
 		}
+	}
+	
+	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->shouldShowWindow) {
 			ImGui::Begin(lh->regions[i]->displayname.c_str());
 			Gui::ShowRegionInfo(lh->regions[i]);

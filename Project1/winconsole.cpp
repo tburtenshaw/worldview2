@@ -194,41 +194,16 @@ int StartGLProgram(LocationHistory* lh)
 	lh->viewNSWE->setvalues(lh->viewNSWE->target);
 	lh->viewNSWE->movetowards(1000000000000);
 
-	//make a new region
+	//make a new region, which is the viewport
 	lh->regions.push_back(new Region());
 	lh->regionsInfo->displayRegions.resize(1);
 
 
 	SetupRegionsBufferDataAndVertexAttribArrays(lh->regionsInfo);
-
 	SetupRegionsShaders(lh->regionsInfo);
-	/*REGIONS*/
-
-	GLfloat g_vertex_buffer_data[] = {
-0,1,2,3,
-1,2,20,30,
-3,4,30,40,
-5,6,50,60,
-
-7,8,70,80,
-17,18,90,100,
-25,28,120,140,
-30,31,130,131,
-
-0,-1,2,-3,
-1,-2,20,-30,
-3,-4,30,-40,
-5,-6,50,-60,
-
-7,-8,70,-80,
-17,-18,90,-100,
-25,-28,120,-140,
-30,-31,130,-131
-	};
 
 
-
-
+	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
 		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
 			ManageMouseMoveClickAndDrag(window, lh);
@@ -678,18 +653,26 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 {
 	int sizeOfRegionVector = pLocationHistory->regions.size();
 
-	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
+	//We'll just do a global redraw if any region has changed
+	bool needsRedraw = false;
+	for (std::size_t i = 0; (i < pLocationHistory->regions.size()) && (!needsRedraw); i++) {
+		if (pLocationHistory->regions[i]->needsRedraw) {
+			needsRedraw = true;
+			pLocationHistory->regions[i]->needsRedraw = false;
+		}
+	}
 
-	if (sizeOfRegionVector > 1) {
+	if (!needsRedraw) {
+		return;
+	}
 
-		if (mapRegionsInfo->displayRegions.size() < sizeOfRegionVector-1) {
-			mapRegionsInfo->displayRegions.resize(sizeOfRegionVector);
-			printf("increasing displayregions size to: %i\n",sizeOfRegionVector);
-			//mapRegionsInfo->displayRegions.push_back({});
+		if (mapRegionsInfo->displayRegions.size() != sizeOfRegionVector-1) {
+			mapRegionsInfo->displayRegions.resize(sizeOfRegionVector-1);
+			//printf("changing displayregions size to: %i\n",sizeOfRegionVector-1);
 		}
 
 		for (int r = 1; r < sizeOfRegionVector; r++) {
-			printf("r:%i of %i.\t", r, sizeOfRegionVector);
+			//printf("r:%i of %i.\t", r, sizeOfRegionVector);
 
 			
 			mapRegionsInfo->displayRegions[r - 1].f[0]= pLocationHistory->regions[r]->nswe.west;
@@ -702,26 +685,23 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 			//mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
 			//mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
 
-			printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
+			//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
 			//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
 
 		}
-	}
+
 	//copy the whole thing at first
 	//glBufferData(GL_ARRAY_BUFFER, (0) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT) * sizeOfRegionVector, &mapRegionsInfo->displayRegions.front());
 	
+	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 	//As we'll usually increase the size, we won't muck around with buffersubdata (wasted a day on this!)
 	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
 	
 
 	//printf("count: %i*%i=%i.\n", mapRegionsInfo->displayRegions.size(), sizeof(DisplayRegion), mapRegionsInfo->displayRegions.size() *sizeof(DisplayRegion));
-	
-
 
 	//glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), 0);
 	//glEnableVertexAttribArray(0);
-
-
 	return;
 }
 
