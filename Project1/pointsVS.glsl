@@ -1,5 +1,6 @@
 #version 330
 layout (location = 0) in vec2 vp;
+layout (location = 1) in vec4 pointcolour;
 
 uniform vec4 nswe;
 uniform vec2 resolution;
@@ -16,5 +17,5 @@ void main()
 	
 	gl_Position = vec4(((vp.x-midx)/width*2),(vp.y-midy)/height*2,0,1.0);
 	
-	vcolour = vec3(0.7,0.9,0.25);
+	vcolour = pointcolour.rgb; //vec3(0.7,0.9,0.25);
 }

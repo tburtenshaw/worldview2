@@ -159,7 +159,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	ImGui::Begin("Selected");
 	ImGui::Checkbox("Show points", &options->showPoints);
-	ImGui::SliderFloat("Point radius", &options->pointradius, 0, 100, "%.1f");
+	ImGui::SliderFloat("Point radius", &options->pointradius, 0.0, 10.0, "%.1f");
 	ImGui::End();
 
 	ImGui::Begin("Toolbar");

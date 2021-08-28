@@ -590,8 +590,8 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 	glEnableVertexAttribArray(1);
 
 	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
-//	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
-//	glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
+	glEnableVertexAttribArray(2);
 
 
 	return;
@@ -695,7 +695,7 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 	//glBufferData(GL_ARRAY_BUFFER, (0) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT) * sizeOfRegionVector, &mapRegionsInfo->displayRegions.front());
 	
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
-	//As we'll usually increase the size, we won't muck around with buffersubdata (wasted a day on this!)
+	//As we'll usually change the size, we won't muck around with buffersubdata (wasted a day on this!)
 	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
 	
 

@@ -74,8 +74,8 @@ GlobalOptions::GlobalOptions()
 	seconds = 0;
 	
 	showPaths = false;
-	showPoints = false;
-	showHeatmap = true;
+	showPoints = true;
+	showHeatmap = false;
 
 	linewidth = 2;
 	cycle = 3600;
