@@ -576,22 +576,23 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 {
 	glGenBuffers(1, &mapPointsInfo->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->locations.size() * sizeof(LOCATION), &pLocationHistory->locations.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front(), GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &mapPointsInfo->vao);
 	glBindVertexArray(mapPointsInfo->vao);
 
 	//lat,long
-	glVertexAttribPointer(0, 2, GL_DOUBLE, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, longitude));
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
 	glEnableVertexAttribArray(0);
 
-	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
+	//rgba colour
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
 	glEnableVertexAttribArray(1);
 
-	//detail level
-	//glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(LOCATION), (void*)offsetof(LOCATION, detaillevel));
-	//glEnableVertexAttribArray(2);
+	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
+//	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(LOCATION), (void*)offsetof(LOCATION, timestamp));
+//	glEnableVertexAttribArray(1);
+
 
 	return;
 }
@@ -614,7 +615,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
 	glBindVertexArray(mapPointsInfo->vao);
-	glDrawArrays(GL_POINTS, 0, pLocationHistory->locations.size());
+	glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
 
 	return;
 }
