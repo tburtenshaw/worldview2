@@ -130,7 +130,11 @@ public:
 
 
 	//points
-	float pointradius;
+	float pointdiameter;
+	float pointalpha;
+	float secondsbetweenhighlights;
+	float minutestravelbetweenhighlights;
+
 
 
 	//heatmap
@@ -243,6 +247,15 @@ public:
 
 	unsigned int vao;
 	unsigned int vbo;
+
+	unsigned int uniformNswe;
+	unsigned int uniformResolution;
+	unsigned int uniformPointRadius;
+	unsigned int uniformPointAlpha;
+	unsigned int uniformSeconds;
+	unsigned int uniformColourBy;
+	unsigned int uniformSecondsBetweenHighlights;
+	unsigned int uniformTravelTimeBetweenHighlights;
 
 	Shader* shader;
 };

@@ -159,7 +159,12 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	ImGui::Begin("Selected");
 	ImGui::Checkbox("Show points", &options->showPoints);
-	ImGui::SliderFloat("Point radius", &options->pointradius, 0.0, 10.0, "%.1f");
+	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0, 10.0, "%.1f");
+	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0, 1.0, "%.2f");
+
+	ImGui::SliderFloat("Minutes travel", &options->minutestravelbetweenhighlights, 1.0, 60.0, "%.1f");
+	ImGui::SliderFloat("Seconds between", &options->secondsbetweenhighlights, 1.0, 60.0, "%.1f");
+
 	ImGui::End();
 
 	ImGui::Begin("Toolbar");

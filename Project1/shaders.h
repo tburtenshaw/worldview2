@@ -19,6 +19,13 @@ public:
 	void UseMe();
 	GLuint LoadShaderFromFile(const char* filename, GLenum type);
 	GLuint CreateProgram();
+	GLuint LoadUniformLocation(unsigned int* l, const char* uniformname);
+
+	void SetUniform(GLuint loc, float f1);
+	void SetUniform(GLuint loc, float f1, float f2);
+	void SetUniform(GLuint loc, NSWE* nswe);
+
+	//deprecating these, as I wrote them before learning much about C++
 	void SetUniformFromFloats(const char* uniformname, float f1);
 	void SetUniformFromFloats(const char* uniformname, float f1,float f2);
 	void SetUniformFromFloats(const char* uniformname, float f1, float f2, float f3);

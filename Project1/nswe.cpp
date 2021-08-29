@@ -192,7 +192,7 @@ void NSWE::setto(NSWE *setthis) {
 
 		//printf("After: N%f,S%f,W%f,E%f\n", north, south, west, east);
 		//printf("This leaves us at %f %f.\n", c.latitude, c.longitude);
-
+			
 		return;
 
 	}

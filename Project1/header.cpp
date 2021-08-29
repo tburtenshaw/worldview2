@@ -90,7 +90,12 @@ GlobalOptions::GlobalOptions()
 		*/
 
 
-	pointradius = 20;
+	pointdiameter = 5.0;
+	pointalpha = 0.5;
+
+	secondsbetweenhighlights=2.0;
+	minutestravelbetweenhighlights=60.0;
+
 
 
 

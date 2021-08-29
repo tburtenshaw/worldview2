@@ -92,6 +92,29 @@ GLuint Shader::CreateProgram()
 	return program;
 }
 
+GLuint Shader::LoadUniformLocation(unsigned int * l, const char* uniformname)
+{
+	*l= glGetUniformLocation(program, uniformname);
+	return GLuint();
+}
+
+void Shader::SetUniform(GLuint loc, float f1)
+{
+	glUniform1f(loc, f1);
+}
+
+void Shader::SetUniform(GLuint loc, float f1, float f2)
+{
+	glUniform2f(loc, f1, f2);
+}
+
+void Shader::SetUniform(GLuint loc, NSWE* nswe)
+{
+	glUniform4f(loc, nswe->north, nswe->south, nswe->west, nswe->east);
+}
+
+
+
 void Shader::SetUniformFromFloats(const char* uniformname, float f1)
 {
 	int uniloc;
