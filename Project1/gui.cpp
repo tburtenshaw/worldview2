@@ -159,11 +159,16 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	ImGui::Begin("Selected");
 	ImGui::Checkbox("Show points", &options->showPoints);
-	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0, 10.0, "%.1f");
-	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0, 1.0, "%.2f");
+	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
+	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
 
-	ImGui::SliderFloat("Minutes travel", &options->minutestravelbetweenhighlights, 1.0, 60.0, "%.1f");
-	ImGui::SliderFloat("Seconds between", &options->secondsbetweenhighlights, 1.0, 60.0, "%.1f");
+	ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 60.0f, "%.1f minutes");
+	ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
+	float motionSpeedX;
+	motionSpeedX = options->minutestravelbetweenhighlights*60.0f / options->secondsbetweenhighlights;
+	bool b;
+	b= ImGui::SliderFloat("Motion speed", &motionSpeedX, 1.0, 3600.0, "%.0fX");
+	if (b) { options->secondsbetweenhighlights = options->minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
 
 	ImGui::End();
 

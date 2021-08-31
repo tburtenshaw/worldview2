@@ -63,19 +63,13 @@ void OptimiseDetail(std::vector<PathPlotLocation>& loc) {
 	return;
 }
 
-void CreatePathPlotLocations(LocationHistory* lh)	//this shouldn't be in the loading .cpp, as it's more a processing step
+void CreatePathPlotLocations(LocationHistory* lh)
 {
-	//	PathPlotLocation pathPlotLoc;
-
+	//Creates and fills a new array for GL, with floats instead of doubles and local time fixed.
 	lh->pathPlotLocations.reserve(lh->locations.size());	//it'll be as big as the number of locations
+
 	for (std::vector<LOCATION>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
-		//		pathPlotLoc.latitude = (float)iter->latitude;
-			//	pathPlotLoc.longitude = (float)iter->longitude;
-
-				//pathPlotLoc.timestamp = iter->timestamp;
-
-				//lh->pathPlotLocations.push_back(pathPlotLoc);
-		lh->pathPlotLocations.emplace_back((float)iter->latitude, (float)iter->longitude, iter->timestamp);
+		lh->pathPlotLocations.emplace_back((float)iter->latitude, (float)iter->longitude, MyTimeZone::FixToLocalTime(iter->timestamp));
 	}
 
 	OptimiseDetail(lh->pathPlotLocations);
@@ -123,6 +117,7 @@ RGBA ColourByHourOfDay(unsigned long ts, LocationHistory* lh)
 	unsigned long fixedTS = MyTimeZone::FixToLocalTime(ts);
 
 	unsigned long secondsthroughday = fixedTS % (3600 * 24);
+	int hour = 24 * secondsthroughday / (3600 * 24);
 
 	const unsigned char rgbHour[72] = {
 	0x08, 0x0F, 0x1D, 0x0E, 0x15, 0x32, 0x1A, 0x27, 0x5A, 0x25, 0x3C, 0x7F,
@@ -134,13 +129,6 @@ RGBA ColourByHourOfDay(unsigned long ts, LocationHistory* lh)
 	};
 
 
-
-	//colour.a = 10;
-	//colour.r = 255;
-	//colour.g = (256 * secondsthroughday / (3600 * 24));
-	//colour.b = 0;
-
-	int hour = 24*secondsthroughday / (3600 * 24);
 	//printf("%i ", hour);
 	colour.a = 255;
 	colour.r = rgbHour[hour * 3 + 0];

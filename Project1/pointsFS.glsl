@@ -5,7 +5,7 @@ uniform float alpha;
 uniform float seconds;
 
 out vec4 fragColor;
-in vec3 gcolour;
+in vec4 gcolour;
 in vec2 centre;
 
 float circle(vec2 uv, vec2 pos, float rad) {
@@ -26,7 +26,7 @@ float circleFactor = circle(uv, tempPos, pointradius);
 
 
 vec4 outputColour;
-outputColour=vec4(gcolour,circleFactor*alpha);
+outputColour=vec4(gcolour.rgb, circleFactor*alpha*gcolour.a);
 
 fragColor=outputColour;
 }

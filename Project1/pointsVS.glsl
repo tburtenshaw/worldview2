@@ -8,10 +8,40 @@ layout (location = 2) in uint timestamp;
 uniform vec4 nswe;
 uniform vec2 resolution;
 uniform float seconds;
+
 uniform float secondsbetweenhighlights;
 uniform float traveltimebetweenhighlights;
 
-out vec3 vcolour;
+uniform uint earliesttimetoshow;
+uniform uint lastesttimetoshow;
+
+uniform int colourby;
+uniform vec4 palette[24];
+
+out vec4 vcolour;
+
+vec4 ColourByWeekday(uint t)
+{
+
+	int day=int(((t / uint(86400)) + uint(4)) % uint(7));
+
+	return palette[day];
+}
+
+vec4 ColourByHour(uint t)
+{
+	uint secondsthroughday = t % uint(3600 * 24);
+	int hour = 24 * int(secondsthroughday) / (3600 * 24);
+
+	return palette[hour];
+}
+
+float expImpulse( float n, float k )
+{
+    float h = k*n;
+    return h*exp(1.0-h);
+}
+
 
 void main()
 {
@@ -34,9 +64,16 @@ void main()
 		correctedLongitude+=360.0;
 	}
 
-	gl_Position = vec4(((correctedLongitude-midx)/width*2),(vp.y-midy)/height*2,0,1.0);
+	gl_Position = vec4(((correctedLongitude-midx)/width*2),(vp.y-midy)/height*2,0.0,1.0);
 	
-	vcolour = pointcolour.rgb; //vec3(0.7,0.9,0.25);
+	vcolour = pointcolour.rgba; //vec3(0.7,0.9,0.25);
+	
+	
+	if (colourby==1)	{
+		vcolour = ColourByHour(timestamp);
+	}
+	else vcolour = ColourByWeekday(timestamp);
+	
 
 	uint m;
 	m = (timestamp -uint(1262304000));
@@ -47,10 +84,7 @@ void main()
 	ts = float(m);
 	
 	float sinehighlight;
-	sinehighlight=sin(ts*PI/(traveltimebetweenhighlights)-PI*seconds/(secondsbetweenhighlights));
-	sinehighlight*=sinehighlight;
-
-	sinehighlight=smoothstep(0.85,0.95,sinehighlight);
-
-	vcolour+=vec3(sinehighlight);
+	sinehighlight=expImpulse(mod(-ts/traveltimebetweenhighlights + seconds/(secondsbetweenhighlights),1),14.0);
+	
+	vcolour+=vec4(sinehighlight, sinehighlight, sinehighlight,0.0);
 }

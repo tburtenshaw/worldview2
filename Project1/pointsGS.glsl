@@ -6,8 +6,8 @@ layout(triangle_strip, max_vertices = 4) out;
 uniform vec2 resolution;
 uniform float pointradius;
 
-in vec3 vcolour[];
-out vec3 gcolour;
+in vec4 vcolour[];
+out vec4 gcolour;
 out vec2 centre;
 
 void main()

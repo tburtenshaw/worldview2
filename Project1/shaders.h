@@ -23,7 +23,9 @@ public:
 
 	void SetUniform(GLuint loc, float f1);
 	void SetUniform(GLuint loc, float f1, float f2);
+	void SetUniform(GLuint loc, int f1);
 	void SetUniform(GLuint loc, NSWE* nswe);
+	void SetUniform(GLuint loc, GLsizei count, const GLfloat* value);
 
 	//deprecating these, as I wrote them before learning much about C++
 	void SetUniformFromFloats(const char* uniformname, float f1);

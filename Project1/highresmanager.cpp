@@ -148,7 +148,7 @@ void HighResManager::LoadBestTex()
 		glBindTexture(GL_TEXTURE_2D, highresTexture);
 		//if we try to load a whole image at once, it'll cause stutter, so we do a few lines at a time
 		int linesToLoad = std::min(height - subImageLinesLoaded, 512); //load at most 512 lines
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageLinesLoaded, width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + subImageLinesLoaded*width* nrChannels);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageLinesLoaded, width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + (long)subImageLinesLoaded*width* nrChannels);
 		subImageLinesLoaded += linesToLoad;
 
 		if (subImageLinesLoaded == height) {

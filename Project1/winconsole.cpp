@@ -614,6 +614,8 @@ void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformSecondsBetweenHighlights, "secondsbetweenhighlights");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformTravelTimeBetweenHighlights, "traveltimebetweenhighlights");
 
+	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformPalette, "palette");
+	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformColourBy, "colourby");
 
 }
 
@@ -630,9 +632,34 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSecondsBetweenHighlights, pLocationHistory->globalOptions->secondsbetweenhighlights);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformTravelTimeBetweenHighlights, pLocationHistory->globalOptions->minutestravelbetweenhighlights*60.0f);
 
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformColourBy, pLocationHistory->globalOptions->colourby);
+
+	switch (pLocationHistory->globalOptions->colourby) {
+	case 1:
+		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteHourOfDay, 24);
+		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
+		break;
+	default:
+		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteDayOfWeek, 7);
+		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 7, &mapPointsInfo->palette[0][0]);
+		break;
+	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
 	glBindVertexArray(mapPointsInfo->vao);
 	glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
+
+	return;
+}
+
+void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, RGBA* sourcePalette, int n)
+{
+	for (int i = 0; i < n; i++) {
+		mapPointsInfo->palette[i][0] = (float)sourcePalette[i].r / 255.0f;
+		mapPointsInfo->palette[i][1] = (float)sourcePalette[i].g / 255.0f;
+		mapPointsInfo->palette[i][2] = (float)sourcePalette[i].b / 255.0f;
+		mapPointsInfo->palette[i][3] = (float)sourcePalette[i].a / 255.0f;
+	}
 
 	return;
 }
@@ -769,7 +796,6 @@ void DisplayIfGLError(const char* message, bool alwaysshow)
 
 int main(int argc, char** argv)
 {
-	//pLocationHistory = new LocationHistory;
 	LocationHistory locationHistory;
 	pLocationHistory = &locationHistory;
 
