@@ -291,7 +291,9 @@ int StartGLProgram(LocationHistory* lh)
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		if (!lh->viewNSWE->isMoving())	glfwWaitEventsTimeout(1.0f / 60.0f);	//this runs constantly, but max of ~60fps
-		else glfwPollEvents();
+		else {
+			glfwPollEvents();
+		}
 
 		glfwSwapBuffers(window);
 	}

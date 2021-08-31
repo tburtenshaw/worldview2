@@ -74,6 +74,44 @@ void CreatePathPlotLocations(LocationHistory* lh)
 
 	OptimiseDetail(lh->pathPlotLocations);
 	ColourPathPlot(lh);
+
+
+	struct std::tm corrected;
+	time_t t;
+	t = 0;
+
+	gmtime_s(&corrected, &t);
+
+
+	corrected.tm_mon = 0;
+	corrected.tm_mday = 1;
+	//corrected.tm_year = 0;
+	corrected.tm_hour = 0;
+	corrected.tm_min = 0;
+	corrected.tm_sec = 0;
+	corrected.tm_isdst = 0;
+
+	int oldT=0;
+	for (int i=110; i < 139; i++) {
+		corrected.tm_year = i;
+		t = _mkgmtime(&corrected);
+		//printf("Year:%i. Unix time: %i.", corrected.tm_year + 1900, t);
+		if (oldT) {
+			printf("if (t<uint(%i) )\t{\n",t);
+			printf("\tyear=%i;\n\treturn palette[year %% 7];\n}\n", corrected.tm_year + 1900 - 1);
+		}
+		printf("\n");
+		oldT = t;
+	}
+
+	/*
+		if  ((t<uint(1388534400))&&(t>=uint(1356998400)))	{
+		year=2013;
+		//return vec4(1.0,0.2,0.3,1.0);
+		return palette[year % 7];
+	}
+	*/
+
 	return;
 }
 

@@ -6,6 +6,8 @@
 #include "heatmap.h"
 #include "regions.h"
 #include <stdio.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
 
 //extern MovingTarget viewNSWE;
 //extern RECTDIMENSION windowDimensions;
@@ -19,6 +21,11 @@ NSWE originalNSWE;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureKeyboard) {
+		return ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+	}
+	
 	if (action == GLFW_RELEASE) {	//we'll ignore any releases of keys
 		return;
 	}
@@ -68,6 +75,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse) {
+		return ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+	}
+	
 	double xpos, ypos;	//this function uses doubles
 	glfwGetCursorPos(window, &xpos, &ypos);
 

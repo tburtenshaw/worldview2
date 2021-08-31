@@ -107,25 +107,46 @@ void Gui::MakeGUI(LocationHistory* lh)
 	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year" };
 	ImGui::Combo("Colour by", &options->colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
 
-	static ImVec4 color[7] = { ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
-	for (int i = 0; i < 7; i++) {
-		if (color[i].x < 0.0f) {
-			printf("neg %i ", i);
-			color[i].x = (float)options->paletteDayOfWeek[i].r / 255.0f;
-			color[i].y = (float)options->paletteDayOfWeek[i].g / 255.0f;
-			color[i].z = (float)options->paletteDayOfWeek[i].b / 255.0f;
-			color[i].w = (float)options->paletteDayOfWeek[i].a / 255.0f;
-		}
+	static ImVec4 color[24] = {};
+	//{ ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
+	
+	if (options->colourby == 2) {
+		for (int i = 0; i < 7; i++) {
+				color[i].x = (float)options->paletteDayOfWeek[i].r / 255.0f;
+				color[i].y = (float)options->paletteDayOfWeek[i].g / 255.0f;
+				color[i].z = (float)options->paletteDayOfWeek[i].b / 255.0f;
+				color[i].w = (float)options->paletteDayOfWeek[i].a / 255.0f;
 
-		if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-			options->paletteDayOfWeek[i].r = (unsigned char)(color[i].x * 255.0f);
-			options->paletteDayOfWeek[i].g = (unsigned char)(color[i].y * 255.0f);
-			options->paletteDayOfWeek[i].b = (unsigned char)(color[i].z * 255.0f);
-			options->paletteDayOfWeek[i].a = (unsigned char)(color[i].w * 255.0f);
-			options->regenPathColours = true;
+			if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
+				options->paletteDayOfWeek[i].r = (unsigned char)(color[i].x * 255.0f);
+				options->paletteDayOfWeek[i].g = (unsigned char)(color[i].y * 255.0f);
+				options->paletteDayOfWeek[i].b = (unsigned char)(color[i].z * 255.0f);
+				options->paletteDayOfWeek[i].a = (unsigned char)(color[i].w * 255.0f);
+				//options->regenPathColours = true;
+			}
+			ImGui::SameLine();
 		}
-		ImGui::SameLine();
 	}
+
+	if (options->colourby == 1) {
+		for (int i = 0; i < 24; i++) {
+				color[i].x = (float)options->paletteHourOfDay[i].r / 255.0f;
+				color[i].y = (float)options->paletteHourOfDay[i].g / 255.0f;
+				color[i].z = (float)options->paletteHourOfDay[i].b / 255.0f;
+				color[i].w = (float)options->paletteHourOfDay[i].a / 255.0f;
+
+			if (ImGui::ColorEdit4(MyTimeZone::daynames[i%7].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
+				options->paletteHourOfDay[i].r = (unsigned char)(color[i].x * 255.0f);
+				options->paletteHourOfDay[i].g = (unsigned char)(color[i].y * 255.0f);
+				options->paletteHourOfDay[i].b = (unsigned char)(color[i].z * 255.0f);
+				options->paletteHourOfDay[i].a = (unsigned char)(color[i].w * 255.0f);
+				//options->regenPathColours = true;
+			}
+			ImGui::SameLine();
+		}
+	}
+
+
 
 	ImGui::End();
 
@@ -162,7 +183,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
 
-	ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 60.0f, "%.1f minutes");
+	ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 24.0f*60.0f, "%.1f minutes");
 	ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
 	float motionSpeedX;
 	motionSpeedX = options->minutestravelbetweenhighlights*60.0f / options->secondsbetweenhighlights;
