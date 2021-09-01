@@ -51,7 +51,6 @@ void main()
 	//}
 
 
-
 	float linelength;
 	linelength = distance(start,end);
 
@@ -69,20 +68,29 @@ void main()
 
 	vec2 extendlength = normalize(start-end)*thickness;
 
+
 	fcol = gs_in[0].color;
 	
-	gl_Position = gl_in[0].gl_Position + vec4(-thickness1, 0.0, 0.0) + vec4(extendlength, 0.0, 0.0);
+	gl_Position = vec4(start,1.0,1.0) + vec4(-thickness1, 0.0, 0.0) + vec4(extendlength, 0.0, 0.0);
 	EmitVertex();
 
-	gl_Position = gl_in[0].gl_Position + vec4(thickness1, 0.0, 0.0)+ vec4(extendlength, 0.0, 0.0);
+	gl_Position = vec4(start,1.0,1.0) + vec4(thickness1, 0.0, 0.0)+ vec4(extendlength, 0.0, 0.0);
     EmitVertex();
 
-
+	
+	
 	fcol = gs_in[1].color;
-	gl_Position = gl_in[1].gl_Position + vec4(-thickness1, 0.0, 0.0)- vec4(extendlength, 0.0, 0.0);
+
+//	if (start.x-end.x > (0.0000000005/ ((nswe.w-nswe.z)/resolution.x)))	{
+		////end+=vec2(1.0/ ((nswe.w-nswe.z)/resolution.x),100.0);
+		//fcol=vec4(1.0,1.0,1.0,1.0);
+	//}
+
+
+	gl_Position = vec4(end,1.0,1.0) + vec4(-thickness1, 0.0, 0.0)- vec4(extendlength, 0.0, 0.0);
     EmitVertex();
 
-	gl_Position = gl_in[1].gl_Position + vec4( thickness1, 0.0, 0.0) - vec4(extendlength, 0.0, 0.0);
+	gl_Position = vec4(end,1.0,1.0) + vec4( thickness1, 0.0, 0.0) - vec4(extendlength, 0.0, 0.0);
     EmitVertex();
 
 

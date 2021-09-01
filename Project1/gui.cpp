@@ -130,19 +130,22 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	if (options->colourby == 1) {
 		for (int i = 0; i < 24; i++) {
-				color[i].x = (float)options->paletteHourOfDay[i].r / 255.0f;
-				color[i].y = (float)options->paletteHourOfDay[i].g / 255.0f;
-				color[i].z = (float)options->paletteHourOfDay[i].b / 255.0f;
-				color[i].w = (float)options->paletteHourOfDay[i].a / 255.0f;
+			color[i].x = (float)options->paletteHourOfDay[i].r / 255.0f;
+			color[i].y = (float)options->paletteHourOfDay[i].g / 255.0f;
+			color[i].z = (float)options->paletteHourOfDay[i].b / 255.0f;
+			color[i].w = (float)options->paletteHourOfDay[i].a / 255.0f;
 
-			if (ImGui::ColorEdit4(MyTimeZone::daynames[i%7].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
+			std::string text = "Hour ";
+			text += std::to_string(i);
+
+			if (ImGui::ColorEdit4(text.c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
 				options->paletteHourOfDay[i].r = (unsigned char)(color[i].x * 255.0f);
 				options->paletteHourOfDay[i].g = (unsigned char)(color[i].y * 255.0f);
 				options->paletteHourOfDay[i].b = (unsigned char)(color[i].z * 255.0f);
 				options->paletteHourOfDay[i].a = (unsigned char)(color[i].w * 255.0f);
 				//options->regenPathColours = true;
 			}
-			ImGui::SameLine();
+			if ((i+1) % 6) { ImGui::SameLine(); }
 		}
 	}
 
