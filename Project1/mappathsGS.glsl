@@ -29,8 +29,23 @@ void main()
     vec2 start = gl_in[0].gl_Position.xy;
     vec2 end = gl_in[1].gl_Position.xy;
 
+
+	if ((start.x-end.x)*(nswe.w-nswe.z) >360.0)	{
+		end=end+vec2(720.0/(nswe.w-nswe.z),0.0);
+	}
+
+	if ((end.x-start.x)*(nswe.w-nswe.z) >360.0)	{
+		start=start+vec2(720.0/(nswe.w-nswe.z),0.0);
+	}
+
+	//else if ((start.x-end.x)*(nswe.w-nswe.z) <-360.0)	{
+		//start=start-vec2(720.0/(nswe.w-nswe.z),0.0);
+	//}
+
 	vec2 thickness;
 	thickness=(linewidth+2)/resolution; //extra little bit to allow for aliasing
+
+
 
 	//if both coordinates too far west, don't bother
 	if ((gs_in[0].origcoords.x<nswe.z-thickness.x)&&(gs_in[1].origcoords.x<nswe.z-thickness.x))	{
@@ -51,11 +66,19 @@ void main()
 	//}
 
 
-	float linelength;
-	linelength = distance(start,end);
 
+	
+
+
+
+	//For the frag shader if required.
 	pointa=start;
 	pointb=end;
+	//float linelength;
+	//linelength = distance(start,end);
+
+
+
 
 
 	//this gets a perpendicular vector of length one
@@ -67,7 +90,6 @@ void main()
 	vec2 thickness1 =thickness*slope1;
 
 	vec2 extendlength = normalize(start-end)*thickness;
-
 
 	fcol = gs_in[0].color;
 	

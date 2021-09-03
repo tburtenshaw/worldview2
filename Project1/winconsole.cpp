@@ -613,6 +613,7 @@ void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformSeconds, "seconds");
 
 	//A highlight is used to give an indication of travel speed, travels through as the peak of a sine wave
+	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformShowHighlights, "showhighlights");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformSecondsBetweenHighlights, "secondsbetweenhighlights");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformTravelTimeBetweenHighlights, "traveltimebetweenhighlights");
 
@@ -631,6 +632,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointAlpha, pLocationHistory->globalOptions->pointalpha);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSeconds, pLocationHistory->globalOptions->seconds);
 
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformShowHighlights, pLocationHistory->globalOptions->showHighlights);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSecondsBetweenHighlights, pLocationHistory->globalOptions->secondsbetweenhighlights);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformTravelTimeBetweenHighlights, pLocationHistory->globalOptions->minutestravelbetweenhighlights*60.0f);
 
@@ -639,6 +641,10 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	switch (pLocationHistory->globalOptions->colourby) {
 	case 1:
 		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteHourOfDay, 24);
+		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
+		break;
+	case 4:
+		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteYear, 24);
 		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
 		break;
 	default:

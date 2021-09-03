@@ -93,10 +93,11 @@ GlobalOptions::GlobalOptions()
 	pointdiameter = 5.0;
 	pointalpha = 0.5;
 
+	showHighlights = true;
 	secondsbetweenhighlights=2.0;
 	minutestravelbetweenhighlights=60.0;
 
-
+	colourby = 1;
 
 
 	minimumaccuracy = 24;

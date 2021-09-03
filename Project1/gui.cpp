@@ -85,23 +85,51 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
 
-	ImGui::Begin("Path drawing");
-	ImGui::Checkbox("Show paths", &options->showPaths);
-	ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
+	static float oldBlur = 0;
+	static float oldMinimumaccuracy = 0;
+	static float oldBlurperaccurary = 0;
+	ImGui::Begin("Heatmap");
+	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
+	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 10.0f, "%.1f");
+	ImGui::Checkbox("_Predict paths", &options->predictpath);
+	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
+	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
+	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
+	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
 
-	const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years", "Other" };
-	const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f };
-
-	static int uiCycleSelect = 0;
-	ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames));
-	if (uiCycleSelect < IM_ARRAYSIZE(cyclenames) - 1) {
-		options->cycle = cycleresults[uiCycleSelect];
+	if (options->blurperaccuracy != oldBlurperaccurary) {
+		oldBlurperaccurary = options->blurperaccuracy;
+		lh->heatmap->MakeDirty();
 	}
-	ImGui::SliderFloat("Cycle", &options->cycle, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f", 6.0f);
-	for (int i = 0; i < IM_ARRAYSIZE(cyclenames) - 1; i++) {
-		if (options->cycle == cycleresults[i]) {
-			uiCycleSelect = i;
-		}
+
+	if (options->gaussianblur != oldBlur) {
+		oldBlur = options->gaussianblur;
+		lh->heatmap->MakeDirty();
+	}
+	if (options->minimumaccuracy != oldMinimumaccuracy) {
+		oldMinimumaccuracy = options->minimumaccuracy;
+		lh->heatmap->MakeDirty();
+	}
+
+	ImGui::End();
+
+	ImGui::Begin("Location display");
+	ImGui::Checkbox("Show points", &options->showPoints);
+	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
+	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
+	ImGui::Checkbox("Connect points", &options->showPaths);
+	if (options->showPaths) {
+		ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
+	}
+	ImGui::Checkbox("Travel highlight", &options->showHighlights);
+	if (options->showHighlights) {
+		ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 24.0f * 60.0f, "%.1f minutes");
+			ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
+			float motionSpeedX;
+			motionSpeedX = options->minutestravelbetweenhighlights * 60.0f / options->secondsbetweenhighlights;
+			bool b;
+			b = ImGui::SliderFloat("Motion speed", &motionSpeedX, 1.0, 3600.0, "%.0fX");
+			if (b) { options->secondsbetweenhighlights = options->minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
 	}
 
 	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year" };
@@ -109,13 +137,38 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	static ImVec4 color[24] = {};
 	//{ ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
-	
+
+
+	if (options->colourby == 4) {
+		int n = 0;
+		for (int i = 2012; (i < 2022) && (n < 24); i++) {
+			color[n].x = (float)options->paletteYear[i % 24].r / 255.0f;
+			color[n].y = (float)options->paletteYear[i % 24].g / 255.0f;
+			color[n].z = (float)options->paletteYear[i % 24].b / 255.0f;
+			color[n].w = (float)options->paletteYear[i % 24].a / 255.0f;
+
+			std::string text = "Year ";
+			text += std::to_string(i);
+
+			if (ImGui::ColorEdit4(text.c_str(), (float*)&color[n], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
+				options->paletteYear[i % 24].r = (unsigned char)(color[n].x * 255.0f);
+				options->paletteYear[i % 24].g = (unsigned char)(color[n].y * 255.0f);
+				options->paletteYear[i % 24].b = (unsigned char)(color[n].z * 255.0f);
+				options->paletteYear[i % 24].a = (unsigned char)(color[n].w * 255.0f);
+				//options->regenPathColours = true;
+			}
+			if ((n + 1) % 6) { ImGui::SameLine(); }
+			n++;
+		}
+	}
+
+
 	if (options->colourby == 2) {
 		for (int i = 0; i < 7; i++) {
-				color[i].x = (float)options->paletteDayOfWeek[i].r / 255.0f;
-				color[i].y = (float)options->paletteDayOfWeek[i].g / 255.0f;
-				color[i].z = (float)options->paletteDayOfWeek[i].b / 255.0f;
-				color[i].w = (float)options->paletteDayOfWeek[i].a / 255.0f;
+			color[i].x = (float)options->paletteDayOfWeek[i].r / 255.0f;
+			color[i].y = (float)options->paletteDayOfWeek[i].g / 255.0f;
+			color[i].z = (float)options->paletteDayOfWeek[i].b / 255.0f;
+			color[i].w = (float)options->paletteDayOfWeek[i].a / 255.0f;
 
 			if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
 				options->paletteDayOfWeek[i].r = (unsigned char)(color[i].x * 255.0f);
@@ -145,54 +198,25 @@ void Gui::MakeGUI(LocationHistory* lh)
 				options->paletteHourOfDay[i].a = (unsigned char)(color[i].w * 255.0f);
 				//options->regenPathColours = true;
 			}
-			if ((i+1) % 6) { ImGui::SameLine(); }
+			if ((i + 1) % 6) { ImGui::SameLine(); }
 		}
 	}
+	if (options->colourby == 0) {
+		const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years", "Other" };
+		const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f };
 
-
-
-	ImGui::End();
-
-	static float oldBlur = 0;
-	static float oldMinimumaccuracy = 0;
-	static float oldBlurperaccurary = 0;
-	ImGui::Begin("Heatmap");
-	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
-	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 10.0f, "%.1f");
-	ImGui::Checkbox("_Predict paths", &options->predictpath);
-	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
-	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
-	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
-	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
-
-	if (options->blurperaccuracy != oldBlurperaccurary) {
-		oldBlurperaccurary = options->blurperaccuracy;
-		lh->heatmap->MakeDirty();
+		static int uiCycleSelect = 0;
+		ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames));
+		if (uiCycleSelect < IM_ARRAYSIZE(cyclenames) - 1) {
+			options->cycle = cycleresults[uiCycleSelect];
+		}
+		ImGui::SliderFloat("Cycle", &options->cycle, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f", 6.0f);
+		for (int i = 0; i < IM_ARRAYSIZE(cyclenames) - 1; i++) {
+			if (options->cycle == cycleresults[i]) {
+				uiCycleSelect = i;
+			}
+		}
 	}
-
-	if (options->gaussianblur != oldBlur) {
-		oldBlur = options->gaussianblur;
-		lh->heatmap->MakeDirty();
-	}
-	if (options->minimumaccuracy != oldMinimumaccuracy) {
-		oldMinimumaccuracy = options->minimumaccuracy;
-		lh->heatmap->MakeDirty();
-	}
-
-	ImGui::End();
-
-	ImGui::Begin("Selected");
-	ImGui::Checkbox("Show points", &options->showPoints);
-	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
-	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
-
-	ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 24.0f*60.0f, "%.1f minutes");
-	ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
-	float motionSpeedX;
-	motionSpeedX = options->minutestravelbetweenhighlights*60.0f / options->secondsbetweenhighlights;
-	bool b;
-	b= ImGui::SliderFloat("Motion speed", &motionSpeedX, 1.0, 3600.0, "%.0fX");
-	if (b) { options->secondsbetweenhighlights = options->minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
 
 	ImGui::End();
 

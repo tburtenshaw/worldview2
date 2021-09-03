@@ -9,6 +9,7 @@ uniform vec4 nswe;
 uniform vec2 resolution;
 uniform float seconds;
 
+uniform bool showhighlights;
 uniform float secondsbetweenhighlights;
 uniform float traveltimebetweenhighlights;
 
@@ -54,6 +55,25 @@ float expImpulse( float n, float k )
 }
 
 
+vec3 hpluv(float t) {
+
+    t *= 6.283185307179586;
+
+    vec2 cs1 = vec2(cos(t), sin(t));
+
+    vec3 n = vec3(0.5832271348571118, 0.5669143498918592, 0.5688901803565138);
+    n += vec3(0.5579918385059167, -0.123397919673585, -0.04010425190513076)*cs1.x;
+    n += vec3(0.07377028386927893, 0.1108109634096618, -0.3122855451190785)*cs1.y;
+
+    vec3 d = vec3(1.0);
+    d += vec3(0.5048729122168087, -0.086202826156657, -0.02961476768472726)*cs1.x;
+    d += vec3(0.1355863216235928, 0.1557689334676045, -0.1491132071515487)*cs1.y;
+
+    return n/d;
+
+}
+
+
 void main()
 {
 	float width; float height;
@@ -86,19 +106,27 @@ void main()
 	else if (colourby==4)	{
 		vcolour = ColourByYear(timestamp);
 	}
-	else vcolour = ColourByWeekday(timestamp);
+	else if (colourby==2)	{
+		vcolour = ColourByWeekday(timestamp);
+	}
+	else {
+		vcolour = vec4(hpluv(float(timestamp)/3600.0),1.0);
+	}
 	
 
 	uint m;
 	m = (timestamp -uint(1262304000));
-	
-	m = (m % uint(3600*24*7)); //i think the number has trouble as so large
+	m = (m % uint(3600*24*365)); //i think the number has trouble as so large
 
 	float ts;
 	ts = float(m);
-	
-	float sinehighlight;
-	sinehighlight=expImpulse(mod(-ts/traveltimebetweenhighlights + seconds/(secondsbetweenhighlights),1),20.0);
-	
+
+	float sinehighlight=0.0;
+
+	if (showhighlights)	{
+		sinehighlight=expImpulse(mod(-ts/traveltimebetweenhighlights + seconds/(secondsbetweenhighlights),1),20.0);
+	}
+
+
 	vcolour+=vec4(sinehighlight, sinehighlight, sinehighlight,sinehighlight);
 }
