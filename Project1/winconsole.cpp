@@ -568,7 +568,7 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 	mapPathInfo->shader->SetUniformFromFloats("seconds", options->seconds * 20.0f);
 	mapPathInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
 	mapPathInfo->shader->SetUniformFromFloats("linewidth", options->linewidth);
-	mapPathInfo->shader->SetUniformFromFloats("cycle", options->cycle);
+	mapPathInfo->shader->SetUniformFromFloats("cycle", options->cycleSeconds);
 
 	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
 	glBindVertexArray(mapPathInfo->vao);
@@ -614,6 +614,7 @@ void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformPointRadius, "pointradius");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformPointAlpha, "alpha");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformSeconds, "seconds");
+	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformCycleSeconds, "cycleSeconds");
 
 	//Which times to show
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformEarliestTimeToShow, "earliesttimetoshow");
@@ -638,6 +639,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointRadius, pLocationHistory->globalOptions->pointdiameter/2.0f);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointAlpha, pLocationHistory->globalOptions->pointalpha);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSeconds, pLocationHistory->globalOptions->seconds);
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformCycleSeconds, pLocationHistory->globalOptions->cycleSeconds);
 
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformEarliestTimeToShow, pLocationHistory->globalOptions->earliestTimeToShow);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformLatestTimeToShow, pLocationHistory->globalOptions->latestTimeToShow);

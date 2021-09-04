@@ -207,14 +207,17 @@ void Gui::MakeGUI(LocationHistory* lh)
 		const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f };
 
 		static int uiCycleSelect = 0;
-		ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames));
-		if (uiCycleSelect < IM_ARRAYSIZE(cyclenames) - 1) {
-			options->cycle = cycleresults[uiCycleSelect];
+		if (ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames))) {
+			if (uiCycleSelect < IM_ARRAYSIZE(cyclenames) - 1) {
+				options->cycleSeconds = cycleresults[uiCycleSelect];
+			}
 		}
-		ImGui::SliderFloat("Cycle", &options->cycle, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f", 6.0f);
-		for (int i = 0; i < IM_ARRAYSIZE(cyclenames) - 1; i++) {
-			if (options->cycle == cycleresults[i]) {
-				uiCycleSelect = i;
+		if (ImGui::SliderFloat("Cycle", &options->cycleSeconds, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f seconds", 6.0f)) {
+			uiCycleSelect = 7;
+			for (int i = 0; i < IM_ARRAYSIZE(cyclenames) - 1; i++) {
+				if (options->cycleSeconds == cycleresults[i]) {
+					uiCycleSelect = i;
+				}
 			}
 		}
 	}

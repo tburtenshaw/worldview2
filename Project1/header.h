@@ -114,11 +114,10 @@ public:
 
 	//paths
 	float linewidth;
-	float cycle;
+	float cycleSeconds;
 	int colourby;
 	RGBA paletteHourOfDay[24]
 	{
-	{ 0x08, 0x0f, 0x1d, 0xff },
 	{ 0x0e, 0x15, 0x32, 0xff },
 	{ 0x1a, 0x27, 0x5a, 0xff },
 	{ 0x25, 0x3c, 0x7f, 0xff },
@@ -141,7 +140,8 @@ public:
 	{ 0x96, 0x04, 0x22, 0xff },
 	{ 0x73, 0x00, 0x1b, 0xff },
 	{ 0x44, 0x00, 0x10, 0xff },
-	{ 0x1a, 0x07, 0x13, 0xff }
+	{ 0x1a, 0x07, 0x13, 0xff },
+	{ 0x08, 0x0f, 0x1d, 0xff }
 	};
 
 	RGBA paletteDayOfWeek[7]
@@ -298,6 +298,7 @@ public:
 	unsigned int uniformPointRadius;
 	unsigned int uniformPointAlpha;
 	unsigned int uniformSeconds;
+	unsigned int uniformCycleSeconds;
 	unsigned int uniformShowHighlights;
 	unsigned int uniformSecondsBetweenHighlights;
 	unsigned int uniformTravelTimeBetweenHighlights;

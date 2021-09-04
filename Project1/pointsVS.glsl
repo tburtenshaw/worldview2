@@ -16,6 +16,8 @@ uniform float traveltimebetweenhighlights;
 uniform uint earliesttimetoshow;
 uniform uint latesttimetoshow;
 
+uniform float cycleSeconds;	//for the rainbow display, the time between the colours of the rainbow.
+
 uniform int colourby;
 uniform vec4 palette[24];
 
@@ -112,7 +114,7 @@ void main()
 		vcolour = ColourByWeekday(timestamp);
 	}
 	else {
-		vcolour = vec4(hpluv(float(timestamp)/3600.0),1.0);
+		vcolour = vec4(hpluv(float(int(timestamp -uint(1262304000))- 31536000 * 3 + 31622400)/cycleSeconds),1.0);
 	}
 	
 

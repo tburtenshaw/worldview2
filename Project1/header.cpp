@@ -66,29 +66,30 @@ PathPlotLocation::PathPlotLocation(float lat, float lon, unsigned long ts)	//con
 	latitude = lat;
 	longitude = lon;
 	timestamp = ts;
+	detaillevel = 0.0f;
 
 }
 
 GlobalOptions::GlobalOptions()
 {
-	seconds = 0;
+	seconds = 0.0f;	//an easy way for anyone to get the seconds counter (it's set in main loop by ImGui IO)
 	
 	showPaths = false;
 	showPoints = true;
 	showHeatmap = false;
 
 	linewidth = 2.0;
-	cycle = 3600.0;
+	cycleSeconds = 3600.0;
 
 	earliestTimeToShow = 0;
 	latestTimeToShow = 2147400000;
 
-	pointdiameter = 5.0;
-	pointalpha = 0.5;
+	pointdiameter = 5.0f;
+	pointalpha = 0.5f;
 
 	showHighlights = true;
-	secondsbetweenhighlights=2.0;
-	minutestravelbetweenhighlights=60.0;
+	secondsbetweenhighlights=2.0f;
+	minutestravelbetweenhighlights=60.0f;
 
 	colourby = 1;
 
@@ -96,7 +97,7 @@ GlobalOptions::GlobalOptions()
 	minimumaccuracy = 24;
 	palette = 1;
 
-	gaussianblur = 0.0;
+	gaussianblur = 0.0f;
 	blurperaccuracy = false;
 	predictpath = false;
 }
