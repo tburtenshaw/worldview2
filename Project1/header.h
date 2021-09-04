@@ -108,6 +108,10 @@ public:
 	bool showHeatmap;
 	float seconds;
 
+	//
+	unsigned long earliestTimeToShow;
+	unsigned long latestTimeToShow;
+
 	//paths
 	float linewidth;
 	float cycle;
@@ -294,11 +298,15 @@ public:
 	unsigned int uniformPointRadius;
 	unsigned int uniformPointAlpha;
 	unsigned int uniformSeconds;
-	unsigned int uniformColourBy;
 	unsigned int uniformShowHighlights;
 	unsigned int uniformSecondsBetweenHighlights;
 	unsigned int uniformTravelTimeBetweenHighlights;
+	unsigned int uniformEarliestTimeToShow;
+	unsigned int uniformLatestTimeToShow;
 	unsigned int uniformPalette;
+	unsigned int uniformColourBy;
+
+
 
 	float palette[24][4];
 

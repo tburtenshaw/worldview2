@@ -112,9 +112,11 @@ void Gui::MakeGUI(LocationHistory* lh)
 	}
 
 	ImGui::End();
-
+	
 	ImGui::Begin("Location display");
 	ImGui::Checkbox("Show points", &options->showPoints);
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
 	ImGui::Checkbox("Connect points", &options->showPaths);
@@ -138,10 +140,9 @@ void Gui::MakeGUI(LocationHistory* lh)
 	static ImVec4 color[24] = {};
 	//{ ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
 
-
 	if (options->colourby == 4) {
 		int n = 0;
-		for (int i = 2012; (i < 2022) && (n < 24); i++) {
+		for (int i = MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp); (i < MyTimeZone::GetYearFromTimestamp(lh->latesttimestamp)+1) && (n < 24); i++) {
 			color[n].x = (float)options->paletteYear[i % 24].r / 255.0f;
 			color[n].y = (float)options->paletteYear[i % 24].g / 255.0f;
 			color[n].z = (float)options->paletteYear[i % 24].b / 255.0f;

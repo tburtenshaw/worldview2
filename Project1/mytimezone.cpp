@@ -85,3 +85,17 @@ std::string MyTimeZone::FormatUnixTime(unsigned long unixtime, int flags)
     }
     return output;
 }
+
+unsigned long MyTimeZone::GetYearFromTimestamp(unsigned long unixtime)
+{
+    
+    unixtime += 31536000;	//increase the date, so we start on a non-leap, after a leap year
+    const unsigned long fouryears = 31536000 * 3 + 31622400;	//365,365,365,366 days
+    unsigned long olympiad = unixtime / fouryears;	//which group of four years
+    unsigned long remainder = (unixtime - (olympiad * fouryears)) / 31536000;
+    if (remainder > 3) remainder = 3;
+
+    unsigned long yearcalc = olympiad * 4 + remainder + 1969;	//from 1969 as we went forward a year previously
+    
+    return yearcalc;
+}

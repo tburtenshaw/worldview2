@@ -27,7 +27,7 @@ vec3 rainbow(float f)
 {
     //thanks jodie, https://www.shadertoy.com/view/4l2cDm
 	
-	return sqrt(sin( (f+vec3(0,2,1)/3.)*2*3.14159265359 ) * .5 + .5);
+	return sqrt(sin( (f+vec3(0.0,2.0,1.0)/3.0)*2.0*3.14159265359 ) * .5 + .5);
 }
 
 
@@ -41,7 +41,7 @@ void main() {
 	midx = (nswe.w+nswe.z)/2; 
 	midy = (nswe.x+nswe.y)/2; 
 	
-	gl_Position = vec4(((vp.x-midx)/width*2),(vp.y-midy)/height*2,0,1.0);
+	gl_Position = vec4(((vp.x-midx)/width*2.0),(vp.y-midy)/height*2.0,0.0,1.0);
 	
 	vs_out.color=colour;
 

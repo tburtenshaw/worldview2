@@ -14,12 +14,13 @@ uniform float secondsbetweenhighlights;
 uniform float traveltimebetweenhighlights;
 
 uniform uint earliesttimetoshow;
-uniform uint lastesttimetoshow;
+uniform uint latesttimetoshow;
 
 uniform int colourby;
 uniform vec4 palette[24];
 
 out vec4 vcolour;
+out uint ts;
 
 vec4 ColourByWeekday(uint t)
 {
@@ -39,13 +40,13 @@ vec4 ColourByHour(uint t)
 
 vec4 ColourByYear(uint t)
 {
-    t+=uint(31536000);
-	const uint fouryears = uint(31536000 * 3 + 31622400);
-	uint olympiad = t / fouryears;
+    t+=uint(31536000);	//increase the date, so we start on a non-leap, after a leap year
+	const uint fouryears = uint(31536000 * 3 + 31622400);	//365,365,365,366 days
+	uint olympiad = t / fouryears;	//which group of four years
 	uint remainder = min(uint(3), ((t - (olympiad * fouryears)) / uint(31536000)));
 	
-    uint yearcalc=olympiad * uint(4) + remainder + uint(1969);
-    return palette[yearcalc % uint(7)];
+    uint yearcalc=olympiad * uint(4) + remainder + uint(1969);	//from 1969 as we went forward a year previously
+    return palette[yearcalc % uint(24)];	//24 is the size of the palette for year, maybe pass as uniform
 }
 
 float expImpulse( float n, float k )
@@ -84,8 +85,9 @@ void main()
 	midx = (nswe.w+nswe.z)/2; 
 	midy = (nswe.x+nswe.y)/2; 
 	
-	float correctedLongitude=vp.x;
+	ts=timestamp;	//pass on to the geometry shader
 
+	float correctedLongitude=vp.x;
 
 	if ((nswe.z<-180.0)&&(nswe.w<180.0)&&(vp.x>nswe.w))	{
 		correctedLongitude-=360.0;
@@ -118,13 +120,13 @@ void main()
 	m = (timestamp -uint(1262304000));
 	m = (m % uint(3600*24*365)); //i think the number has trouble as so large
 
-	float ts;
-	ts = float(m);
+	float ftime;
+	ftime = float(m);
 
 	float sinehighlight=0.0;
 
 	if (showhighlights)	{
-		sinehighlight=expImpulse(mod(-ts/traveltimebetweenhighlights + seconds/(secondsbetweenhighlights),1),20.0);
+		sinehighlight=expImpulse(mod(-ftime/traveltimebetweenhighlights + seconds/(secondsbetweenhighlights),1),20.0);
 	}
 
 

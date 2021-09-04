@@ -38,10 +38,6 @@ void main()
 		start=start+vec2(720.0/(nswe.w-nswe.z),0.0);
 	}
 
-	//else if ((start.x-end.x)*(nswe.w-nswe.z) <-360.0)	{
-		//start=start-vec2(720.0/(nswe.w-nswe.z),0.0);
-	//}
-
 	vec2 thickness;
 	thickness=(linewidth+2)/resolution; //extra little bit to allow for aliasing
 

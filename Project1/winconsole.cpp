@@ -74,6 +74,9 @@ int OpenAndReadJSON(LocationHistory* lh)
 	int result;	//zero if no problems.
 	lh->totalbytesread = 0;
 	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
+	
+	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
+	lh->latesttimestamp = 0;
 
 	readbytes = 1;
 	while (readbytes) {
@@ -612,6 +615,10 @@ void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformPointAlpha, "alpha");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformSeconds, "seconds");
 
+	//Which times to show
+	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformEarliestTimeToShow, "earliesttimetoshow");
+	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformLatestTimeToShow, "latesttimetoshow");
+
 	//A highlight is used to give an indication of travel speed, travels through as the peak of a sine wave
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformShowHighlights, "showhighlights");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformSecondsBetweenHighlights, "secondsbetweenhighlights");
@@ -631,6 +638,9 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointRadius, pLocationHistory->globalOptions->pointdiameter/2.0f);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointAlpha, pLocationHistory->globalOptions->pointalpha);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSeconds, pLocationHistory->globalOptions->seconds);
+
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformEarliestTimeToShow, pLocationHistory->globalOptions->earliestTimeToShow);
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformLatestTimeToShow, pLocationHistory->globalOptions->latestTimeToShow);
 
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformShowHighlights, pLocationHistory->globalOptions->showHighlights);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSecondsBetweenHighlights, pLocationHistory->globalOptions->secondsbetweenhighlights);

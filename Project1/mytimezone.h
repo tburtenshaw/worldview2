@@ -26,5 +26,7 @@ namespace MyTimeZone {
 	unsigned long AdjustBasedOnLongitude(unsigned long unixtime, float longitude);
 	std::string FormatUnixTime(unsigned long unixtime, int flags);
 
+	unsigned long GetYearFromTimestamp(unsigned long unixtime);
+
 	
 }
