@@ -10,6 +10,8 @@
 
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
+#include <iostream>
+#include <filesystem>
 
 
 HighResManager::HighResManager()
@@ -44,8 +46,8 @@ HighResManager::HighResManager()
 	filename.push_back("D:/n-16s-28w145e154.png");
 	nswe.push_back(NSWE(-16.0f, -28.0f, 145.0f, 154.0f));
 
-	filename.push_back("D:/n50s47w-124e-121.png");
-	nswe.push_back(NSWE(50.0f, 47.0f, -124.0f, -121.0f));
+	filename.push_back("D:/n51s46w-125e-120.png");
+	nswe.push_back(NSWE(51.0f, 46.0f, -125.0f, -120.0f));
 
 	filename.push_back("D:/n-33s-35w18e20.png");
 	nswe.push_back(NSWE(-33.0f, -35.0f, 18.0f, 20.0f));
@@ -55,7 +57,28 @@ HighResManager::HighResManager()
 
 	filename.push_back("d:/n-22s-25w-47e-42.png");
 	nswe.push_back(NSWE(-22.0f, -25.0f, -47.0f, -42.0f));
+
+	filename.push_back("d:/n-33s-35w150e152.png");
+	nswe.push_back(NSWE(-33.0f, -35.0f, 150.0f, 152.0f));
+
+	filename.push_back("d:/n31s24w72e79.png");
+	nswe.push_back(NSWE(31.0f, 24.0f, 72.0f, 79.0f));
 	
+	filename.push_back("d:/n39s31w-123e-115.png");
+	nswe.push_back(NSWE(39.0f, 31.0f, -123.0f, -115.0f));
+
+	std::filesystem::path p="n39s31w-123e-115.png";
+	std::filesystem::path ap;
+
+	
+	ap = std::filesystem::absolute(p);
+
+
+	printf("Path: %s\n", ap.parent_path().string().c_str());
+	std::cout << "Absolute path for " << p << " is "
+		<< std::filesystem::absolute(p) << '\n';
+
+
 }
 
 void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)
@@ -75,7 +98,7 @@ void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)
 
 	bestscore = 0;
 	for (int i=1;i<nswe.size();i++)	{
-		NSWE intersection = viewportNSWE->interectionWith(nswe[i]);
+		NSWE intersection = viewportNSWE->intersectionWith(nswe[i]);
 		float areatotest = nswe[i].area();
 		float areaofintersection = intersection.area();
 

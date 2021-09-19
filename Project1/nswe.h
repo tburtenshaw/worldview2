@@ -32,7 +32,7 @@ public:
 
 
 	NSWE createExpandedBy(float factor);
-	NSWE interectionWith(NSWE otherNSWE);
+	NSWE intersectionWith(NSWE otherNSWE);
 	WORLDCOORD centre();
 
 	void zoom(float z, WORLDCOORD c);

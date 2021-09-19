@@ -350,10 +350,17 @@ void DrawPaths(MapPathInfo* mapPathInfo);
 void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
 void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
-void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, RGBA* sourcePalette, int n);
+void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, int id);
 
 //regions
 void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo);
 void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
 void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
 void DrawRegions(MapRegionsInfo* mapRegionsInfo);
+
+int OpenAndReadJSON(LocationHistory* lh);
+
+void CalculateEarliestAndLatest(LocationHistory *lh);
+int SaveWVFormat(LocationHistory* lh);
+int LoadWVFormat(LocationHistory* lh);
+

@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\imgui-master\imgui_demo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="palettes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loadjson.h">
@@ -105,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="processlocations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="palettes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

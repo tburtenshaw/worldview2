@@ -26,11 +26,12 @@
 #include "regions.h"
 #include "gui.h"
 #include "highresmanager.h"
+#include "palettes.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-using namespace std;
+//using namespace std;
 
 LocationHistory* pLocationHistory;
 
@@ -74,11 +75,10 @@ int OpenAndReadJSON(LocationHistory* lh)
 	int result;	//zero if no problems.
 	lh->totalbytesread = 0;
 	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
-	
-	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
-	lh->latesttimestamp = 0;
 
-	readbytes = 1;
+
+
+	readbytes = 0;
 	while (readbytes) {
 		rf = ReadFile(jsonfile, buffer, READ_BUFFER_SIZE - 1, &readbytes, NULL);
 		if (rf == false) {
@@ -96,7 +96,13 @@ int OpenAndReadJSON(LocationHistory* lh)
 	delete[] buffer;
 	CloseHandle(jsonfile);
 
+	//SaveWVFormat(lh);
+	LoadWVFormat(lh);
+
+	CalculateEarliestAndLatest(lh);
+
 	CreatePathPlotLocations(lh);	//points for OpenGL are stored on another vector
+
 
 	lh->isLoadingFile = false;
 	lh->isFullyLoaded = true;
@@ -105,12 +111,126 @@ int OpenAndReadJSON(LocationHistory* lh)
 	return 0;
 }
 
+struct WVFormat {
+	unsigned long timestamp;
+	float lon;
+	float lat;
+};
+
+void CalculateEarliestAndLatest(LocationHistory* lh)
+{
+	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
+	lh->latesttimestamp = 0;
+
+	for (int i = 0; i < lh->locations.size(); i++) {
+		if (lh->locations[i].timestamp < lh->earliesttimestamp)
+			lh->earliesttimestamp = lh->locations[i].timestamp;
+
+		if (lh->locations[i].timestamp > lh->latesttimestamp)
+			lh->latesttimestamp = lh->locations[i].timestamp;
+	}
+}
+
+int SaveWVFormat(LocationHistory* lh)
+{
+	HANDLE hFile;
+	DWORD numberOfLocations;
+	DWORD bytesWritten;
+
+	const char* const magic = "WVF1";
+
+	//copy whole thing at once.
+	numberOfLocations = lh->locations.size();
+	WVFormat* flatArray = new WVFormat[numberOfLocations];
+
+	for (DWORD i = 0; i < numberOfLocations; i++) {
+		flatArray[i].timestamp = lh->locations[i].timestamp;
+		flatArray[i].lon = lh->locations[i].longitude;
+		flatArray[i].lat = lh->locations[i].latitude;
+	}
+
+	hFile = CreateFile(L"test.WVF", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(hFile, magic, 4, &bytesWritten, NULL);
+	WriteFile(hFile, &numberOfLocations, sizeof(numberOfLocations), &bytesWritten, NULL);
+	WriteFile(hFile, flatArray, numberOfLocations * sizeof(WVFormat), &bytesWritten, NULL);
+
+	delete[] flatArray;
+	CloseHandle(hFile);
+
+	return 0;
+}
+
+int LoadWVFormat(LocationHistory* lh)
+{
+	HANDLE hFile;
+	DWORD bytesRead;
+	DWORD numberOfLocations;
+
+	UINT32 magic;
+
+	constexpr DWORD locLimit = 0x04000000;	//largest number of locations we'll allow
+
+	hFile = CreateFile(L"test.wvf", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+
+	LARGE_INTEGER filesize;
+	GetFileSizeEx(hFile, &filesize);
+	lh->filesize = filesize.QuadPart;
+
+	bool fileRead = ReadFile(hFile, &magic, 4, &bytesRead, NULL);
+	printf("Magic: %i\n", magic);
+	if (!fileRead || ((magic & 0x00FFFFFF) != 0x00465657) || (bytesRead != 4)) {
+		printf("Couldn't read magic number.\n");
+		CloseHandle(hFile);
+		return 1;
+	}
+	lh->totalbytesread += bytesRead;
+
+	fileRead = ReadFile(hFile, &numberOfLocations, 4, &bytesRead, NULL);
+	if (!fileRead || (numberOfLocations > locLimit) || (bytesRead != 4) || (numberOfLocations * sizeof(WVFormat) != lh->filesize - 8)) {
+		printf("Location number likely incorrect.\n");
+		CloseHandle(hFile);
+		return 1;
+	}
+	lh->totalbytesread += bytesRead;
+
+	constexpr unsigned int entriesToRead = 1024;
+	WVFormat entry[entriesToRead];
+	LOCATION newLocation;
+
+	lh->locations.reserve(numberOfLocations);
+
+	DWORD bytesStillToRead = lh->filesize - 8;
+
+	while (bytesStillToRead) {
+		bool fileRead = ReadFile(hFile, entry, sizeof(entry), &bytesRead, NULL);
+		bytesStillToRead -= bytesRead;
+		unsigned int entriesRead = bytesRead / sizeof(WVFormat);
+		//printf("Read bytes: %i\n", bytesRead);
+		if (fileRead) {
+			for (int i = 0; i < entriesRead; i++) {
+				newLocation.timestamp = entry[i].timestamp;
+				newLocation.longitude = entry[i].lon;
+				newLocation.latitude = entry[i].lat;
+				lh->locations.emplace_back(newLocation);
+				lh->totalbytesread += bytesRead;
+			}
+		}
+		else
+		{
+			printf("Error reading entries.");
+			CloseHandle(hFile);
+			return 2;
+		}
+	}
+
+	CloseHandle(hFile);
+	return 0;
+}
+
 int StartGLProgram(LocationHistory* lh)
 {
 	GlobalOptions* options;
 	options = lh->globalOptions;
-
-	HighResManager* highres = new HighResManager;
 
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
@@ -201,10 +321,8 @@ int StartGLProgram(LocationHistory* lh)
 	lh->regions.push_back(new Region());
 	lh->regionsInfo->displayRegions.resize(1);
 
-
 	SetupRegionsBufferDataAndVertexAttribArrays(lh->regionsInfo);
 	SetupRegionsShaders(lh->regionsInfo);
-
 
 	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
@@ -237,7 +355,6 @@ int StartGLProgram(LocationHistory* lh)
 
 		DrawBackgroundAndHeatmap(lh);
 
-
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
 			if (lh->viewNSWE->isDirty()) {
@@ -269,7 +386,6 @@ int StartGLProgram(LocationHistory* lh)
 
 			UpdateDisplayRegions(lh->regionsInfo);
 			DrawRegions(lh->regionsInfo);	//this draws the selection box, and the rectangle where regions are
-
 		}
 
 		//		glBindFramebuffer(GL_FRAMEBUFFER, 0);	//Get out of the FBO
@@ -598,7 +714,6 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
 	glEnableVertexAttribArray(2);
 
-
 	return;
 }
 
@@ -627,7 +742,6 @@ void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
 
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformPalette, "palette");
 	mapPointsInfo->shader->LoadUniformLocation(&mapPointsInfo->uniformColourBy, "colourby");
-
 }
 
 void DrawPoints(MapPointsInfo* mapPointsInfo)
@@ -636,7 +750,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	mapPointsInfo->shader->UseMe();
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformNswe, pLocationHistory->viewNSWE);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformResolution, (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
-	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointRadius, pLocationHistory->globalOptions->pointdiameter/2.0f);
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointRadius, pLocationHistory->globalOptions->pointdiameter / 2.0f);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointAlpha, pLocationHistory->globalOptions->pointalpha);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSeconds, pLocationHistory->globalOptions->seconds);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformCycleSeconds, pLocationHistory->globalOptions->cycleSeconds);
@@ -646,21 +760,24 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformShowHighlights, pLocationHistory->globalOptions->showHighlights);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSecondsBetweenHighlights, pLocationHistory->globalOptions->secondsbetweenhighlights);
-	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformTravelTimeBetweenHighlights, pLocationHistory->globalOptions->minutestravelbetweenhighlights*60.0f);
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformTravelTimeBetweenHighlights, pLocationHistory->globalOptions->minutestravelbetweenhighlights * 60.0f);
 
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformColourBy, pLocationHistory->globalOptions->colourby);
 
 	switch (pLocationHistory->globalOptions->colourby) {
 	case 1:
-		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteHourOfDay, 24);
+		//UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteHourOfDay, 24);
+		UpdateShaderPalette(mapPointsInfo, 1);
 		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
 		break;
 	case 4:
-		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteYear, 24);
+		//UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteYear, 24);
+		UpdateShaderPalette(mapPointsInfo, 1);
 		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
 		break;
 	default:
-		UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteDayOfWeek, 7);
+	//	UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteDayOfWeek, 7);
+		UpdateShaderPalette(mapPointsInfo, 1);
 		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 7, &mapPointsInfo->palette[0][0]);
 		break;
 	}
@@ -672,8 +789,16 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	return;
 }
 
-void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, RGBA* sourcePalette, int n)
+void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, int id)
 {
+
+	RGBA* sourcePalette = Palette_Handler::PalettePointer(id);
+	unsigned int n = Palette_Handler::PaletteSize(id);
+
+		if (n > 24) {
+			n = 24;
+		}
+
 	for (int i = 0; i < n; i++) {
 		mapPointsInfo->palette[i][0] = (float)sourcePalette[i].r / 255.0f;
 		mapPointsInfo->palette[i][1] = (float)sourcePalette[i].g / 255.0f;
@@ -688,18 +813,17 @@ void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
 {
 	glGenVertexArrays(1, &mapRegionsInfo->vao);
 	glBindVertexArray(mapRegionsInfo->vao);
-	
+
 	glGenBuffers(1, &mapRegionsInfo->vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 
-	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size()*sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion)/2, 0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion) / 2, 0);
 	glEnableVertexAttribArray(0);
 
 	//glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
 	//glEnableVertexAttribArray(1);
-
 
 	return;
 }
@@ -731,37 +855,34 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 		return;
 	}
 
-		if (mapRegionsInfo->displayRegions.size() != sizeOfRegionVector-1) {
-			mapRegionsInfo->displayRegions.resize(sizeOfRegionVector-1);
-			//printf("changing displayregions size to: %i\n",sizeOfRegionVector-1);
-		}
+	if (mapRegionsInfo->displayRegions.size() != sizeOfRegionVector - 1) {
+		mapRegionsInfo->displayRegions.resize(sizeOfRegionVector - 1);
+		//printf("changing displayregions size to: %i\n",sizeOfRegionVector-1);
+	}
 
-		for (int r = 1; r < sizeOfRegionVector; r++) {
-			//printf("r:%i of %i.\t", r, sizeOfRegionVector);
+	for (int r = 1; r < sizeOfRegionVector; r++) {
+		//printf("r:%i of %i.\t", r, sizeOfRegionVector);
 
-			
-			mapRegionsInfo->displayRegions[r - 1].f[0]= pLocationHistory->regions[r]->nswe.west;
-			mapRegionsInfo->displayRegions[r - 1].f[1] = pLocationHistory->regions[r]->nswe.north;
-			mapRegionsInfo->displayRegions[r - 1].f[2] = pLocationHistory->regions[r]->nswe.east;
-			mapRegionsInfo->displayRegions[r - 1].f[3] = pLocationHistory->regions[r]->nswe.south;
+		mapRegionsInfo->displayRegions[r - 1].f[0] = pLocationHistory->regions[r]->nswe.west;
+		mapRegionsInfo->displayRegions[r - 1].f[1] = pLocationHistory->regions[r]->nswe.north;
+		mapRegionsInfo->displayRegions[r - 1].f[2] = pLocationHistory->regions[r]->nswe.east;
+		mapRegionsInfo->displayRegions[r - 1].f[3] = pLocationHistory->regions[r]->nswe.south;
 
-			//mapRegionsInfo->displayRegions[r - 1].colour.r = 0xff;
-			//mapRegionsInfo->displayRegions[r - 1].colour.g = 0xee;
-			//mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
-			//mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
+		//mapRegionsInfo->displayRegions[r - 1].colour.r = 0xff;
+		//mapRegionsInfo->displayRegions[r - 1].colour.g = 0xee;
+		//mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
+		//mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
 
-			//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
-			//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
-
-		}
+		//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
+		//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
+	}
 
 	//copy the whole thing at first
 	//glBufferData(GL_ARRAY_BUFFER, (0) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT) * sizeOfRegionVector, &mapRegionsInfo->displayRegions.front());
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 	//As we'll usually change the size, we won't muck around with buffersubdata (wasted a day on this!)
 	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
-	
 
 	//printf("count: %i*%i=%i.\n", mapRegionsInfo->displayRegions.size(), sizeof(DisplayRegion), mapRegionsInfo->displayRegions.size() *sizeof(DisplayRegion));
 
@@ -778,12 +899,11 @@ void DrawRegions(MapRegionsInfo* mapRegionsInfo)
 	mapRegionsInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 
-
 	glBindVertexArray(mapRegionsInfo->vao);
- 	glDrawArrays(GL_LINES, 0, mapRegionsInfo->displayRegions.size()*40);//needs to be the number of vertices (not lines)
+	glDrawArrays(GL_LINES, 0, mapRegionsInfo->displayRegions.size() * 40);//needs to be the number of vertices (not lines)
 	glBindVertexArray(0);
 	DisplayIfGLError("After DrawRegions.", false);
-	
+
 	return;
 }
 
@@ -795,14 +915,12 @@ MapRegionsInfo::MapRegionsInfo()
 	shader = new Shader;
 
 	displayRegions = {};
-
 }
 
 MapRegionsInfo::~MapRegionsInfo()
 {
 	delete shader;
 }
-
 
 void DisplayIfGLError(const char* message, bool alwaysshow)
 {

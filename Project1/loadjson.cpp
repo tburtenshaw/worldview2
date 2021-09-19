@@ -154,7 +154,7 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 	return 0;
 }
-
+/*
 void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<PathPlotLocation>& loc)
 {
 	int westwards = 0;
@@ -219,7 +219,7 @@ void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<PathPlotLocation>& loc)
 		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
 	}
 }
-
+*/
 
 double fast_strtolatlongdouble(char* str)
 {

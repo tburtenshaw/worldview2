@@ -127,7 +127,7 @@ void NSWE::setto(NSWE *setthis) {
 		return outputNSWE;
 	}
 
-	NSWE NSWE::interectionWith(NSWE otherNSWE)
+	NSWE NSWE::intersectionWith(NSWE otherNSWE)
 	{
 		NSWE outputNSWE;
 

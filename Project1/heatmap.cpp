@@ -7,6 +7,7 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
+#include <random>
 
 extern LocationHistory* pLocationHistory;
 
@@ -23,6 +24,112 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	
 	maxPixel = 0;
 	memset(pixel, 0, sizeof(pixel));
+
+
+
+	//temporary trial of something
+	
+	/*
+	
+	
+	std::random_device rd{};
+	std::mt19937 gen{ rd() };
+
+
+
+
+	for (int row = 0; row < 12;row++)	{
+	std::normal_distribution<> d{ 100+(double)row*200.0,40.0 };
+	std::normal_distribution<> f{ 100 + (double)row * 200.0,(double)options->minimumaccuracy };
+	std::normal_distribution<> e{ 1800,(double)options->minimumaccuracy };
+	
+
+	for (int i = 0; i < 200000; i++) {
+		int x0 = d(gen);
+		int y0 = d(gen);
+
+		int x1 = e(gen);
+		int y1 = f(gen);
+
+
+//		if ((x0>0) && (y0>0))
+			//pixel[y0 * width + x0] +=10.0;
+
+		//if ((x1 > 0) && (y1 > 0))
+			//pixel[y1 * width + x1] += 10.0;
+			
+
+		float plottedpoints = 0.0;
+		//Pretend to draw line between (but only count the needed points)
+		{
+			int tempx0, tempy0, tempx1, tempy1;
+			tempx0 = x0;
+			tempy0 = y0;
+			tempx1 = x1;
+			tempy1 = y1;
+
+			int dx = abs(tempx1 - tempx0), sx = tempx0 < tempx1 ? 1 : -1;
+			int dy = abs(tempy1 - tempy0), sy = tempy0 < tempy1 ? 1 : -1;
+			int err = (dx > dy ? dx : -dy) / 2, e2;
+
+			for (;;) {
+				plottedpoints++;
+				if (tempx0 == tempx1 && tempy0 == tempy1) break;
+				e2 = err;
+				if (e2 > -dx) { err -= dy; tempx0 += sx; }
+				if (e2 < dy) { err += dx; tempy0 += sy; }
+			}
+		}
+
+
+		//Draw line between
+		{
+			int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+			int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+			int err = (dx > dy ? dx : -dy) / 2, e2;
+
+			for (;;) {
+				if ((x0 > 0) && (y0 > 0) && (x0 < width) && (y0 < height)) {
+					pixel[y0 * width + x0] += 1000.0 / plottedpoints;
+				}
+
+
+				if (x0 == x1 && y0 == y1) break;
+				e2 = err;
+				if (e2 > -dx) { err -= dy; x0 += sx; }
+				if (e2 < dy) { err += dx; y0 += sy; }
+			}
+		}
+
+
+	}
+
+
+
+		//don't redo it
+		options->showHeatmap = false;
+		options->showPoints = false;
+
+
+	}
+
+
+
+	for (int x = 0; x < width; x++) {
+		for (int y = 0; y < width; y++) {
+			float p = pixel[y * width + x];
+
+			if (p > maxPixel) {
+				maxPixel = p;
+			}
+		
+		}
+	
+	}
+
+
+	return;
+	*/
 	
 	//this acts as a mask, so we don't try to blur nothing
 	memset(roughHeatmap, 0, sizeof(roughHeatmap));
