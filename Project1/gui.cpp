@@ -6,6 +6,7 @@
 #include "mytimezone.h"
 #include "input.h"
 #include "heatmap.h"
+#include "palettes.h"
 #include <string>
 #include <vector>
 
@@ -138,66 +139,68 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Combo("Colour by", &options->colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
 
 	static ImVec4 color[24] = {};
-	//{ ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f),ImVec4(-1.0f,0.0f,0.0f,0.0f) };	//set negative if not loaded
+	
+
 
 	if (options->colourby == 4) {
+		options->indexPaletteYear = Palette_Handler::MatchingPalette(options->indexPaletteYear, Palette::YEAR);
 		int n = 0;
-		for (int i = MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp); (i < MyTimeZone::GetYearFromTimestamp(lh->latesttimestamp)+1) && (n < 24); i++) {
-			color[n].x = (float)options->paletteYear[i % 24].r / 255.0f;
-			color[n].y = (float)options->paletteYear[i % 24].g / 255.0f;
-			color[n].z = (float)options->paletteYear[i % 24].b / 255.0f;
-			color[n].w = (float)options->paletteYear[i % 24].a / 255.0f;
+		for (int year = MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->latesttimestamp)+1) && (n < 24); year++) {
+			color[n] = Palette_Handler::PaletteColorImVec4(options->indexPaletteYear, year);
 
 			std::string text = "Year ";
-			text += std::to_string(i);
+			text += std::to_string(year);
 
 			if (ImGui::ColorEdit4(text.c_str(), (float*)&color[n], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-				options->paletteYear[i % 24].r = (unsigned char)(color[n].x * 255.0f);
-				options->paletteYear[i % 24].g = (unsigned char)(color[n].y * 255.0f);
-				options->paletteYear[i % 24].b = (unsigned char)(color[n].z * 255.0f);
-				options->paletteYear[i % 24].a = (unsigned char)(color[n].w * 255.0f);
-				//options->regenPathColours = true;
+				Palette_Handler::SetColourImVec4(options->indexPaletteYear, year, color[n]);
 			}
 			if ((n + 1) % 6) { ImGui::SameLine(); }
 			n++;
+		}
+		if (ImGui::Button(Palette_Handler::PaletteName(options->indexPaletteYear).c_str())) {
+			options->indexPaletteYear = Palette_Handler::NextMatchingPalette(options->indexPaletteYear, Palette::YEAR);
+		}
+		if (ImGui::Button("left")) {
+			Palette_Handler::RotatePaletteLeft(options->indexPaletteYear);
+		}
+		if (ImGui::Button("right")) {
+			Palette_Handler::RotatePaletteRight(options->indexPaletteYear);
 		}
 	}
 
 
 	if (options->colourby == 2) {
 		for (int i = 0; i < 7; i++) {
-			color[i].x = (float)options->paletteDayOfWeek[i].r / 255.0f;
-			color[i].y = (float)options->paletteDayOfWeek[i].g / 255.0f;
-			color[i].z = (float)options->paletteDayOfWeek[i].b / 255.0f;
-			color[i].w = (float)options->paletteDayOfWeek[i].a / 255.0f;
-
+			options->indexPaletteWeekday = Palette_Handler::MatchingPalette(options->indexPaletteWeekday, Palette::WEEKDAY);
+			color[i]= Palette_Handler::PaletteColorImVec4(options->indexPaletteWeekday, i);
 			if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-				options->paletteDayOfWeek[i].r = (unsigned char)(color[i].x * 255.0f);
-				options->paletteDayOfWeek[i].g = (unsigned char)(color[i].y * 255.0f);
-				options->paletteDayOfWeek[i].b = (unsigned char)(color[i].z * 255.0f);
-				options->paletteDayOfWeek[i].a = (unsigned char)(color[i].w * 255.0f);
-				//options->regenPathColours = true;
+				Palette_Handler::SetColourImVec4(options->indexPaletteWeekday, i, color[i]);
 			}
 			ImGui::SameLine();
 		}
+		if (ImGui::Button(Palette_Handler::PaletteName(options->indexPaletteWeekday).c_str())) {
+			options->indexPaletteWeekday = Palette_Handler::NextMatchingPalette(options->indexPaletteWeekday, Palette::WEEKDAY);
+		}
+
+		if (ImGui::Button("left")) {
+			Palette_Handler::RotatePaletteLeft(options->indexPaletteWeekday);
+		}
+		if (ImGui::Button("right")) {
+			Palette_Handler::RotatePaletteRight(options->indexPaletteWeekday);
+		}
+
+
 	}
 
 	if (options->colourby == 1) {
+		options->indexPaletteHour = Palette_Handler::MatchingPalette(options->indexPaletteHour, Palette::HOUR);
 		for (int i = 0; i < 24; i++) {
-			color[i].x = (float)options->paletteHourOfDay[i].r / 255.0f;
-			color[i].y = (float)options->paletteHourOfDay[i].g / 255.0f;
-			color[i].z = (float)options->paletteHourOfDay[i].b / 255.0f;
-			color[i].w = (float)options->paletteHourOfDay[i].a / 255.0f;
-
+			color[i] = Palette_Handler::PaletteColorImVec4(options->indexPaletteHour, i);
 			std::string text = "Hour ";
 			text += std::to_string(i);
 
 			if (ImGui::ColorEdit4(text.c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-				options->paletteHourOfDay[i].r = (unsigned char)(color[i].x * 255.0f);
-				options->paletteHourOfDay[i].g = (unsigned char)(color[i].y * 255.0f);
-				options->paletteHourOfDay[i].b = (unsigned char)(color[i].z * 255.0f);
-				options->paletteHourOfDay[i].a = (unsigned char)(color[i].w * 255.0f);
-				//options->regenPathColours = true;
+				Palette_Handler::SetColourImVec4(options->indexPaletteHour, i, color[i]);
 			}
 			if ((i + 1) % 6) { ImGui::SameLine(); }
 		}

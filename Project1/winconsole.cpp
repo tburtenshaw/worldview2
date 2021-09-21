@@ -766,19 +766,16 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 
 	switch (pLocationHistory->globalOptions->colourby) {
 	case 1:
-		//UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteHourOfDay, 24);
-		UpdateShaderPalette(mapPointsInfo, 1);
+		Palette_Handler::FillShaderPalette(mapPointsInfo->palette, 24, pLocationHistory->globalOptions->indexPaletteHour);
 		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
 		break;
 	case 4:
-		//UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteYear, 24);
-		UpdateShaderPalette(mapPointsInfo, 1);
+		Palette_Handler::FillShaderPalette(mapPointsInfo->palette, 24, pLocationHistory->globalOptions->indexPaletteYear);
 		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
 		break;
 	default:
-	//	UpdateShaderPalette(mapPointsInfo, pLocationHistory->globalOptions->paletteDayOfWeek, 7);
-		UpdateShaderPalette(mapPointsInfo, 1);
-		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 7, &mapPointsInfo->palette[0][0]);
+		Palette_Handler::FillShaderPalette(mapPointsInfo->palette, 24, pLocationHistory->globalOptions->indexPaletteWeekday);
+		mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
 		break;
 	}
 
@@ -789,25 +786,6 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	return;
 }
 
-void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, int id)
-{
-
-	RGBA* sourcePalette = Palette_Handler::PalettePointer(id);
-	unsigned int n = Palette_Handler::PaletteSize(id);
-
-		if (n > 24) {
-			n = 24;
-		}
-
-	for (int i = 0; i < n; i++) {
-		mapPointsInfo->palette[i][0] = (float)sourcePalette[i].r / 255.0f;
-		mapPointsInfo->palette[i][1] = (float)sourcePalette[i].g / 255.0f;
-		mapPointsInfo->palette[i][2] = (float)sourcePalette[i].b / 255.0f;
-		mapPointsInfo->palette[i][3] = (float)sourcePalette[i].a / 255.0f;
-	}
-
-	return;
-}
 
 void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
 {

@@ -4,6 +4,7 @@
 //#include "nswe.h"
 #include <string>
 #include <vector>
+#include <imgui.h>
 
 #define READ_BUFFER_SIZE 1024*256
 #define MAX_JSON_STRING 1024
@@ -71,6 +72,15 @@ public:
 		b = other.b;
 		a = other.a;
 	}
+
+	void operator=(const ImVec4 other) {
+		r = (unsigned char)(other.x *255.0f);
+		g = (unsigned char)(other.y * 255.0f);
+		b = (unsigned char)(other.z * 255.0f);
+		a = (unsigned char)(other.w * 255.0f);
+	}
+
+
 };
 
 struct LOCATION {
@@ -116,6 +126,16 @@ public:
 	float linewidth;
 	float cycleSeconds;
 	int colourby;
+
+	//palettes
+	int indexPaletteHour = 0;
+	int indexPaletteWeekday = 0;
+	int indexPaletteYear = 0;
+
+
+
+
+
 	RGBA paletteHourOfDay[24]
 	{
 	{ 0x0e, 0x15, 0x32, 0xff },
@@ -350,8 +370,7 @@ void DrawPaths(MapPathInfo* mapPathInfo);
 void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
 void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
-void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, int id);
-
+void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, unsigned int index);
 //regions
 void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo);
 void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
