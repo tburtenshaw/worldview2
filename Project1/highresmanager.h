@@ -24,7 +24,7 @@ public:
 
 	HighResManager();
 
-	void DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE);
+	void DecideBestTex(RectDimension windowSize, NSWE* viewportNSWE);
 	NSWE *GetBestNSWE();
 	void ImageLoadThread(int n);
 	void LoadBestTex();

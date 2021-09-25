@@ -322,7 +322,7 @@ void Gui::ListDatesInRegion(Region* r)
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 
-const char* Gui::BestSigFigsFormat(NSWE* nswe, RECTDIMENSION* rect)
+const char* Gui::BestSigFigsFormat(NSWE* nswe, RectDimension* rect)
 {
 	float dpp;	//degrees per pixel
 	dpp = nswe->width() / rect->width;

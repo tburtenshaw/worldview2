@@ -6,7 +6,7 @@
 #include "loadjson.h"
 #include "heatmap.h"
 
-int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION>& loc, LocationHistory * lh) {
+int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location>& loc, LocationHistory * lh) {
 
 	unsigned long i;
 	//char c;
@@ -154,72 +154,6 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 	return 0;
 }
-/*
-void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<PathPlotLocation>& loc)
-{
-	int westwards = 0;
-	if (jsr->location.longitude < jsr->oldlocation.longitude) {
-		westwards = 1;
-	}
-	else {
-		westwards = 0;
-	}
-	
-	//printf("old:%f %f, new:%f %f\n", jsr->oldlocation.longitude, jsr->oldlocation.latitude, jsr->location.longitude, jsr->location.latitude);
-	double newlat;
-	PathPlotLocation newloc;
-	double dx, dy;
-
-	double movedlongitude;	//this is an extra 360 deg
-	float proportionNew;	//proportion with the most recent
-	proportionNew = 0.5;	//at the moment, just said to 50%, so the time of the new point is between the old and new
-
-	if (!westwards) {
-		movedlongitude = 360 + jsr->oldlocation.longitude;
-
-		dx = movedlongitude - jsr->location.longitude;
-		dy = jsr->oldlocation.latitude - jsr->location.latitude;
-
-		newlat = (dy / dx) * (180 - jsr->location.longitude) + jsr->location.latitude;
-
-		newloc.detaillevel = 0.0;//?don't draw
-		newloc.latitude = newlat;
-		newloc.longitude = -180.0;
-		//newloc.timestamp = jsr->location.timestamp*(proportionNew)+ jsr->oldlocation.timestamp*(1-proportionNew);
-		loc.push_back(newloc);
-
-		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
-		newloc.detaillevel = -1000;//?don't draw
-		newloc.latitude = newlat;
-		newloc.longitude = +180;
-		loc.push_back(newloc);
-		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
-	}
-	else {
-		movedlongitude = 360 + jsr->location.longitude;
-
-		//printf("old:%f %f, new:%f %f\n", jsr->oldlocation.longitude, jsr->oldlocation.latitude, movedlongitude, jsr->location.latitude);
-
-		dx = movedlongitude - jsr->oldlocation.longitude;
-		dy = jsr->location.latitude- jsr->oldlocation.latitude;
-
-		newlat = (dy / dx) * (180 - movedlongitude) + jsr->location.latitude;
-
-		newloc.detaillevel = 0;
-		newloc.latitude = newlat;
-		newloc.longitude = 180;
-		//newloc.timestamp = jsr->location.timestamp * (proportionNew)+jsr->oldlocation.timestamp * (1 - proportionNew);
-		loc.push_back(newloc);
-
-		
-		newloc.detaillevel = -1000.0;//?don't draw
-		newloc.latitude = newlat;
-		newloc.longitude = -180.0;
-		loc.push_back(newloc);
-		//printf("-dx %f, dy %f. New lat: %f long %f\n", dx, dy, newloc.latitude, newloc.longitude);
-	}
-}
-*/
 
 double fast_strtolatlongdouble(char* str)
 {
@@ -354,4 +288,98 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 		}
 	}
 	return 0; //return 0 if we didn't use anything
+}
+
+int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
+{
+	JSON_READER_STATE jrs;
+	memset(&jrs, 0, sizeof(jrs));
+	char* buffer;
+
+	buffer = new char[READ_BUFFER_SIZE];
+	unsigned long readbytes;
+	BOOL rf;
+	int result;	//zero if no problems.
+	lh->totalbytesread = 0;
+	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
+
+
+
+	readbytes = 1;
+	while (readbytes) {
+		rf = ReadFile(jsonfile, buffer, READ_BUFFER_SIZE - 1, &readbytes, NULL);
+		if (rf == false) {
+			printf("Failed reading the file.\n");
+			return 1;
+		}
+		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations, lh);
+		lh->totalbytesread += readbytes;
+		if (result) {
+			readbytes = 0;	//trick the loading loop into ending
+		}
+	}
+	printf("Finished loading\n");
+
+	delete[] buffer;
+}
+
+
+int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
+{
+	DWORD bytesRead;
+	DWORD numberOfLocations;
+
+	UINT32 magic;
+
+	constexpr DWORD locLimit = 0x04000000;	//largest number of locations we'll allow
+
+	LARGE_INTEGER filesize;
+	GetFileSizeEx(WVFfile, &filesize);
+	lh->filesize = filesize.QuadPart;
+
+	bool fileRead = ReadFile(WVFfile, &magic, 4, &bytesRead, NULL);
+	printf("Magic: %i\n", magic);
+	if (!fileRead || ((magic & 0x00FFFFFF) != 0x00465657) || (bytesRead != 4)) {
+		printf("Couldn't read magic number.\n");
+		return 1;
+	}
+	lh->totalbytesread += bytesRead;
+
+	fileRead = ReadFile(WVFfile, &numberOfLocations, 4, &bytesRead, NULL);
+	if (!fileRead || (numberOfLocations > locLimit) || (bytesRead != 4) || (numberOfLocations * sizeof(WVFormat) != lh->filesize - 8)) {
+		printf("Location number likely incorrect.\n");
+		return 1;
+	}
+	lh->totalbytesread += bytesRead;
+
+	constexpr unsigned int entriesToRead = 1024;
+	WVFormat entry[entriesToRead];
+	Location newLocation;
+
+	lh->locations.reserve(numberOfLocations);
+
+	DWORD bytesStillToRead = lh->filesize - 8;
+
+	while (bytesStillToRead) {
+		bool fileRead = ReadFile(WVFfile, entry, sizeof(entry), &bytesRead, NULL);
+		bytesStillToRead -= bytesRead;
+		unsigned int entriesRead = bytesRead / sizeof(WVFormat);
+		//printf("Read bytes: %i\n", bytesRead);
+		if (fileRead) {
+			for (int i = 0; i < entriesRead; i++) {
+				newLocation.timestamp = entry[i].timestamp;
+				newLocation.longitude = entry[i].lon;
+				newLocation.latitude = entry[i].lat;
+				lh->locations.emplace_back(newLocation);
+				lh->totalbytesread += bytesRead;
+			}
+		}
+		else
+		{
+			printf("Error reading entries.");
+			return 2;
+		}
+	}
+
+	return 0;
 }

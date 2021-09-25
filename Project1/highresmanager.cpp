@@ -11,7 +11,6 @@
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <filesystem>
 
 
 HighResManager::HighResManager()
@@ -35,53 +34,41 @@ HighResManager::HighResManager()
 	nswe.push_back(NSWE(10000.0f, 20000.0f, 30000.0f, 40000.0f));	//should never be displayed
 
 
-	filename.push_back("D:/n-34s-48w166e179.png"); //nz
+	filename.push_back("n-34s-48w166e179.png"); //nz
 	nswe.push_back(NSWE(-34.0f, -48.0f, 166.0f, 179.0f));
 
 
 	
-	filename.push_back("D:/n55s38w0e17.png");
+	filename.push_back("n55s38w0e17.png");
 	nswe.push_back(NSWE(55.0f, 38.0f, 0.0f, 17.0f));
 
-	filename.push_back("D:/n-16s-28w145e154.png");
+	filename.push_back("n-16s-28w145e154.png");
 	nswe.push_back(NSWE(-16.0f, -28.0f, 145.0f, 154.0f));
 
-	filename.push_back("D:/n51s46w-125e-120.png");
+	filename.push_back("n51s46w-125e-120.png");
 	nswe.push_back(NSWE(51.0f, 46.0f, -125.0f, -120.0f));
 
-	filename.push_back("D:/n-33s-35w18e20.png");
+	filename.push_back("n-33s-35w18e20.png");
 	nswe.push_back(NSWE(-33.0f, -35.0f, 18.0f, 20.0f));
 	
-	filename.push_back("d:/n-25s-26w-55e-54.png");
+	filename.push_back("n-25s-26w-55e-54.png");
 	nswe.push_back(NSWE(-25.0f, -26.0f, -55.0f, -54.0f));
 
-	filename.push_back("d:/n-22s-25w-47e-42.png");
+	filename.push_back("n-22s-25w-47e-42.png");
 	nswe.push_back(NSWE(-22.0f, -25.0f, -47.0f, -42.0f));
 
-	filename.push_back("d:/n-33s-35w150e152.png");
+	filename.push_back("n-33s-35w150e152.png");
 	nswe.push_back(NSWE(-33.0f, -35.0f, 150.0f, 152.0f));
 
-	filename.push_back("d:/n31s24w72e79.png");
+	filename.push_back("n31s24w72e79.png");
 	nswe.push_back(NSWE(31.0f, 24.0f, 72.0f, 79.0f));
 	
-	filename.push_back("d:/n39s31w-123e-115.png");
+	filename.push_back("n39s31w-123e-115.png");
 	nswe.push_back(NSWE(39.0f, 31.0f, -123.0f, -115.0f));
-
-	std::filesystem::path p="n39s31w-123e-115.png";
-	std::filesystem::path ap;
-
-	
-	ap = std::filesystem::absolute(p);
-
-
-	printf("Path: %s\n", ap.parent_path().string().c_str());
-	std::cout << "Absolute path for " << p << " is "
-		<< std::filesystem::absolute(p) << '\n';
-
 
 }
 
-void HighResManager::DecideBestTex(RECTDIMENSION windowSize, NSWE* viewportNSWE)
+void HighResManager::DecideBestTex(RectDimension windowSize, NSWE* viewportNSWE)
 {
 	float pixelsperdegree;
 
@@ -130,6 +117,12 @@ void HighResManager::ImageLoadThread(int n)
 {
 	printf("Filename: %s, number: %i\n", filename[n].c_str(),n);
 	rawImageData = stbi_load(filename[n].c_str(), &width, &height, &nrChannels, 0);
+	if (!rawImageData) {
+		std::string CheckRoot="D:/"+filename[n];
+		rawImageData = stbi_load(CheckRoot.c_str(), &width, &height, &nrChannels, 0);
+	}
+
+
 	if (!rawImageData) { 
 		printf("Didn't load.\n");
 		fileThreadLoading = false;

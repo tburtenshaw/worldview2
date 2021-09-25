@@ -77,6 +77,29 @@ vec3 hpluv(float t) {
 }
 
 
+const float tau = radians(360.);
+
+vec3 linearToSRGB(vec3 linear){
+    return mix(
+        linear * 12.92,
+        pow(linear, vec3(1./2.4) ) * 1.055 - .055,
+        step( .0031308, linear )
+    );
+}
+
+vec3 JodieSRGBRainbow(float t)
+{
+    vec3 rainbow = 	sin( (t+vec3(0,2,1)/3.)*tau ) * .5 + .5;
+    return linearToSRGB(rainbow);
+}
+
+
+vec3 rainbow(float t)
+{
+	return JodieSRGBRainbow(t);
+	//return hpluv(t);
+}
+
 void main()
 {
 	float width; float height;
@@ -114,7 +137,7 @@ void main()
 		vcolour = ColourByWeekday(timestamp);
 	}
 	else {
-		vcolour = vec4(hpluv(float(int(timestamp -uint(1262304000))- 31536000 * 3 + 31622400)/cycleSeconds),1.0);
+		vcolour = vec4(rainbow(float(int(timestamp -uint(1262304000))- 31536000 * 3 + 31622400)/cycleSeconds),1.0);
 	}
 	
 
@@ -132,5 +155,5 @@ void main()
 	}
 
 
-	vcolour+=vec4(sinehighlight, sinehighlight, sinehighlight,sinehighlight);
+	vcolour+=vec4(sinehighlight, sinehighlight, sinehighlight,0.0);
 }

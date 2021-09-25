@@ -68,12 +68,12 @@ void CreatePathPlotLocations(LocationHistory* lh)
 	//Creates and fills a new array for GL, with floats instead of doubles and local time fixed.
 	lh->pathPlotLocations.reserve(lh->locations.size());	//it'll be as big as the number of locations
 
-	for (std::vector<LOCATION>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
+	for (std::vector<Location>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
 		lh->pathPlotLocations.emplace_back((float)iter->latitude, (float)iter->longitude, MyTimeZone::FixToLocalTime(iter->timestamp));
 	}
 
 	OptimiseDetail(lh->pathPlotLocations);
-	ColourPathPlot(lh);
+	//ColourPathPlot(lh);
 
 	return;
 }

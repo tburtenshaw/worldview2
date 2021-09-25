@@ -96,7 +96,7 @@ void Region::Populate(LocationHistory* lh)
 
 	bool instay = false;
 
-	for (std::vector<LOCATION>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
+	for (std::vector<Location>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
 
 		if (nswe.containspoint(iter->latitude, iter->longitude)) {
 			if (instay == false) {

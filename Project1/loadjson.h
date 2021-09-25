@@ -18,14 +18,15 @@ typedef struct json_reader_state {
 	int locationsdepth;
 	long locationnumber;
 
-	LOCATION location;
+	Location location;
 
-	LOCATION oldlocation; //to compare to previous to see if crosses earth the other way around
+	Location oldlocation; //to compare to previous to see if crosses earth the other way around
 	
-
 
 } JSON_READER_STATE;
 
-int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<LOCATION> &loc, LocationHistory* lh);
+int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location> &loc, LocationHistory* lh);
 int AssignValueToName(JSON_READER_STATE* jsr);
-void BreakRoundTheWorlds(JSON_READER_STATE* jsr, vector<LOCATION>& loc);
+
+int LoadJsonFile(LocationHistory* lh, HANDLE jsonfile);
+int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile);

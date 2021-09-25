@@ -11,7 +11,7 @@
 
 //forward declarations
 class NSWE;
-struct LOCATION;
+struct Location;
 class Heatmap;
 class Shader;
 class FrameBufferObjectInfo;
@@ -46,7 +46,7 @@ struct XY {
 	}
 };
 
-struct RECTDIMENSION {
+struct RectDimension {
 	int width;
 	int height;
 };
@@ -56,7 +56,7 @@ public:
 	float latitude;	//these can be floats, as they're not really for data points
 	float longitude;
 
-	void SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION* window);
+	void SetFromWindowXY(float x, float y, NSWE nswe, RectDimension* window);
 };
 
 class RGBA {
@@ -83,7 +83,7 @@ public:
 
 };
 
-struct LOCATION {
+struct Location {
 	unsigned long timestamp; //we'll use a long instead of the high precision of google (seconds rather than ms)
 	double longitude;	//tried using a float rather than a double means an imprecision of less than 2metres, but keeping doubles
 	double latitude;		//longitude first as it's x
@@ -223,7 +223,7 @@ public:
 	std::wstring filename;
 	unsigned long filesize;
 
-	std::vector<LOCATION> locations;	//this holds the raw data from the json file, double precision
+	std::vector<Location> locations;	//this holds the raw data from the json file, double precision
 	unsigned long earliesttimestamp;
 	unsigned long latesttimestamp;
 
@@ -243,7 +243,7 @@ public:
 	MouseActions* mouseInfo;
 
 	MovingTarget* viewNSWE;
-	RECTDIMENSION* windowDimensions;
+	RectDimension* windowDimensions;
 
 	std::vector<Region*> regions;
 
@@ -346,6 +346,12 @@ public:
 	std::vector<DisplayRegion> displayRegions;
 };
 
+struct WVFormat {
+	unsigned long timestamp;
+	float lon;
+	float lat;
+};
+
 int StartGLProgram(LocationHistory* lh);
 void DisplayIfGLError(const char* message, bool alwaysshow);
 
@@ -370,16 +376,16 @@ void DrawPaths(MapPathInfo* mapPathInfo);
 void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
 void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
-void UpdateShaderPalette(MapPointsInfo* mapPointsInfo, unsigned int index);
+
 //regions
 void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo);
 void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
 void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
 void DrawRegions(MapRegionsInfo* mapRegionsInfo);
 
-int OpenAndReadJSON(LocationHistory* lh);
+int OpenAndReadLocationFile(LocationHistory* lh);
 
 void CalculateEarliestAndLatest(LocationHistory *lh);
 int SaveWVFormat(LocationHistory* lh);
-int LoadWVFormat(LocationHistory* lh);
+
 

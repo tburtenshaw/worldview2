@@ -150,7 +150,7 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 
 	//printf("Heatmap pixel size: W%i H%i. West: %f, East: %f, Map width: %f\n",width,height,nswe->west,nswe->east,nswe->width());
 
-	for (std::vector<LOCATION>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
+	for (std::vector<Location>::iterator iter = pLocationHistory->locations.begin(); iter != pLocationHistory->locations.end(); ++iter) {
 		int x,y, xold, yold;
 		double fx, fy;
 

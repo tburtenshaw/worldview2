@@ -30,15 +30,16 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <filesystem>
+#include <string>
 
 //using namespace std;
 
 LocationHistory* pLocationHistory;
 
-int OpenAndReadJSON(LocationHistory* lh)
+int OpenAndReadLocationFile(LocationHistory* lh)
 {
-	HANDLE jsonfile;
-	JSON_READER_STATE jrs;
+	HANDLE hLocationFile;
 
 	if (lh->isLoadingFile) {	//we don't want to load if we're already loading something
 		return 2;
@@ -48,9 +49,9 @@ int OpenAndReadJSON(LocationHistory* lh)
 	lh->isFileChosen = true;
 	lh->isInitialised = false;
 
-	jsonfile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	hLocationFile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
-	if (jsonfile == INVALID_HANDLE_VALUE) {
+	if (hLocationFile == INVALID_HANDLE_VALUE) {
 		lh->isFileChosen = false;
 		lh->isLoadingFile = false;
 		lh->isFullyLoaded = false;
@@ -62,45 +63,24 @@ int OpenAndReadJSON(LocationHistory* lh)
 	}
 
 	LARGE_INTEGER filesize;
-	GetFileSizeEx(jsonfile, &filesize);
+	GetFileSizeEx(hLocationFile, &filesize);
 	lh->filesize = filesize.QuadPart;
 	printf("File size: %i\n", lh->filesize);
 
-	memset(&jrs, 0, sizeof(jrs));
-	char* buffer;
 
-	buffer = new char[READ_BUFFER_SIZE];
-	unsigned long readbytes;
-	BOOL rf;
-	int result;	//zero if no problems.
-	lh->totalbytesread = 0;
-	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
-
-
-
-	readbytes = 0;
-	while (readbytes) {
-		rf = ReadFile(jsonfile, buffer, READ_BUFFER_SIZE - 1, &readbytes, NULL);
-		if (rf == false) {
-			printf("Failed reading the file.\n");
-			return 1;
-		}
-		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations, lh);
-		lh->totalbytesread += readbytes;
-		if (result) {
-			readbytes = 0;	//trick the loading loop into ending
-		}
+	std::string extension = std::filesystem::path(lh->filename).extension().string();
+	if (extension == ".json") {
+		LoadJsonFile(lh, hLocationFile);
 	}
-	printf("Finished loading\n");
+	else if (extension == ".wvf") {
+		LoadWVFormat(lh, hLocationFile);
+	}
 
-	delete[] buffer;
-	CloseHandle(jsonfile);
+	CloseHandle(hLocationFile);
 
 	//SaveWVFormat(lh);
-	LoadWVFormat(lh);
-
+	
 	CalculateEarliestAndLatest(lh);
-
 	CreatePathPlotLocations(lh);	//points for OpenGL are stored on another vector
 
 
@@ -111,11 +91,7 @@ int OpenAndReadJSON(LocationHistory* lh)
 	return 0;
 }
 
-struct WVFormat {
-	unsigned long timestamp;
-	float lon;
-	float lat;
-};
+
 
 void CalculateEarliestAndLatest(LocationHistory* lh)
 {
@@ -160,72 +136,7 @@ int SaveWVFormat(LocationHistory* lh)
 	return 0;
 }
 
-int LoadWVFormat(LocationHistory* lh)
-{
-	HANDLE hFile;
-	DWORD bytesRead;
-	DWORD numberOfLocations;
 
-	UINT32 magic;
-
-	constexpr DWORD locLimit = 0x04000000;	//largest number of locations we'll allow
-
-	hFile = CreateFile(L"test.wvf", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-
-	LARGE_INTEGER filesize;
-	GetFileSizeEx(hFile, &filesize);
-	lh->filesize = filesize.QuadPart;
-
-	bool fileRead = ReadFile(hFile, &magic, 4, &bytesRead, NULL);
-	printf("Magic: %i\n", magic);
-	if (!fileRead || ((magic & 0x00FFFFFF) != 0x00465657) || (bytesRead != 4)) {
-		printf("Couldn't read magic number.\n");
-		CloseHandle(hFile);
-		return 1;
-	}
-	lh->totalbytesread += bytesRead;
-
-	fileRead = ReadFile(hFile, &numberOfLocations, 4, &bytesRead, NULL);
-	if (!fileRead || (numberOfLocations > locLimit) || (bytesRead != 4) || (numberOfLocations * sizeof(WVFormat) != lh->filesize - 8)) {
-		printf("Location number likely incorrect.\n");
-		CloseHandle(hFile);
-		return 1;
-	}
-	lh->totalbytesread += bytesRead;
-
-	constexpr unsigned int entriesToRead = 1024;
-	WVFormat entry[entriesToRead];
-	LOCATION newLocation;
-
-	lh->locations.reserve(numberOfLocations);
-
-	DWORD bytesStillToRead = lh->filesize - 8;
-
-	while (bytesStillToRead) {
-		bool fileRead = ReadFile(hFile, entry, sizeof(entry), &bytesRead, NULL);
-		bytesStillToRead -= bytesRead;
-		unsigned int entriesRead = bytesRead / sizeof(WVFormat);
-		//printf("Read bytes: %i\n", bytesRead);
-		if (fileRead) {
-			for (int i = 0; i < entriesRead; i++) {
-				newLocation.timestamp = entry[i].timestamp;
-				newLocation.longitude = entry[i].lon;
-				newLocation.latitude = entry[i].lat;
-				lh->locations.emplace_back(newLocation);
-				lh->totalbytesread += bytesRead;
-			}
-		}
-		else
-		{
-			printf("Error reading entries.");
-			CloseHandle(hFile);
-			return 2;
-		}
-	}
-
-	CloseHandle(hFile);
-	return 0;
-}
 
 int StartGLProgram(LocationHistory* lh)
 {
@@ -238,7 +149,7 @@ int StartGLProgram(LocationHistory* lh)
 		return 1;
 	}
 
-	lh->windowDimensions->width = 800;
+	lh->windowDimensions->width = 1200;
 	lh->windowDimensions->height = 800;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -336,7 +247,7 @@ int StartGLProgram(LocationHistory* lh)
 		lh->viewNSWE->movetowards(lh->globalOptions->seconds);
 
 		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
-			std::thread loadingthread(OpenAndReadJSON, pLocationHistory);
+			std::thread loadingthread(OpenAndReadLocationFile, pLocationHistory);
 			loadingthread.detach();
 		}
 
@@ -372,7 +283,7 @@ int StartGLProgram(LocationHistory* lh)
 
 			if (options->showPaths) {
 				if (options->regenPathColours) {
-					//printf("regen pathplot\n");
+					printf("regen pathplot\n");
 					ColourPathPlot(lh);
 					glBindBuffer(GL_ARRAY_BUFFER, lh->pathInfo->vbo);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
@@ -454,8 +365,12 @@ void SetupBackgroundVertices(BackgroundInfo* backgroundInfo)
 void LoadBackgroundImageToTexture(unsigned int* texture)
 {
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load("D:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load("world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
 
+	if (!data) {	//hack to try root until I get filenames better
+		stbi_image_free(data);
+		data = stbi_load("d:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
+	}
 	if (!data) {
 		printf("\nCan't load background\n");
 		return;
@@ -917,7 +832,7 @@ int main(int argc, char** argv)
 
 	pLocationHistory->isFileChosen = true;
 	if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
-		std::thread loadingthread(OpenAndReadJSON, pLocationHistory);
+		std::thread loadingthread(OpenAndReadLocationFile, pLocationHistory);
 		loadingthread.detach();
 	}
 

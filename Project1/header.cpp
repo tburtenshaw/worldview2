@@ -6,7 +6,7 @@
 #include "highresmanager.h"
 #include <stdio.h>
 
-void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RECTDIMENSION *window)
+void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension *window)
 {
 	longitude = x / window->width;
 	longitude *= nswe.width();
@@ -21,12 +21,13 @@ LocationHistory::LocationHistory()
 {
 	filesize = 0;
 
-	filename = L"d:\\Location History.json";
+	//filename = L"d:\\Location History.json";
+	filename = L"test.wvf";
 
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
 
-	windowDimensions = new RECTDIMENSION;
+	windowDimensions = new RectDimension;
 	mouseInfo = new MouseActions;
 	viewNSWE = new MovingTarget;
 

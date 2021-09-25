@@ -70,12 +70,12 @@ void Palette_Handler::RotatePalette(unsigned int currentIndex, int amount)
 
 }
 
-unsigned int Palette_Handler::SetColourImVec4(unsigned int currentIndex, int c, ImVec4 colour)
+unsigned int Palette_Handler::SetColourImVec4(unsigned int currentIndex, int pos, ImVec4 colour)
 {
     if (currentIndex >= palette.size())
         return 0;
 
-    int m = c % palette[currentIndex].colors.size();  //should stop overflow
+    int m = (pos + palette[currentIndex].startingPoint) % palette[currentIndex].colors.size();
     palette[currentIndex].colors[m] = colour;
 
     return currentIndex; //this may be different if palette is created.
