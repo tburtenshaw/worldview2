@@ -93,8 +93,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	if (yoffset > 0.0) { viewNSWE->target.zoom(0.8f, mapCoord); }
 	else if (yoffset < 1.0) { viewNSWE->target.zoom(1.0f / 0.8f, mapCoord); }
 
-	//printf("%i %i\n", pLocationHistory->windowDimensions->height, pLocationHistory->windowDimensions->width);
-	viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions->height/ (float)pLocationHistory->windowDimensions->width);
+	viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions.height/ (float)pLocationHistory->windowDimensions.width);
 
 	viewNSWE->starttime = glfwGetTime();
 	viewNSWE->targettime = glfwGetTime() + 0.4;
@@ -105,14 +104,14 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 {
 	//printf("Resize %i %i\t", windowNewWidth, windowNewHeight);
-	pLocationHistory->windowDimensions->height = windowNewHeight;
-	pLocationHistory->windowDimensions->width = windowNewWidth;
+	pLocationHistory->windowDimensions.height = windowNewHeight;
+	pLocationHistory->windowDimensions.width = windowNewWidth;
 	glViewport(0, 0, windowNewWidth, windowNewHeight);
 	glBindTexture(GL_TEXTURE_2D, pLocationHistory->fboInfo->fboTexture);
 	//printf("fbo texture %i\n", pLocationHistory->fboInfo->fboTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions->width, pLocationHistory->windowDimensions->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-	pLocationHistory->viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions->height / (float)pLocationHistory->windowDimensions->width);
+	pLocationHistory->viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
 
 	return;
 }
@@ -190,8 +189,8 @@ void MouseNavigation(MouseActions* mouse, MovingTarget* viewNSWE, LocationHistor
 			delta = mouse->GetDragDelta();
 
 			float dppx, dppy;
-			dppx = viewNSWE->width() / lh->windowDimensions->width;
-			dppy = viewNSWE->height() / lh->windowDimensions->height;
+			dppx = viewNSWE->width() / lh->windowDimensions.width;
+			dppy = viewNSWE->height() / lh->windowDimensions.height;
 
 			viewNSWE->target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
 			viewNSWE->setMoving(true);

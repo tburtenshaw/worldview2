@@ -149,15 +149,15 @@ int StartGLProgram(LocationHistory* lh)
 		return 1;
 	}
 
-	lh->windowDimensions->width = 1200;
-	lh->windowDimensions->height = 800;
+	lh->windowDimensions = { 1200,800 };
+	
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	//glfwWindowHint(GLFW_SAMPLES, 4);
 	//glEnable(GL_MULTISAMPLE);
 
-	GLFWwindow* window = glfwCreateWindow(lh->windowDimensions->width, lh->windowDimensions->height, "World Tracker", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(lh->windowDimensions.width, lh->windowDimensions.height, "World Tracker", NULL, NULL);
 	if (!window) {
 		fprintf(stderr, "ERROR: could not open window with GLFW3\n");
 		glfwTerminate();
@@ -197,7 +197,7 @@ int StartGLProgram(LocationHistory* lh)
 	//glEnable(GL_DEPTH_TEST); // enable depth-testing (don't do this, as breask alpha)
 	//glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 
-	glViewport(0, 0, lh->windowDimensions->width, lh->windowDimensions->height);
+	glViewport(0, 0, lh->windowDimensions.width, lh->windowDimensions.height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetFramebufferSizeCallback(window, size_callback);
@@ -220,11 +220,11 @@ int StartGLProgram(LocationHistory* lh)
 
 	//Set up the FBO that we draw onto
 	lh->fboInfo = new FrameBufferObjectInfo();
-	SetupFrameBufferObject(lh->fboInfo, lh->windowDimensions->width, lh->windowDimensions->height);
+	SetupFrameBufferObject(lh->fboInfo, lh->windowDimensions.width, lh->windowDimensions.height);
 
 	//initial values
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
-	lh->viewNSWE->target.makeratio((float)lh->windowDimensions->height / (float)lh->windowDimensions->width);
+	lh->viewNSWE->target.makeratio((float)lh->windowDimensions.height / (float)lh->windowDimensions.width);
 	lh->viewNSWE->setvalues(lh->viewNSWE->target);
 	lh->viewNSWE->movetowards(1000000000000);
 
@@ -492,7 +492,7 @@ void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int heigh
 void DrawFrameBuffer(LocationHistory* lh)
 {
 	lh->fboInfo->fboBGInfo.shader->UseMe();
-	lh->fboInfo->fboBGInfo.shader->SetUniformFromFloats("resolution", (float)lh->windowDimensions->width, (float)lh->windowDimensions->height);
+	lh->fboInfo->fboBGInfo.shader->SetUniformFromFloats("resolution", (float)lh->windowDimensions.width, (float)lh->windowDimensions.height);
 
 	glActiveTexture(GL_TEXTURE0 + 4);
 	glBindTexture(GL_TEXTURE_2D, lh->fboInfo->fboTexture);
@@ -516,14 +516,14 @@ void DrawBackgroundAndHeatmap(LocationHistory* lh)
 	heatmapnswe = pLocationHistory->heatmap->nswe;
 	highres = lh->highres;
 
-	highres->DecideBestTex(*lh->windowDimensions, lh->viewNSWE);
+	highres->DecideBestTex(lh->windowDimensions, lh->viewNSWE);
 	highresnswe = highres->GetBestNSWE();
 
 	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
 
 	backgroundInfo->shader->UseMe();
 	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
-	backgroundInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+	backgroundInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
 	backgroundInfo->shader->SetUniformFromFloats("nswe", viewnswe->north, viewnswe->south, viewnswe->west, viewnswe->east);
 	backgroundInfo->shader->SetUniformFromNSWE("highresnswe", highresnswe);
 	backgroundInfo->shader->SetUniformFromFloats("highresscale", (float)highres->width / 8192.0f, (float)highres->height / 8192.0f); //as we're just loading the
@@ -597,7 +597,7 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 	mapPathInfo->shader->UseMe();
 	mapPathInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
 	mapPathInfo->shader->SetUniformFromFloats("seconds", options->seconds * 20.0f);
-	mapPathInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+	mapPathInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
 	mapPathInfo->shader->SetUniformFromFloats("linewidth", options->linewidth);
 	mapPathInfo->shader->SetUniformFromFloats("cycle", options->cycleSeconds);
 
@@ -664,7 +664,7 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	//update uniform shader variables
 	mapPointsInfo->shader->UseMe();
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformNswe, pLocationHistory->viewNSWE);
-	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformResolution, (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformResolution, (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointRadius, pLocationHistory->globalOptions->pointdiameter / 2.0f);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformPointAlpha, pLocationHistory->globalOptions->pointalpha);
 	mapPointsInfo->shader->SetUniform(mapPointsInfo->uniformSeconds, pLocationHistory->globalOptions->seconds);
@@ -788,7 +788,7 @@ void DrawRegions(MapRegionsInfo* mapRegionsInfo)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 	mapRegionsInfo->shader->UseMe();
-	mapRegionsInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions->width, (float)pLocationHistory->windowDimensions->height);
+	mapRegionsInfo->shader->SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
 	mapRegionsInfo->shader->SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 

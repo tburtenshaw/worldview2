@@ -6,13 +6,13 @@
 #include "highresmanager.h"
 #include <stdio.h>
 
-void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension *window)
+void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension window)
 {
-	longitude = x / window->width;
+	longitude = x / window.width;
 	longitude *= nswe.width();
 	longitude += nswe.west;
 
-	latitude = nswe.north - y / window->height * nswe.height();
+	latitude = nswe.north - y / window.height * nswe.height();
 
 	return;
 }
@@ -27,7 +27,7 @@ LocationHistory::LocationHistory()
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
 
-	windowDimensions = new RectDimension;
+	//windowDimensions = new RectDimension;
 	mouseInfo = new MouseActions;
 	viewNSWE = new MovingTarget;
 

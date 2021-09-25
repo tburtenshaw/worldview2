@@ -56,7 +56,7 @@ public:
 	float latitude;	//these can be floats, as they're not really for data points
 	float longitude;
 
-	void SetFromWindowXY(float x, float y, NSWE nswe, RectDimension* window);
+	void SetFromWindowXY(float x, float y, NSWE nswe, RectDimension window);
 };
 
 class RGBA {
@@ -87,8 +87,6 @@ struct Location {
 	unsigned long timestamp; //we'll use a long instead of the high precision of google (seconds rather than ms)
 	double longitude;	//tried using a float rather than a double means an imprecision of less than 2metres, but keeping doubles
 	double latitude;		//longitude first as it's x
-
-	//float detaillevel;
 
 	int accuracy;
 	int altitude;
@@ -240,10 +238,10 @@ public:
 	bool isInitialised;
 	unsigned long totalbytesread;
 
-	MouseActions* mouseInfo;
+	MouseActions *mouseInfo;
 
 	MovingTarget* viewNSWE;
-	RectDimension* windowDimensions;
+	RectDimension windowDimensions;
 
 	std::vector<Region*> regions;
 

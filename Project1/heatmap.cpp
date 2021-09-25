@@ -145,8 +145,8 @@ void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
 	
 
 	//clamp to MAX_HEATMAP_DIMENSION
-	width = std::min(pLocationHistory->windowDimensions->width, MAX_HEATMAP_DIMENSION);
-	height = std::min(pLocationHistory->windowDimensions->height, MAX_HEATMAP_DIMENSION);
+	width = std::min(pLocationHistory->windowDimensions.width, MAX_HEATMAP_DIMENSION);
+	height = std::min(pLocationHistory->windowDimensions.height, MAX_HEATMAP_DIMENSION);
 
 	//printf("Heatmap pixel size: W%i H%i. West: %f, East: %f, Map width: %f\n",width,height,nswe->west,nswe->east,nswe->width());
 
