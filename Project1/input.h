@@ -1,12 +1,13 @@
 #pragma once
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
-//#include "header.h"
+
 struct XY;
 class WORLDCOORD;
 class LocationHistory;
+class MovingTarget;
 
-enum class MouseMode
+enum class MouseMode	//to be fair, not really the mouse mode, more the whole system
 {
 	ScreenNavigation,
 	PointSelect,
@@ -15,27 +16,28 @@ enum class MouseMode
 
 class MouseActions {
 private:
-	bool isDragging;
+
+	
 public:
-	MouseActions();
+	static double xpos; //as these are doubles from the glfw function
+	static double ypos;
+	static int lmbState;
 
-	double xpos; //as these are doubles from the glfw function
-	double ypos;
-	int lmbState;
+	static bool isDragging;
+	static XY dragStartXY;
 
-	MouseMode mouseMode;
-	WORLDCOORD longlatMouse;
-	
-	XY dragStartXY;
-	WORLDCOORD dragStartLatLong;
-	
-	
-	void SetStartOfDrag();
-	void SetStartOfDrag(float x, float y);
 
-	void FinishDragging();
-	bool IsDragging();
-	XY GetDragDelta();
+	static WORLDCOORD longlatMouse;
+	static WORLDCOORD dragStartLatLong;
+	static MouseMode mouseMode;
+	
+	static void SetMouseMode(MouseMode m);
+	static void SetStartOfDrag();
+	static void SetStartOfDrag(float x, float y);
+
+	static void FinishDragging();
+	static bool IsDragging();
+	static XY GetDragDelta();
 
 };
 
@@ -43,5 +45,5 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
 void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh);
-void MouseNavigation(MouseActions* mouse, MovingTarget* viewNSWE, LocationHistory* lh);
-void RegionSelect(MouseActions* mouse, MovingTarget* viewNSWE, LocationHistory* lh);
+void MouseNavigation(MovingTarget* viewNSWE, LocationHistory* lh);
+void RegionSelect(MovingTarget* viewNSWE, LocationHistory* lh);

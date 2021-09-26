@@ -391,11 +391,11 @@ void Heatmap::GaussianBlur(float sigma)	//this takes a radius, that is rounded t
 
 	cropfactor = overdrawfactor;
 
-	int ystart = height / 2 - height / (2.0 * cropfactor);
-	int yend = height / 2 + height / (2.0 * cropfactor);
+	int ystart = height / 2 - (float)height / (2.0 * cropfactor);
+	int yend = height / 2 + (float)height / (2.0 * cropfactor);
 
-	int xstart = width / 2 - width / (2.0 * cropfactor);
-	int xend = width / 2 + width / (2.0 * cropfactor);
+	int xstart = width / 2 - (float)width / (2.0 * cropfactor);
+	int xend = width / 2 + (float)width / (2.0 * cropfactor);
 
 
 	//if (matrixrow > 3) {	//no blur less than this. (shouldn't need, as already returned above

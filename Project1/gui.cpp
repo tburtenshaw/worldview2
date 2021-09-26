@@ -53,7 +53,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Text("File size: %i", lh->filesize);
 
 	sCoords = "Cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
-	ImGui::Text(sCoords.c_str(), lh->mouseInfo->longlatMouse.longitude, lh->mouseInfo->longlatMouse.latitude);
+	ImGui::Text(sCoords.c_str(), MouseActions::longlatMouse.longitude, MouseActions::longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh->locations.size());
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
@@ -248,13 +248,13 @@ void Gui::MakeGUI(LocationHistory* lh)
 		lh->heatmap->MakeDirty();
 	}
 	if (ImGui::Button("Nav")) {
-		lh->mouseInfo->mouseMode = MouseMode::ScreenNavigation;
+		MouseActions::mouseMode = MouseMode::ScreenNavigation;
 	}
 	if (ImGui::Button("Select")) {
-		lh->mouseInfo->mouseMode = MouseMode::PointSelect;
+		MouseActions::mouseMode = MouseMode::PointSelect;
 	}
 	if (ImGui::Button("Regions")) {
-		lh->mouseInfo->mouseMode = MouseMode::RegionSelect;
+		MouseActions::mouseMode = MouseMode::RegionSelect;
 	}
 
 	ImGui::End();

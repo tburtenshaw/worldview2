@@ -28,7 +28,7 @@ LocationHistory::LocationHistory()
 	latesttimestamp = 0;
 
 	//windowDimensions = new RectDimension;
-	mouseInfo = new MouseActions;
+	//mouseInfo = new MouseActions;
 	viewNSWE = new MovingTarget;
 
 

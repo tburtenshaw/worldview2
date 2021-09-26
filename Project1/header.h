@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <imgui.h>
+#include "input.h"
 
 #define READ_BUFFER_SIZE 1024*256
 #define MAX_JSON_STRING 1024
@@ -21,7 +22,6 @@ class MapPointsInfo;
 class MapRegionsInfo;
 class Region;
 class MovingTarget;
-class MouseActions;
 class HighResManager;
 class RGBA;
 class DisplayRegion;
@@ -237,8 +237,6 @@ public:
 	bool isLoadingFile;
 	bool isInitialised;
 	unsigned long totalbytesread;
-
-	MouseActions *mouseInfo;
 
 	MovingTarget* viewNSWE;
 	RectDimension windowDimensions;
