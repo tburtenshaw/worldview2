@@ -51,7 +51,7 @@ struct RectDimension {
 	int height;
 };
 
-class WORLDCOORD {
+class WorldCoord {
 public:
 	float latitude;	//these can be floats, as they're not really for data points
 	float longitude;

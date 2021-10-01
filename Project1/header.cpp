@@ -6,7 +6,7 @@
 #include "highresmanager.h"
 #include <stdio.h>
 
-void WORLDCOORD::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension window)
+void WorldCoord::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension window)
 {
 	longitude = x / window.width;
 	longitude *= nswe.width();
@@ -27,10 +27,7 @@ LocationHistory::LocationHistory()
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
 
-	//windowDimensions = new RectDimension;
-	//mouseInfo = new MouseActions;
 	viewNSWE = new MovingTarget;
-
 
 	heatmap = new Heatmap;
 
@@ -57,17 +54,13 @@ LocationHistory::~LocationHistory()
 }
 
 PathPlotLocation::PathPlotLocation()
-	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f)
+	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f), rgba({ 0,0,0,0 })
 {
 
 }
 
-PathPlotLocation::PathPlotLocation(float lat, float lon, unsigned long ts)	//constructor
+PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f), rgba({0,0,0,0})
 {
-	latitude = lat;
-	longitude = lon;
-	timestamp = ts;
-	detaillevel = 0.0f;
 
 }
 

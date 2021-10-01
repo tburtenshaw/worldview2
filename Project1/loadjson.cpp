@@ -117,26 +117,6 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 				if (jsr->hierarchydepth == jsr->locationsdepth) {	//if we're closing up a location then write the location
 					jsr->locationnumber++;
 
-					//Here we check whether the longitude spanned over 180, we make the assumption that if this occurred, we took the shortest route
-					//(i.e. if we travel from NZ at longitude (174) to Vancouver (-123) we wouldn't travel through the pacific
-					/*
-					if ((jsr->location.longitude - jsr->oldlocation.longitude >180.0)|| (jsr->location.longitude - jsr->oldlocation.longitude < -180.0)) {	//we can't do this just yet
-						BreakRoundTheWorlds(jsr, loc);
-					}
-					jsr->oldlocation= jsr->location;	//make the old this one
-					*/
-
-					//Write the new value into the Vector
-					loc.push_back(jsr->location);
-
-					//early/late data
-					if (jsr->location.timestamp < lh->earliesttimestamp) {
-						lh->earliesttimestamp = jsr->location.timestamp;
-					}
-					if (jsr->location.timestamp > lh->latesttimestamp) {
-						lh->latesttimestamp = jsr->location.timestamp;
-					}
-
 					//reset to defaults
 					jsr->location.altitude = -1;
 					//jsr->location.detaillevel = 0;

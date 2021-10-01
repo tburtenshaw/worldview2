@@ -25,6 +25,22 @@ float dline( vec2 p, vec2 a, vec2 b ) {
     return distance(p, j);
     
 }
+//consider https://www.shadertoy.com/view/WtVyz3 instead
+
+/*
+void LRyirLine(float width)
+{
+    vec2 point1 = vec2(iResolution * 0.5f);
+    vec2 point2 = vec2(iMouse);
+    
+    vec2 a = (point2-point1)/length(point2-point1);
+    vec2 b = fragCoord - point1;
+    vec2 p = clamp(dot(a, b), 0.f, length(point2-point1)) * a + point1;
+    
+    float width = 20.f;
+    return length(p - fragCoord) - width;
+}
+*/
 
 
 void main() {

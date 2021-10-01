@@ -2,7 +2,7 @@
 //#include "header.h"
 
 //forward declaration
-class WORLDCOORD;
+class WorldCoord;
 class MovingTarget;
 #include <algorithm>
 
@@ -33,9 +33,9 @@ public:
 
 	NSWE createExpandedBy(float factor);
 	NSWE intersectionWith(NSWE otherNSWE);
-	WORLDCOORD centre();
+	WorldCoord centre();
 
-	void zoom(float z, WORLDCOORD c);
+	void zoom(float z, WorldCoord c);
 
 	void makeratio(float ratio);
 

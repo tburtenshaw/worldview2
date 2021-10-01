@@ -3,6 +3,20 @@
 #include "processlocations.h"
 #include "mytimezone.h"
 
+void CalculateEarliestAndLatest(LocationHistory* lh)
+{
+	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
+	lh->latesttimestamp = 0;
+
+	for (int i = 0; i < lh->locations.size(); i++) {
+		if (lh->locations[i].timestamp < lh->earliesttimestamp)
+			lh->earliesttimestamp = lh->locations[i].timestamp;
+
+		if (lh->locations[i].timestamp > lh->latesttimestamp)
+			lh->latesttimestamp = lh->locations[i].timestamp;
+	}
+}
+
 bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {
 	if (abs(p1->latitude - p2->latitude) > d)	return true;
 	if (abs(p1->longitude - p2->longitude) > d)	return true;

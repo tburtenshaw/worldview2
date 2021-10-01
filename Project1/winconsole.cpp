@@ -93,19 +93,7 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 
 
 
-void CalculateEarliestAndLatest(LocationHistory* lh)
-{
-	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
-	lh->latesttimestamp = 0;
 
-	for (int i = 0; i < lh->locations.size(); i++) {
-		if (lh->locations[i].timestamp < lh->earliesttimestamp)
-			lh->earliesttimestamp = lh->locations[i].timestamp;
-
-		if (lh->locations[i].timestamp > lh->latesttimestamp)
-			lh->latesttimestamp = lh->locations[i].timestamp;
-	}
-}
 
 int SaveWVFormat(LocationHistory* lh)
 {
@@ -113,7 +101,7 @@ int SaveWVFormat(LocationHistory* lh)
 	DWORD numberOfLocations;
 	DWORD bytesWritten;
 
-	const char* const magic = "WVF1";
+	static const char* const magic = "WVF1";
 
 	//copy whole thing at once.
 	numberOfLocations = lh->locations.size();
@@ -226,7 +214,7 @@ int StartGLProgram(LocationHistory* lh)
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
 	lh->viewNSWE->target.makeratio((float)lh->windowDimensions.height / (float)lh->windowDimensions.width);
 	lh->viewNSWE->setvalues(lh->viewNSWE->target);
-	lh->viewNSWE->movetowards(1000000000000);
+	lh->viewNSWE->movetowards(1000000000000.0);
 
 	//make a new region, which is the viewport
 	lh->regions.push_back(new Region());
@@ -814,6 +802,52 @@ MapRegionsInfo::~MapRegionsInfo()
 {
 	delete shader;
 }
+
+BackgroundInfo::BackgroundInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+
+	worldTexture = 0;
+	heatmapTexture = 0;
+
+	worldTextureLocation = 0;
+	heatmapTextureLocation = 0;
+	highresTextureLocation = 0;
+}
+
+BackgroundInfo::~BackgroundInfo()
+{
+	delete shader;
+}
+
+MapPathInfo::MapPathInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+}
+MapPathInfo::~MapPathInfo()
+{
+	delete shader;
+}
+
+MapPointsInfo::MapPointsInfo()
+{
+	vao = 0;
+	vbo = 0;
+
+	shader = new Shader;
+}
+MapPointsInfo::~MapPointsInfo()
+{
+	delete shader;
+}
+
+
 
 void DisplayIfGLError(const char* message, bool alwaysshow)
 {

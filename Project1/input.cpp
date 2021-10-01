@@ -23,8 +23,8 @@ int MouseActions::lmbState = 0;
 double MouseActions::xpos = 0.0;
 double MouseActions::ypos = 0.0;
 MouseMode MouseActions::mouseMode = MouseMode::ScreenNavigation;
-WORLDCOORD MouseActions::longlatMouse = { 0,0 };
-WORLDCOORD MouseActions::dragStartLatLong = { 0,0 };
+WorldCoord MouseActions::longlatMouse = { 0,0 };
+WorldCoord MouseActions::dragStartLatLong = { 0,0 };
 XY MouseActions::dragStartXY = { 0,0 };
 
 
@@ -93,7 +93,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	glfwGetCursorPos(window, &xpos, &ypos);
 
 
-	WORLDCOORD mapCoord;
+	WorldCoord mapCoord;
 	MovingTarget* viewNSWE;
 	viewNSWE = pLocationHistory->viewNSWE;
 

@@ -144,8 +144,8 @@ void NSWE::setto(NSWE *setthis) {
 		return outputNSWE;
 	}
 
-	WORLDCOORD NSWE::centre() {
-		WORLDCOORD c;
+	WorldCoord NSWE::centre() {
+		WorldCoord c;
 
 		c.longitude = (west + east) / 2;
 		c.latitude = (north + south) / 2;
@@ -155,7 +155,7 @@ void NSWE::setto(NSWE *setthis) {
 
 
 
-	void NSWE::zoom(float z, WORLDCOORD c) {
+	void NSWE::zoom(float z, WorldCoord c) {
 
 		//printf("Zoom into %f %f, by %f.\n", c.latitude, c.longitude, z);
 		//printf("Before: N%f,S%f,W%f,E%f\n", north, south, west, east);

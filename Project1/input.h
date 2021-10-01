@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 
 struct XY;
-class WORLDCOORD;
+class WorldCoord;
 class LocationHistory;
 class MovingTarget;
 
@@ -27,8 +27,8 @@ public:
 	static XY dragStartXY;
 
 
-	static WORLDCOORD longlatMouse;
-	static WORLDCOORD dragStartLatLong;
+	static WorldCoord longlatMouse;
+	static WorldCoord dragStartLatLong;
 	static MouseMode mouseMode;
 	
 	static void SetMouseMode(MouseMode m);

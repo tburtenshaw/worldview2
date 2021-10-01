@@ -538,48 +538,4 @@ Heatmap::~Heatmap()
 	return;
 }
 
-/* The below have nothing directly to do with heatmaps, I need to move them!*/
-BackgroundInfo::BackgroundInfo()
-{
-	vao = 0;
-	vbo = 0;
-
-	shader = new Shader;
-
-	worldTexture = 0;
-	heatmapTexture = 0;
-
-	worldTextureLocation = 0;
-	heatmapTextureLocation = 0;
-	highresTextureLocation = 0;
-}
-
-BackgroundInfo::~BackgroundInfo()
-{
-	delete shader;
-}
-
-MapPathInfo::MapPathInfo()
-{
-	vao = 0;
-	vbo = 0;
-
-	shader = new Shader;
-}
-MapPathInfo::~MapPathInfo()
-{
-	delete shader;
-}
-
-MapPointsInfo::MapPointsInfo()
-{
-	vao = 0;
-	vbo = 0;
-
-	shader = new Shader;
-}
-MapPointsInfo::~MapPointsInfo()
-{
-	delete shader;
-}
 
