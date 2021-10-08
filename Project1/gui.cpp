@@ -9,6 +9,7 @@
 #include "palettes.h"
 #include <string>
 #include <vector>
+#include <ctime>
 
 #include <Windows.h>
 
@@ -116,8 +117,26 @@ void Gui::MakeGUI(LocationHistory* lh)
 	
 	ImGui::Begin("Location display");
 	ImGui::Checkbox("Show points", &options->showPoints);
+
+	static int earliestDayOfMonth = 0;
+	static int earliestMonth = 0;
+	static int earliestYear = 0;
+
+	earliestDayOfMonth = 0;
+	time_t t;
+	struct std::tm correctedTime;
+
+	t = options->earliestTimeToShow;
+	gmtime_s(&correctedTime, &t);
+	earliestDayOfMonth = correctedTime.tm_mday;
+	
+
+	ImGui::Text("%i", earliestDayOfMonth);
 	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
 	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
+
+	
+
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
 	ImGui::Checkbox("Connect points", &options->showPaths);
@@ -181,14 +200,14 @@ void Gui::MakeGUI(LocationHistory* lh)
 		if (ImGui::Button(Palette_Handler::PaletteName(options->indexPaletteWeekday).c_str())) {
 			options->indexPaletteWeekday = Palette_Handler::NextMatchingPalette(options->indexPaletteWeekday, Palette::WEEKDAY);
 		}
-
-		if (ImGui::Button("left")) {
+		ImGui::PushButtonRepeat(true);
+		if (ImGui::ArrowButton("##rotpalleft", ImGuiDir_Left)) {
 			Palette_Handler::RotatePaletteLeft(options->indexPaletteWeekday);
 		}
-		if (ImGui::Button("right")) {
+		if (ImGui::ArrowButton("##rotpalright", ImGuiDir_Right)) {
 			Palette_Handler::RotatePaletteRight(options->indexPaletteWeekday);
 		}
-
+		ImGui::PopButtonRepeat();
 
 	}
 

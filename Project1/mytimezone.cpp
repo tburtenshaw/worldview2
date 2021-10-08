@@ -1,7 +1,6 @@
 #include "mytimezone.h"
-#include <time.h>
+#include <ctime>
 #include <string>
-#pragma warning(disable : 4996)
 
 unsigned long MyTimeZone::FixToLocalTime(unsigned long unixtime)
 {
@@ -10,8 +9,14 @@ unsigned long MyTimeZone::FixToLocalTime(unsigned long unixtime)
 
 //thanks https://stackoverflow.com/questions/32424125/c-code-to-get-local-time-offset-in-minutes-relative-to-utc
 long MyTimeZone::tz_offset_second(time_t t) {   
-    struct tm local = *localtime(&t);
-    struct tm utc = *gmtime(&t);
+    
+    struct std::tm local;
+    struct std::tm utc;
+
+    localtime_s(&local, &t);
+    gmtime_s(&utc, &t);
+    
+    
     long diff = ((local.tm_hour - utc.tm_hour) * 60 + (local.tm_min - utc.tm_min))
         * 60L + (local.tm_sec - utc.tm_sec);
     int delta_day = local.tm_mday - utc.tm_mday;
@@ -40,30 +45,30 @@ std::string MyTimeZone::FormatUnixTime(unsigned long unixtime, int flags)
 
 
     
-    struct std::tm *corrected;
+    struct std::tm corrected;
 
     time_t t;
     t = unixtime;
     
-    corrected = gmtime(&t);
+    gmtime_s(&corrected, &t);
 
     std::string year, mon, mday, wday, delim;
 
-    year = std::to_string(corrected->tm_year + 1900);
+    year = std::to_string(corrected.tm_year + 1900);
     
     delim = "-";
     if (flags & FormatFlags::TEXT_MONTH) {
-        mon = monthnames[corrected->tm_mon];
+        mon = monthnames[corrected.tm_mon];
         delim = " ";
     }
     else {
-        mon = std::to_string(corrected->tm_mon + 1);
+        mon = std::to_string(corrected.tm_mon + 1);
     }
 
-    mday = std::to_string(corrected->tm_mday);
+    mday = std::to_string(corrected.tm_mday);
 
     if (flags & FormatFlags::SHOW_DAY) {
-        wday = daynames[corrected->tm_wday] + " ";
+        wday = daynames[corrected.tm_wday] + " ";
     }
     else {
         wday = "";
@@ -81,7 +86,7 @@ std::string MyTimeZone::FormatUnixTime(unsigned long unixtime, int flags)
     }
 
     if (flags & FormatFlags::SHOW_TIME) {
-        output = output + ((corrected->tm_hour > 9) ? " " : " 0") + std::to_string(corrected->tm_hour) + ((corrected->tm_min > 9) ? ":" : ":0") + std::to_string(corrected->tm_min);
+        output = output + ((corrected.tm_hour > 9) ? " " : " 0") + std::to_string(corrected.tm_hour) + ((corrected.tm_min > 9) ? ":" : ":0") + std::to_string(corrected.tm_min);
     }
     return output;
 }
