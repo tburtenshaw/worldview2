@@ -118,21 +118,79 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Begin("Location display");
 	ImGui::Checkbox("Show points", &options->showPoints);
 
+	time_t t;
+	struct std::tm correctedTime;
+
 	static int earliestDayOfMonth = 0;
 	static int earliestMonth = 0;
 	static int earliestYear = 0;
 
-	earliestDayOfMonth = 0;
-	time_t t;
-	struct std::tm correctedTime;
+	static int latestDayOfMonth = 0;
+	static int latestMonth = 0;
+	static int latestYear = 0;
 
+	//convert from the unixtime time_t to a tm struct
 	t = options->earliestTimeToShow;
-	gmtime_s(&correctedTime, &t);
+	localtime_s(&correctedTime, &t);
 	earliestDayOfMonth = correctedTime.tm_mday;
-	
+	earliestMonth = correctedTime.tm_mon+1;
+	earliestYear = correctedTime.tm_year+1900;
 
-	ImGui::Text("%i", earliestDayOfMonth);
+	if (ImGui::DragInt("Day", &earliestDayOfMonth,0.4f)) {
+		correctedTime.tm_mday = earliestDayOfMonth;
+		options->earliestTimeToShow = mktime(&correctedTime);
+	}
+
+	if (ImGui::DragInt("Month", &earliestMonth,0.1f)) {
+		correctedTime.tm_mon = earliestMonth-1;
+		options->earliestTimeToShow = mktime(&correctedTime);
+	}
+
+	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp),ImGuiSliderFlags_AlwaysClamp)) {
+		correctedTime.tm_year = earliestYear - 1900;
+		options->earliestTimeToShow = mktime(&correctedTime);
+	}
+
+	if (options->earliestTimeToShow > lh->latesttimestamp) {
+		options->earliestTimeToShow = lh->latesttimestamp;
+	}
+
+	if (options->earliestTimeToShow < lh->earliesttimestamp) {
+		options->earliestTimeToShow = lh->earliesttimestamp;
+	}
+
+	//ensure the earliest time is always H=0, min=0,sec=0
+	//also update the static date display variables
+	t = options->earliestTimeToShow;
+	localtime_s(&correctedTime, &t);
+
+	earliestDayOfMonth = correctedTime.tm_mday;
+	earliestMonth = correctedTime.tm_mon + 1;
+	earliestYear = correctedTime.tm_year + 1900;
+
+	correctedTime.tm_hour = 0;
+	correctedTime.tm_min = 0;
+	correctedTime.tm_sec = 0;
+
+	options->earliestTimeToShow = mktime(&correctedTime);
+
+
+
+
+
+	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
 	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
+
+
+	t = options->latestTimeToShow;
+	gmtime_s(&correctedTime, &t);
+	latestDayOfMonth = correctedTime.tm_mday;
+	latestMonth = correctedTime.tm_mon + 1;
+	latestYear = correctedTime.tm_year + 1900;
+
+
+	
+	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
 	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
 
 	
