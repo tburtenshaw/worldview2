@@ -21,8 +21,8 @@ LocationHistory::LocationHistory()
 {
 	filesize = 0;
 
-	//filename = L"d:\\Location History.json";
-	filename = L"test.wvf";
+	filename = L"d:\\Location History.json";
+	//filename = L"test.wvf";
 
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;

@@ -115,12 +115,14 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 				}
 
 				if (jsr->hierarchydepth == jsr->locationsdepth) {	//if we're closing up a location then write the location
+					
+					//if (jsr->locationnumber%20000 ==0) printf("%i %f %i\n", jsr->locationnumber, jsr->location.latitude, jsr->location.timestamp);
 					jsr->locationnumber++;
 
 					//reset to defaults
 					jsr->location.altitude = -1;
 					//jsr->location.detaillevel = 0;
-
+					loc.emplace_back(jsr->location);
 					//printf("Loc:%i", jsr->locationnumber);
 				}
 				jsr->hierarchydepth--;
@@ -203,6 +205,47 @@ long fast_strtol(char* str)
 	return val;
 }
 
+long timestampToLong(char* str)
+{
+	//Takes form:
+	// 2013-09-16T02:34:43.164Z
+	// 000000000011111111112222
+	// 012345678901234567890123
+	
+	unsigned long year;
+	unsigned long month;
+	unsigned long dayofmonth;
+
+	year = (str[0] - '0') * 1000 + (str[1] - '0')*100+ (str[2] - '0')*10 + (str[3] - '0');
+	//str[4] is '-'
+	month = (str[5] - '0') * 10 + (str[6] - '0');
+	dayofmonth = (str[8] - '0') * 10 + (str[9] - '0');
+	
+	unsigned long hour;
+	unsigned long minute;
+	unsigned long second_floored;
+	unsigned long decimalportionofseconds;
+
+	hour = (str[11] - '0') * 10 + (str[12] - '0');
+	minute = (str[14] - '0') * 10 + (str[15] - '0');
+	second_floored = (str[17] - '0') * 10 + (str[18] - '0');
+
+
+	unsigned long unixtimefromyear = 94694400 + ((year + 3) % 4) * 365 * 86400 + ((year - 1973) / 4) * 126230400;
+
+	const unsigned int daystoaddpermonthminusone[12] = { 0,31,59,90,120,151,181,212,243,273,304,334};
+	unsigned long unixtimefrommonth = daystoaddpermonthminusone[month - 1]* 86400;
+
+	unsigned long unixtimefromday = (dayofmonth - 1) * 86400;
+
+	unsigned long leapday=0;
+	if (year % 4 == 0 && month > 2) {	//simplied, we don't need really historic dates, so divisible by 4 is fine.
+		leapday = 86400	;
+	}
+
+	return unixtimefromyear+ unixtimefromday+ unixtimefrommonth + leapday+ hour*3600+minute*60+second_floored;
+}
+
 int AssignValueToName(JSON_READER_STATE* jsr)
 {
 	//printf("%s=%s ", jsr->name, jsr->buffer);
@@ -216,12 +259,19 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 	switch (firstlong[0]) {
 		
 	case 0x656d6974:
-		if (!strcmp(jsr->name, "timestampMs")) {
+		if (!strcmp(jsr->name, "timestampMs")) {	//the old version had the milliseconds
 			//printf("TS %s ", jsr->buffer);
 			jsr->location.timestamp = fast_strtotimestamp(jsr->buffer);
 			//printf("TS %i ", jsr->location.timestamp);
 			return 1;
 		}
+		if (!strcmp(jsr->name, "timestamp")) {	//new version has format: 2013-09-16T02:34:43.164Z
+			//printf("TS %s ", jsr->buffer);
+			jsr->location.timestamp = timestampToLong(jsr->buffer);
+			//printf("TS %i \n", jsr->location.timestamp);
+			return 1;
+		}
+
 	case 0x6974616c:
 		if (!strcmp(jsr->name, "latitudeE7")) {
 			//	jsr->location.latitude = strtod(jsr->buffer, NULL) / 10000000.0;

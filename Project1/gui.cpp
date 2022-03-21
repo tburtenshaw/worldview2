@@ -143,7 +143,22 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	if (ImGui::DragInt("Month", &earliestMonth,0.1f)) {
 		correctedTime.tm_mon = earliestMonth-1;
+		//correctedTime.tm_mday = earliestDayOfMonth;
+		correctedTime.tm_isdst = -1;
 		options->earliestTimeToShow = mktime(&correctedTime);
+		
+		if (correctedTime.tm_mday != earliestDayOfMonth) {
+			printf("different day ctm:%i em:%i ed:%i ctd:%i\n",correctedTime.tm_mon+1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
+			
+			//changing the month will often change the day, only allow if mday>28
+			if (correctedTime.tm_mday <= 128) {
+				correctedTime.tm_mon = earliestMonth - 1;
+				correctedTime.tm_mday = earliestDayOfMonth;
+				options->earliestTimeToShow = mktime(&correctedTime);
+			}
+
+			printf("After: ctm: % i em : % i ed : % i ctd : % i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
+		}
 	}
 
 	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp),ImGuiSliderFlags_AlwaysClamp)) {

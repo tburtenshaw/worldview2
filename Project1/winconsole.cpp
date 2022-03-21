@@ -78,6 +78,8 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 
 	CloseHandle(hLocationFile);
 
+	printf("Locations: %i\n", lh->locations.size());
+
 	//SaveWVFormat(lh);
 	
 	CalculateEarliestAndLatest(lh);
