@@ -78,7 +78,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->shouldShowWindow) {
-			ImGui::Begin(lh->regions[i]->displayname.c_str());
+			ImGui::Begin((lh->regions[i]->displayname+"###regionwindow"+std::to_string(lh->regions[i]->id)).c_str());
 			Gui::ShowRegionInfo(lh->regions[i]);
 			ImGui::End();
 		}
@@ -356,6 +356,12 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 void Gui::ShowRegionInfo(Region* r)
 {
+	static char str1[128];
+	strcpy_s(str1, r->displayname.c_str());
+	if (ImGui::InputTextWithHint("Region name", "Name the region", str1, IM_ARRAYSIZE(str1))) {
+		r->displayname = str1;
+	}
+	
 	ImGui::Text("N:%.4f S:%.4f W:%.4f E:%.4f", r->nswe.north, r->nswe.south, r->nswe.west, r->nswe.east);
 	ImGui::Text("Height: %.2f Width:%.2f", r->nswe.height(), r->nswe.width());
 

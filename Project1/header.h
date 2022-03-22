@@ -296,9 +296,9 @@ public:
 
 class DisplayRegion {	//used for holding the opengl buffer
 public:
-	//float west, north, east, south;
-	float f[4];
-	//RGBA colour;
+	float west, north, east, south;
+	//float c[4];
+	RGBA colour{ 1,2,3,4 };
 };
 
 class MapPointsInfo {

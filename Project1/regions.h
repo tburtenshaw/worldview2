@@ -27,6 +27,7 @@ public:
 
 	std::string displayname;
 	int id;
+	RGBA colour;
 
 	bool needsRedraw;	//if the region drawing routine needs to redraw it
 

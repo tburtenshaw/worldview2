@@ -78,8 +78,6 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 
 	CloseHandle(hLocationFile);
 
-	printf("Locations: %i\n", lh->locations.size());
-
 	//SaveWVFormat(lh);
 	
 	CalculateEarliestAndLatest(lh);
@@ -702,11 +700,15 @@ void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
 
 	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion) / 2, 0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), 0);
 	glEnableVertexAttribArray(0);
 
-	//glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
-	//glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, east));
+	glEnableVertexAttribArray(1);
+
+
+	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
+	glEnableVertexAttribArray(2);
 
 	return;
 }
@@ -746,31 +748,27 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 	for (int r = 1; r < sizeOfRegionVector; r++) {
 		//printf("r:%i of %i.\t", r, sizeOfRegionVector);
 
-		mapRegionsInfo->displayRegions[r - 1].f[0] = pLocationHistory->regions[r]->nswe.west;
-		mapRegionsInfo->displayRegions[r - 1].f[1] = pLocationHistory->regions[r]->nswe.north;
-		mapRegionsInfo->displayRegions[r - 1].f[2] = pLocationHistory->regions[r]->nswe.east;
-		mapRegionsInfo->displayRegions[r - 1].f[3] = pLocationHistory->regions[r]->nswe.south;
+		mapRegionsInfo->displayRegions[r - 1].west = pLocationHistory->regions[r]->nswe.west;
+		mapRegionsInfo->displayRegions[r - 1].north = pLocationHistory->regions[r]->nswe.north;
+		mapRegionsInfo->displayRegions[r - 1].east = pLocationHistory->regions[r]->nswe.east;
+		mapRegionsInfo->displayRegions[r - 1].south = pLocationHistory->regions[r]->nswe.south;
 
-		//mapRegionsInfo->displayRegions[r - 1].colour.r = 0xff;
-		//mapRegionsInfo->displayRegions[r - 1].colour.g = 0xee;
-		//mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
-		//mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
+		/*
+		mapRegionsInfo->displayRegions[r - 1].colour.r = 0xff;
+		mapRegionsInfo->displayRegions[r - 1].colour.g = 0xee;
+		mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
+		mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
+		*/
 
 		//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
 		//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
 	}
 
-	//copy the whole thing at first
-	//glBufferData(GL_ARRAY_BUFFER, (0) * 4 * sizeof(GL_FLOAT), 4 * sizeof(GL_FLOAT) * sizeOfRegionVector, &mapRegionsInfo->displayRegions.front());
-
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
-	//As we'll usually change the size, we won't muck around with buffersubdata (wasted a day on this!)
 	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
 
 	//printf("count: %i*%i=%i.\n", mapRegionsInfo->displayRegions.size(), sizeof(DisplayRegion), mapRegionsInfo->displayRegions.size() *sizeof(DisplayRegion));
-
-	//glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), 0);
-	//glEnableVertexAttribArray(0);
+	
 	return;
 }
 
@@ -783,7 +781,7 @@ void DrawRegions(MapRegionsInfo* mapRegionsInfo)
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 
 	glBindVertexArray(mapRegionsInfo->vao);
-	glDrawArrays(GL_LINES, 0, mapRegionsInfo->displayRegions.size() * 40);//needs to be the number of vertices (not lines)
+	glDrawArrays(GL_POINTS, 0, mapRegionsInfo->displayRegions.size());//needs to be the number of vertices (not lines)
 	glBindVertexArray(0);
 	DisplayIfGLError("After DrawRegions.", false);
 

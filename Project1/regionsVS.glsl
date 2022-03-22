@@ -1,11 +1,14 @@
 #version 330
-layout (location = 0) in vec4 vp;
+layout (location = 0) in vec2 westnorth;
+layout (location = 1) in vec2 eastsouth;
+layout (location = 2) in vec4 gcolour;
 
 uniform vec4 nswe;
 uniform vec2 resolution;
 
 //in vec3  gcolour;
 out vec3 vcolour;
+out vec2 bottomright;
 
 void main()
 {
@@ -15,12 +18,9 @@ void main()
 	midx = (nswe.w+nswe.z)/2; 
 	midy = (nswe.x+nswe.y)/2; 
 	
-	gl_Position = vec4(((vp.x-midx)/width*2),(vp.y-midy)/height*2,0,1.0);
-	
-	
-	
-	//gl_Position=vec4(vp,0.0,0.0)+vec4(0.0,0.0,0.0,0.0);//(vp/vec2(400.0)+vec2(0.0,0.0),0.0,0.0);
-	//gl_Position=vp;
-	vcolour = vec3(0.7,0.9,vp.x/2);
-	//vcolour=gcolour;
+	gl_Position = vec4(((westnorth.x-midx)/width*2),(westnorth.y-midy)/height*2,0,1.0);
+	bottomright= vec2((eastsouth.x-midx)/width*2,(eastsouth.y-midy)/height*2);
+
+
+	vcolour = vec3(0.7,0.9,westnorth.x/2);
 }
