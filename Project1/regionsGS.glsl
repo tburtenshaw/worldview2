@@ -5,10 +5,10 @@ layout(triangle_strip, max_vertices = 4) out;
 
 
 in vec2 bottomright[];
-in vec3 vcolour[];
+in vec4 vcolour[];
 
 
-out vec3 gcolour;
+out vec4 gcolour;
 
 void main()
 {

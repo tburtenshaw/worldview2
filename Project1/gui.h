@@ -5,6 +5,7 @@ class NSWE;
 class Region;
 struct RectDimension;
 
+#include <string>
 
 
 namespace Gui {
@@ -13,5 +14,6 @@ namespace Gui {
 	void ShowRegionInfo(Region* r);
 	void ListDatesInRegion(Region* r);
 	const char* BestSigFigsFormat(NSWE* nswe, RectDimension rect);
-	bool ChooseFile(LocationHistory * lh);
+	bool ChooseFileToOpen(LocationHistory * lh);
+	std::wstring ChooseFileToSave(LocationHistory* lh);
 }

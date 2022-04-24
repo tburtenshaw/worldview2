@@ -321,7 +321,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	ImGui::Begin("Toolbar");
 	if (ImGui::Button("Open")) {
-		if (ChooseFile(lh)) {
+		if (ChooseFileToOpen(lh)) {
 			lh->isFileChosen = true;
 			lh->isFullyLoaded = false;
 			lh->isInitialised = false;
@@ -330,6 +330,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 		lh->heatmap->MakeDirty();
 	}
 	if (ImGui::Button("Close")) {
+
 		lh->isFileChosen = false;
 		lh->isFullyLoaded = true;	//we're loaded with nothing
 		lh->isInitialised = false;
@@ -337,7 +338,19 @@ void Gui::MakeGUI(LocationHistory* lh)
 		if (!lh->locations.empty()) {
 			lh->locations.clear();
 		}
+		if (!lh->pathPlotLocations.empty()) {
+			lh->pathPlotLocations.clear();
+		}
+
 		lh->heatmap->MakeDirty();
+	}
+	if (ImGui::Button("Save")) {
+		if (lh->isFullyLoaded == true) {
+			std::wstring filename = ChooseFileToSave(lh);
+			if (filename.size() > 0) {
+				SaveWVFormat(lh, filename);
+			}
+		}
 	}
 	if (ImGui::Button("Nav")) {
 		MouseActions::mouseMode = MouseMode::ScreenNavigation;
@@ -362,6 +375,14 @@ void Gui::ShowRegionInfo(Region* r)
 		r->displayname = str1;
 	}
 	
+
+	static ImVec4 colour;
+	colour= r->colour.AsImVec4();
+	if (ImGui::ColorEdit3("Colour", (float*)&colour, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+		r->colour = colour;
+		r->needsRedraw = true;
+	}
+
 	ImGui::Text("N:%.4f S:%.4f W:%.4f E:%.4f", r->nswe.north, r->nswe.south, r->nswe.west, r->nswe.east);
 	ImGui::Text("Height: %.2f Width:%.2f", r->nswe.height(), r->nswe.width());
 
@@ -433,7 +454,7 @@ const char* Gui::BestSigFigsFormat(NSWE* nswe, RectDimension rect)
 	return "%.5f";
 }
 
-bool Gui::ChooseFile(LocationHistory* lh)
+bool Gui::ChooseFileToOpen(LocationHistory* lh)
 {
 	OPENFILENAME ofn;
 	wchar_t filename[MAX_PATH];
@@ -446,12 +467,13 @@ bool Gui::ChooseFile(LocationHistory* lh)
 	ofn.lpstrFile = filename;
 	ofn.nMaxFile = sizeof(filename);
 	ofn.lpstrTitle = L"Import";
+	ofn.lpstrDefExt = L"json";
 	ofn.nFilterIndex = 1;
 
 #pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
-	std::mbstowcs(filename, "*.json;", 7);
+	std::mbstowcs(filename, "*.json;*.wvf", 259);
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_EXPLORER;
-	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0All Supported Files (*.json)\0*.json\0Google History JSON Files (*.json)\0*.json\0\0";
+	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0All Supported Files (*.json, *.wvf)\0*.json;*.wvf\0Google History JSON Files (*.json)\0*.json\0WorldView Files (*.wvf)\0*.wvf\0\0";
 
 	bool result;
 	result = GetOpenFileName(&ofn);
@@ -464,5 +486,39 @@ bool Gui::ChooseFile(LocationHistory* lh)
 	else
 	{
 		return false;
+	}
+}
+
+std::wstring Gui::ChooseFileToSave(LocationHistory* lh)
+{
+	OPENFILENAME ofn;
+	wchar_t filename[MAX_PATH];
+
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hInstance = GetModuleHandle(NULL);
+	ofn.hwndOwner = GetActiveWindow();
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = sizeof(filename);
+	ofn.lpstrTitle = L"Export";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrDefExt = L"wvf";
+
+#pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
+	std::mbstowcs(filename, "*.wvf", 259);
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_EXPLORER;
+	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0WorldView Files (*.wvf)\0*.wvf\0\0";
+
+	bool result;
+	result = GetSaveFileName(&ofn);
+
+	if (result) {
+		//wprintf(L"Filename: %s\n", filename);
+		return filename;
+	}
+	else
+	{
+		return L"";
 	}
 }

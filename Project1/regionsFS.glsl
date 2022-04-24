@@ -2,9 +2,9 @@
 //uniform vec2 resolution;
 
 out vec4 FragColor;
-in vec3 gcolour;
+in vec4 gcolour;
 
 void main()
 {
-    FragColor = vec4(gcolour, 0.3);
+    FragColor = vec4(gcolour.rgb, 0.3);
 } 

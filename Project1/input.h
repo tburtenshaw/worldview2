@@ -22,6 +22,7 @@ public:
 	static double xpos; //as these are doubles from the glfw function
 	static double ypos;
 	static int lmbState;
+	static int rmbState;
 
 	static bool isDragging;
 	static XY dragStartXY;

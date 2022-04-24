@@ -1,13 +1,12 @@
 #version 330
 layout (location = 0) in vec2 westnorth;
 layout (location = 1) in vec2 eastsouth;
-layout (location = 2) in vec4 gcolour;
+layout (location = 2) in vec4 regioncolour;
 
 uniform vec4 nswe;
 uniform vec2 resolution;
 
-//in vec3  gcolour;
-out vec3 vcolour;
+out vec4 vcolour;
 out vec2 bottomright;
 
 void main()
@@ -22,5 +21,5 @@ void main()
 	bottomright= vec2((eastsouth.x-midx)/width*2,(eastsouth.y-midy)/height*2);
 
 
-	vcolour = vec3(0.7,0.9,westnorth.x/2);
+	vcolour = regioncolour;
 }

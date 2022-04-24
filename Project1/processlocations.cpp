@@ -5,10 +5,14 @@
 
 void CalculateEarliestAndLatest(LocationHistory* lh)
 {
+	int locationssize = lh->locations.size();
+	
+	if (locationssize < 1)	return;
+
 	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
 	lh->latesttimestamp = 0;
 
-	for (int i = 0; i < lh->locations.size(); i++) {
+	for (int i = 0; i < locationssize; i++) {
 		if (lh->locations[i].timestamp < lh->earliesttimestamp)
 			lh->earliesttimestamp = lh->locations[i].timestamp;
 

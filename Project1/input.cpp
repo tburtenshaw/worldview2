@@ -20,6 +20,7 @@ NSWE originalNSWE;
 //set defaults
 bool MouseActions::isDragging = false;
 int MouseActions::lmbState = 0;
+int MouseActions::rmbState = 0;
 double MouseActions::xpos = 0.0;
 double MouseActions::ypos = 0.0;
 MouseMode MouseActions::mouseMode = MouseMode::ScreenNavigation;
@@ -133,7 +134,8 @@ void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
 	
 	MouseActions::longlatMouse.SetFromWindowXY(MouseActions::xpos, MouseActions::ypos, *viewNSWE, lh->windowDimensions);
 	MouseActions::lmbState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	
+	MouseActions::rmbState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+
 	switch (MouseActions::mouseMode) {
 	case MouseMode::ScreenNavigation:
 		MouseNavigation(viewNSWE, lh);
@@ -154,6 +156,12 @@ void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
 
 void RegionSelect(MovingTarget* viewNSWE, LocationHistory* lh)
 {
+	if (MouseActions::rmbState == GLFW_PRESS) {
+		//if right button is down, ugly hack to allow nav
+		MouseActions::lmbState = GLFW_PRESS;
+		MouseNavigation(viewNSWE, lh);
+		return;
+	}
 
 	if (MouseActions::lmbState == GLFW_PRESS) {
 		if (!MouseActions::IsDragging()) {	//if we're not dragging yet		

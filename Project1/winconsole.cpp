@@ -78,10 +78,9 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 
 	CloseHandle(hLocationFile);
 
-	//SaveWVFormat(lh);
 	
 	CalculateEarliestAndLatest(lh);
-	CreatePathPlotLocations(lh);	//points for OpenGL are stored on another vector
+	CreatePathPlotLocations(lh);
 
 
 	lh->isLoadingFile = false;
@@ -95,7 +94,7 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 
 
 
-int SaveWVFormat(LocationHistory* lh)
+int SaveWVFormat(LocationHistory* lh, std::wstring filename)
 {
 	HANDLE hFile;
 	DWORD numberOfLocations;
@@ -113,7 +112,7 @@ int SaveWVFormat(LocationHistory* lh)
 		flatArray[i].lat = lh->locations[i].latitude;
 	}
 
-	hFile = CreateFile(L"test.WVF", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	hFile = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	WriteFile(hFile, magic, 4, &bytesWritten, NULL);
 	WriteFile(hFile, &numberOfLocations, sizeof(numberOfLocations), &bytesWritten, NULL);
 	WriteFile(hFile, flatArray, numberOfLocations * sizeof(WVFormat), &bytesWritten, NULL);
@@ -752,13 +751,9 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 		mapRegionsInfo->displayRegions[r - 1].north = pLocationHistory->regions[r]->nswe.north;
 		mapRegionsInfo->displayRegions[r - 1].east = pLocationHistory->regions[r]->nswe.east;
 		mapRegionsInfo->displayRegions[r - 1].south = pLocationHistory->regions[r]->nswe.south;
-
-		/*
-		mapRegionsInfo->displayRegions[r - 1].colour.r = 0xff;
-		mapRegionsInfo->displayRegions[r - 1].colour.g = 0xee;
-		mapRegionsInfo->displayRegions[r - 1].colour.b = 0x34;
-		mapRegionsInfo->displayRegions[r - 1].colour.a = 0xff;
-		*/
+		
+		mapRegionsInfo->displayRegions[r - 1].colour = pLocationHistory->regions[r]->colour;
+		
 
 		//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
 		//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
@@ -766,8 +761,6 @@ void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 
 	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
 	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
-
-	//printf("count: %i*%i=%i.\n", mapRegionsInfo->displayRegions.size(), sizeof(DisplayRegion), mapRegionsInfo->displayRegions.size() *sizeof(DisplayRegion));
 	
 	return;
 }
