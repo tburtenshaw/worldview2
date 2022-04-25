@@ -81,6 +81,13 @@ unsigned int Palette_Handler::SetColourImVec4(unsigned int currentIndex, int pos
     return currentIndex; //this may be different if palette is created.
 }
 
+ImU32 Palette_Handler::PaletteColorImU32(unsigned int index, int c)
+{
+    int m = (c + palette[index].startingPoint) % palette[index].colors.size();
+    
+    return palette[index].colors[m].r + palette[index].colors[m].g*0x100 + palette[index].colors[m].b*0x10000 + 0xff000000;
+}
+
 ImVec4 Palette_Handler::PaletteColorImVec4(unsigned int index, int c)
 {
     int m = (c+ palette[index].startingPoint) % palette[index].colors.size();   //stop overflow

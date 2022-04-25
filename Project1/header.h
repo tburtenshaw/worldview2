@@ -382,6 +382,7 @@ void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
 void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
 void DrawRegions(MapRegionsInfo* mapRegionsInfo);
 
+int CloseLocationFile(LocationHistory* lh);
 int OpenAndReadLocationFile(LocationHistory* lh);
 
 void CalculateEarliestAndLatest(LocationHistory *lh);

@@ -12,6 +12,7 @@
 #include <ctime>
 
 #include <Windows.h>
+#include <imgui_internal.h>
 
 void Gui::ShowLoadingWindow(LocationHistory* lh)
 {
@@ -63,7 +64,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->earliesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->latesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	Gui::ShowRegionInfo(lh->regions[0]);
+	Gui::ShowRegionInfo(lh->regions[0], lh->globalOptions);
 
 	ImGui::End();
 
@@ -76,10 +77,11 @@ void Gui::MakeGUI(LocationHistory* lh)
 		}
 	}
 	
+	//display the info for all regions
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->shouldShowWindow) {
 			ImGui::Begin((lh->regions[i]->displayname+"###regionwindow"+std::to_string(lh->regions[i]->id)).c_str());
-			Gui::ShowRegionInfo(lh->regions[i]);
+			Gui::ShowRegionInfo(lh->regions[i], lh->globalOptions);
 			ImGui::End();
 		}
 	}
@@ -329,21 +331,22 @@ void Gui::MakeGUI(LocationHistory* lh)
 		}
 		lh->heatmap->MakeDirty();
 	}
-	if (ImGui::Button("Close")) {
 
-		lh->isFileChosen = false;
-		lh->isFullyLoaded = true;	//we're loaded with nothing
-		lh->isInitialised = false;
-		lh->isLoadingFile = false;
-		if (!lh->locations.empty()) {
-			lh->locations.clear();
-		}
-		if (!lh->pathPlotLocations.empty()) {
-			lh->pathPlotLocations.clear();
-		}
-
-		lh->heatmap->MakeDirty();
+	bool disabled = false;
+	if (lh->isLoadingFile==true || lh->isInitialised==false) {
+		disabled = true;
 	}
+	
+	if (disabled)
+		ImGui::BeginDisabled();
+
+	if (ImGui::Button("Close")) {
+		CloseLocationFile(lh);
+		lh->filename = L"";
+	}
+	if (disabled)
+		ImGui::EndDisabled();
+
 	if (ImGui::Button("Save")) {
 		if (lh->isFullyLoaded == true) {
 			std::wstring filename = ChooseFileToSave(lh);
@@ -367,7 +370,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	return;
 }
 
-void Gui::ShowRegionInfo(Region* r)
+void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
 {
 	static char str1[128];
 	strcpy_s(str1, r->displayname.c_str());
@@ -410,6 +413,21 @@ void Gui::ShowRegionInfo(Region* r)
 			}
 		}
 		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent per weekday", 0, maxday, ImVec2(0, 80), sizeof(float));
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		
+		float base = 200.f;
+		
+		ImVec2 s, f;
+		s.x = 0;
+		s.y = base;
+		f.x = 20; f.y = base;
+
+		
+		for (int i=0; i < 7; i++) {
+			s.x += 20; f.x += 20;
+			s.y =base-(fdays[i]/maxday*200.f);
+			window->DrawList->AddRectFilled(s, f, Palette_Handler::PaletteColorImU32(options->indexPaletteWeekday, i));
+		}
 	}
 
 	ImGui::Text("Time (hours): %.1f", r->GetHoursInRegion());

@@ -33,9 +33,34 @@
 #include <filesystem>
 #include <string>
 
-//using namespace std;
-
 LocationHistory* pLocationHistory;
+
+int CloseLocationFile(LocationHistory* lh)	//closes the file, empties the arrays, resets names/counts
+{
+	//this should probably be method of LocationHistory
+	if (lh->isLoadingFile) {
+		return 2;
+	}
+
+	lh->isFileChosen = false;
+	lh->isFullyLoaded = true;	//we're loaded with nothing
+	lh->isInitialised = false;
+	lh->isLoadingFile = false;
+
+	if (!lh->locations.empty()) {
+		lh->locations.clear();
+	}
+	if (!lh->pathPlotLocations.empty()) {
+		lh->pathPlotLocations.clear();
+	}
+
+	//lh->filename = L"";	//can't do this, as it's where the file to load is stored.
+	lh->filesize = 0;
+
+	lh->heatmap->MakeDirty();
+	
+	return 0;
+}
 
 int OpenAndReadLocationFile(LocationHistory* lh)
 {
@@ -44,10 +69,6 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 	if (lh->isLoadingFile) {	//we don't want to load if we're already loading something
 		return 2;
 	}
-
-	lh->isLoadingFile = true;
-	lh->isFileChosen = true;
-	lh->isInitialised = false;
 
 	hLocationFile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
@@ -58,9 +79,11 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 		return 1;
 	}
 
-	if (!lh->locations.empty()) {
-		lh->locations.clear();
-	}
+	CloseLocationFile(lh);	//close any existing file
+	lh->isLoadingFile = true;
+	lh->isFileChosen = true;
+	lh->isInitialised = false;
+
 
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(hLocationFile, &filesize);

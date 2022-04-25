@@ -44,6 +44,8 @@ public:
 
 	static ImVec4 PaletteColorImVec4(unsigned int index, int c);
 	static unsigned int SetColourImVec4(unsigned int currentIndex, int c, ImVec4 colour);
+
+	static ImU32 PaletteColorImU32(unsigned int index, int c);
 	
 	static unsigned int MatchingPalette(unsigned int currentIndex, unsigned int flags);	//returns new index
 	static unsigned int NextMatchingPalette(unsigned int currentIndex, unsigned int flag);
