@@ -2,9 +2,16 @@
 #include "header.h"
 #include "processlocations.h"
 #include "mytimezone.h"
+#include <algorithm>
 
-void CalculateEarliestAndLatest(LocationHistory* lh)
+void SortAndCalculateEarliestAndLatest(LocationHistory* lh)
 {
+	std::sort(lh->locations.begin(), lh->locations.end());	//stable_sort might be better, as doesn't muck around if the same size
+	lh->earliesttimestamp = lh->locations.front().timestamp;
+	lh->latesttimestamp = lh->locations.back().timestamp;
+	
+	return;
+	/*
 	int locationssize = lh->locations.size();
 	
 	if (locationssize < 1)	return;
@@ -19,6 +26,7 @@ void CalculateEarliestAndLatest(LocationHistory* lh)
 		if (lh->locations[i].timestamp > lh->latesttimestamp)
 			lh->latesttimestamp = lh->locations[i].timestamp;
 	}
+	*/
 }
 
 bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {

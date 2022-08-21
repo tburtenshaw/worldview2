@@ -104,3 +104,24 @@ unsigned long MyTimeZone::GetYearFromTimestamp(unsigned long unixtime)
     
     return yearcalc;
 }
+
+std::string MyTimeZone::DisplayBestTimeUnits(unsigned long seconds)
+{
+  
+    if (seconds > 60 * 60 * 24*365) {   //over one year
+        return std::to_string(seconds / (60 * 60 * 24*7)) + " weeks";
+    }
+    else if (seconds > 60 * 60 * 48) {   //over two days
+        return std::to_string(seconds / (60 * 60 * 24)) + " days";
+    }
+
+    else if (seconds > 60 * 60) {   //over one hour
+        return std::to_string(seconds / (60 * 60)) + " hours";
+    }
+
+    else if (seconds > 2*60) {   //over two minutes
+        return std::to_string(seconds/60) + " minutes";
+    }
+
+    return std::to_string(seconds) + " seconds";
+}

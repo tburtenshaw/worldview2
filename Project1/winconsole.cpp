@@ -98,13 +98,11 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 	else if (extension == ".wvf") {
 		LoadWVFormat(lh, hLocationFile);
 	}
-
 	CloseHandle(hLocationFile);
 
-	
-	CalculateEarliestAndLatest(lh);
-	CreatePathPlotLocations(lh);
+	SortAndCalculateEarliestAndLatest(lh);
 
+	CreatePathPlotLocations(lh);
 
 	lh->isLoadingFile = false;
 	lh->isFullyLoaded = true;
@@ -199,13 +197,9 @@ int StartGLProgram(LocationHistory* lh)
 	ImGui::StyleColorsDark();
 
 	//	ImFont* pFont1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 16);
-	//	ImFont* pFont2 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 24);
-
-	//	ImFont* pFont3 = io.Fonts->AddFontFromFileTTF("C:\\Users\\GGPC\\AppData\\Local\\Microsoft\\Windows\\Fonts\\OpenSans-Light.ttf", 18);
 	ImFont* pFont4 = io.Fonts->AddFontFromFileTTF("C:\\Users\\GGPC\\AppData\\Local\\Microsoft\\Windows\\Fonts\\OpenSans-Regular.ttf", 16);
 
-	//glEnable(GL_DEPTH_TEST); // enable depth-testing (don't do this, as breask alpha)
-	//glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
+	glDisable(GL_DEPTH_TEST); //we're not doing 3d
 
 	glViewport(0, 0, lh->windowDimensions.width, lh->windowDimensions.height);
 	glfwSetKeyCallback(window, key_callback);
@@ -216,6 +210,8 @@ int StartGLProgram(LocationHistory* lh)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
+	//glBlendEquation(GL_MAX);
+	
 
 	//set up the background
 	SetupBackgroundVertices(lh->bgInfo);
@@ -245,6 +241,28 @@ int StartGLProgram(LocationHistory* lh)
 	SetupRegionsBufferDataAndVertexAttribArrays(lh->regionsInfo);
 	SetupRegionsShaders(lh->regionsInfo);
 
+	
+	//Trying to do better, GPU based, heatmap
+	printf("Start: glGetError %i\n", glGetError());
+	
+	unsigned int HeatmapFBO;
+	glGenFramebuffers(1, &HeatmapFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, HeatmapFBO);
+
+	unsigned int NewHeatmapTexture;
+	glGenTextures(1, &NewHeatmapTexture);
+	glBindTexture(GL_TEXTURE_2D, NewHeatmapTexture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lh->windowDimensions.width, lh->windowDimensions.height, 0, GL_RED, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, NewHeatmapTexture, 0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	printf("After unbind: glGetError %i\n", glGetError());
+
+
 	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
 		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
@@ -271,10 +289,33 @@ int StartGLProgram(LocationHistory* lh)
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
+
+
+		//try to do NewHeatmap rendering
+		glBlendFunc(GL_ONE, GL_ONE);
+
+
+
+
+		//now back to normal
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glBlendEquation(GL_FUNC_ADD);
+
+
+
+		glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
+		glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
 		//Set the FBO as the draw surface
 		glBindFramebuffer(GL_FRAMEBUFFER, lh->fboInfo->fbo);
 
+
+		//glBlendEquation(GL_MAX);
 		DrawBackgroundAndHeatmap(lh);
+		//glBlendEquation(GL_FUNC_ADD);
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {

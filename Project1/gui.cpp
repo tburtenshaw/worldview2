@@ -12,6 +12,11 @@
 #include <ctime>
 
 #include <Windows.h>
+
+#undef IMGUI_DEFINE_PLACEMENT_NEW
+#define IMGUI_DEFINE_PLACEMENT_NEW
+#undef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
 
 void Gui::ShowLoadingWindow(LocationHistory* lh)
@@ -72,15 +77,15 @@ void Gui::MakeGUI(LocationHistory* lh)
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->toDelete) {
 			lh->regions.erase(lh->regions.begin() + i);
-			
-			lh->regions[i-1]->needsRedraw = true;
+
+			lh->regions[i - 1]->needsRedraw = true;
 		}
 	}
-	
+
 	//display the info for all regions
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->shouldShowWindow) {
-			ImGui::Begin((lh->regions[i]->displayname+"###regionwindow"+std::to_string(lh->regions[i]->id)).c_str());
+			ImGui::Begin((lh->regions[i]->displayname + "###regionwindow" + std::to_string(lh->regions[i]->id)).c_str());
 			Gui::ShowRegionInfo(lh->regions[i], lh->globalOptions);
 			ImGui::End();
 		}
@@ -116,7 +121,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	}
 
 	ImGui::End();
-	
+
 	ImGui::Begin("Location display");
 	ImGui::Checkbox("Show points", &options->showPoints);
 
@@ -135,23 +140,23 @@ void Gui::MakeGUI(LocationHistory* lh)
 	t = options->earliestTimeToShow;
 	localtime_s(&correctedTime, &t);
 	earliestDayOfMonth = correctedTime.tm_mday;
-	earliestMonth = correctedTime.tm_mon+1;
-	earliestYear = correctedTime.tm_year+1900;
+	earliestMonth = correctedTime.tm_mon + 1;
+	earliestYear = correctedTime.tm_year + 1900;
 
-	if (ImGui::DragInt("Day", &earliestDayOfMonth,0.4f)) {
+	if (ImGui::DragInt("Day", &earliestDayOfMonth, 0.4f)) {
 		correctedTime.tm_mday = earliestDayOfMonth;
 		options->earliestTimeToShow = mktime(&correctedTime);
 	}
 
-	if (ImGui::DragInt("Month", &earliestMonth,0.1f)) {
-		correctedTime.tm_mon = earliestMonth-1;
+	if (ImGui::DragInt("Month", &earliestMonth, 0.1f)) {
+		correctedTime.tm_mon = earliestMonth - 1;
 		//correctedTime.tm_mday = earliestDayOfMonth;
 		correctedTime.tm_isdst = -1;
 		options->earliestTimeToShow = mktime(&correctedTime);
-		
+
 		if (correctedTime.tm_mday != earliestDayOfMonth) {
-			printf("different day ctm:%i em:%i ed:%i ctd:%i\n",correctedTime.tm_mon+1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
-			
+			printf("different day ctm:%i em:%i ed:%i ctd:%i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
+
 			//changing the month will often change the day, only allow if mday>28
 			if (correctedTime.tm_mday <= 128) {
 				correctedTime.tm_mon = earliestMonth - 1;
@@ -163,7 +168,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 		}
 	}
 
-	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp),ImGuiSliderFlags_AlwaysClamp)) {
+	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp), ImGuiSliderFlags_AlwaysClamp)) {
 		correctedTime.tm_year = earliestYear - 1900;
 		options->earliestTimeToShow = mktime(&correctedTime);
 	}
@@ -191,13 +196,8 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	options->earliestTimeToShow = mktime(&correctedTime);
 
-
-
-
-
 	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
 	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
-
 
 	t = options->latestTimeToShow;
 	gmtime_s(&correctedTime, &t);
@@ -205,12 +205,8 @@ void Gui::MakeGUI(LocationHistory* lh)
 	latestMonth = correctedTime.tm_mon + 1;
 	latestYear = correctedTime.tm_year + 1900;
 
-
-	
 	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
 	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
-
-	
 
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
@@ -221,25 +217,23 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Checkbox("Travel highlight", &options->showHighlights);
 	if (options->showHighlights) {
 		ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 24.0f * 60.0f, "%.1f minutes");
-			ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
-			float motionSpeedX;
-			motionSpeedX = options->minutestravelbetweenhighlights * 60.0f / options->secondsbetweenhighlights;
-			bool b;
-			b = ImGui::SliderFloat("Motion speed", &motionSpeedX, 1.0, 3600.0, "%.0fX");
-			if (b) { options->secondsbetweenhighlights = options->minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
+		ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
+		float motionSpeedX;
+		motionSpeedX = options->minutestravelbetweenhighlights * 60.0f / options->secondsbetweenhighlights;
+		bool b;
+		b = ImGui::SliderFloat("Motion speed", &motionSpeedX, 1.0, 3600.0, "%.0fX");
+		if (b) { options->secondsbetweenhighlights = options->minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
 	}
 
 	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year" };
 	ImGui::Combo("Colour by", &options->colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
 
 	static ImVec4 color[24] = {};
-	
-
 
 	if (options->colourby == 4) {
 		options->indexPaletteYear = Palette_Handler::MatchingPalette(options->indexPaletteYear, Palette::YEAR);
 		int n = 0;
-		for (int year = MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->latesttimestamp)+1) && (n < 24); year++) {
+		for (int year = MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->latesttimestamp) + 1) && (n < 24); year++) {
 			color[n] = Palette_Handler::PaletteColorImVec4(options->indexPaletteYear, year);
 
 			std::string text = "Year ";
@@ -262,11 +256,10 @@ void Gui::MakeGUI(LocationHistory* lh)
 		}
 	}
 
-
 	if (options->colourby == 2) {
 		for (int i = 0; i < 7; i++) {
 			options->indexPaletteWeekday = Palette_Handler::MatchingPalette(options->indexPaletteWeekday, Palette::WEEKDAY);
-			color[i]= Palette_Handler::PaletteColorImVec4(options->indexPaletteWeekday, i);
+			color[i] = Palette_Handler::PaletteColorImVec4(options->indexPaletteWeekday, i);
 			if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
 				Palette_Handler::SetColourImVec4(options->indexPaletteWeekday, i, color[i]);
 			}
@@ -283,7 +276,6 @@ void Gui::MakeGUI(LocationHistory* lh)
 			Palette_Handler::RotatePaletteRight(options->indexPaletteWeekday);
 		}
 		ImGui::PopButtonRepeat();
-
 	}
 
 	if (options->colourby == 1) {
@@ -333,10 +325,10 @@ void Gui::MakeGUI(LocationHistory* lh)
 	}
 
 	bool disabled = false;
-	if (lh->isLoadingFile==true || lh->isInitialised==false) {
+	if (lh->isLoadingFile == true || lh->isInitialised == false) {
 		disabled = true;
 	}
-	
+
 	if (disabled)
 		ImGui::BeginDisabled();
 
@@ -377,10 +369,9 @@ void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
 	if (ImGui::InputTextWithHint("Region name", "Name the region", str1, IM_ARRAYSIZE(str1))) {
 		r->displayname = str1;
 	}
-	
 
 	static ImVec4 colour;
-	colour= r->colour.AsImVec4();
+	colour = r->colour.AsImVec4();
 	if (ImGui::ColorEdit3("Colour", (float*)&colour, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
 		r->colour = colour;
 		r->needsRedraw = true;
@@ -413,21 +404,7 @@ void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
 			}
 		}
 		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent per weekday", 0, maxday, ImVec2(0, 80), sizeof(float));
-		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		
-		float base = 200.f;
-		
-		ImVec2 s, f;
-		s.x = 0;
-		s.y = base;
-		f.x = 20; f.y = base;
-
-		
-		for (int i=0; i < 7; i++) {
-			s.x += 20; f.x += 20;
-			s.y =base-(fdays[i]/maxday*200.f);
-			window->DrawList->AddRectFilled(s, f, Palette_Handler::PaletteColorImU32(options->indexPaletteWeekday, i));
-		}
+		DayHistogram(r, options, 80.f);
 	}
 
 	ImGui::Text("Time (hours): %.1f", r->GetHoursInRegion());
@@ -438,6 +415,90 @@ void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
 		if (ImGui::Button("Delete")) {
 			r->toDelete = true;
 		}
+	}
+}
+
+void Gui::DayHistogram(Region* r, GlobalOptions* options, float height)
+{
+	ImVec2 frame_size;
+	const char* label = "Time per weekday";
+
+	float maxday = 0;
+	float fdays[7]{};
+	float totaldays = 0;
+
+	for (int i = 0; i < 7; i++) {
+		fdays[i] = (float)r->dayofweeks[i];
+		//fdays[i] /= 3600;
+		if (fdays[i] > maxday) {
+			maxday = fdays[i];
+		}
+		totaldays += fdays[i];
+	}
+
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
+	if (window->SkipItems)
+		return;
+
+	const ImGuiStyle& style = g.Style;
+	const ImGuiID id = window->GetID(label);
+
+	const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+	if (frame_size.x == 0.0f)
+		frame_size.x = ImGui::CalcItemWidth();
+	if (frame_size.y == 0.0f)
+		frame_size.y = height;
+
+	const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + frame_size);
+	const ImRect inner_bb(frame_bb.Min + style.FramePadding, frame_bb.Max - style.FramePadding);
+	const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0));
+	ImGui::ItemSize(total_bb, style.FramePadding.y);
+	if (!ImGui::ItemAdd(total_bb, 0, &frame_bb))
+		return;
+	const bool hovered = ImGui::ItemHoverable(frame_bb, id);
+
+	ImGui::RenderFrame(frame_bb.Min, frame_bb.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+
+	if (hovered && inner_bb.Contains(g.IO.MousePos))
+	{
+		const float t = ImClamp((g.IO.MousePos.x - inner_bb.Min.x) / (inner_bb.Max.x - inner_bb.Min.x), 0.0f, 0.9999f);
+		const int v_idx = (int)(t * 7);
+
+		std::string timeunitstodisplay;
+
+		ImGui::SetTooltip("%s: %s", MyTimeZone::daynameslong[(v_idx + 6) % 7].c_str(), MyTimeZone::DisplayBestTimeUnits(fdays[v_idx]));
+	}
+
+	ImVec2 topleftofbar, bottomrightofbar;
+	topleftofbar.x = inner_bb.Min.x;
+	bottomrightofbar.y = inner_bb.Max.y - label_size.y;
+
+	int gap = 1;
+	float thickness = inner_bb.GetWidth() / 7 - gap;
+
+	if (thickness < 2.0) {
+		gap = 0;
+		inner_bb.GetWidth() / 7;
+	}
+
+	for (int i = 0; i < 7; i++) {
+		bottomrightofbar.x = topleftofbar.x + thickness;
+		topleftofbar.y = inner_bb.Max.y - label_size.y - (fdays[i] / maxday * (inner_bb.GetHeight()-label_size.y));
+		window->DrawList->AddRectFilled(topleftofbar, bottomrightofbar, Palette_Handler::PaletteColorImU32(options->indexPaletteWeekday, i));
+
+		int percentint;
+		percentint = fdays[i] * 100.0f / totaldays + 0.5f;
+		std::string percent = std::to_string(percentint) + "%";
+
+		
+		//print the percentage on the bar
+		ImGui::RenderTextClipped(topleftofbar, bottomrightofbar, percent.c_str(), NULL, NULL, ImVec2(0.5f, 0.0f));
+
+		//the label
+		ImGui::RenderTextClipped(ImVec2(topleftofbar.x, bottomrightofbar.y ), ImVec2(bottomrightofbar.x, bottomrightofbar.y+ label_size.y), MyTimeZone::daynames[(i + 6) % 7].c_str(), NULL, NULL, ImVec2(0.5f, 0.0f));
+
+		topleftofbar.x += thickness + gap;
 	}
 }
 

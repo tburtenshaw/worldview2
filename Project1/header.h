@@ -96,6 +96,10 @@ struct Location {
 	int heading;
 	int velocity;
 	int verticalaccuracy;
+
+	bool operator< (Location const& rhs) {	//sorts just by timestamp
+		return timestamp < rhs.timestamp;
+	}
 };
 
 struct PathPlotLocation {	//this is the structure (a vector of them) sent to the GPU
@@ -257,15 +261,23 @@ public:
 	GlobalOptions* globalOptions;
 };
 
-class BackgroundInfo {
+class GLRenderLayer {
 public:
-	BackgroundInfo();
-	~BackgroundInfo();
-
 	unsigned int vao;
 	unsigned int vbo;
 
 	Shader* shader;
+};
+
+class BackgroundInfo : public GLRenderLayer {
+public:
+	BackgroundInfo();
+	~BackgroundInfo();
+
+	//unsigned int vao;
+	//unsigned int vbo;
+
+	//Shader* shader;
 	unsigned int worldTexture;	//the background NASA map
 	//unsigned int highresTexture;
 	unsigned int heatmapTexture;
@@ -286,31 +298,16 @@ public:
 	BackgroundInfo fboBGInfo;	//so can use other functions
 };
 
-class MapPathInfo {
+class MapPathInfo : public GLRenderLayer {
 public:
 	MapPathInfo();
 	~MapPathInfo();
-
-	unsigned int vao;
-	unsigned int vbo;
-
-	Shader* shader;
 };
 
-class DisplayRegion {	//used for holding the opengl buffer
-public:
-	float west, north, east, south;
-	//float c[4];
-	RGBA colour{ 1,2,3,4 };
-};
-
-class MapPointsInfo {
+class MapPointsInfo : public GLRenderLayer {
 public:
 	MapPointsInfo();
 	~MapPointsInfo();
-
-	unsigned int vao;
-	unsigned int vbo;
 
 	unsigned int uniformNswe;
 	unsigned int uniformResolution;
@@ -326,23 +323,22 @@ public:
 	unsigned int uniformPalette;
 	unsigned int uniformColourBy;
 
-
-
 	float palette[24][4];
-
-	Shader* shader;
 };
 
-class MapRegionsInfo {
+class MapRegionsInfo : public GLRenderLayer {
 public:
 	MapRegionsInfo();
 	~MapRegionsInfo();
 
-	unsigned int vao;
-	unsigned int vbo;
-	Shader* shader;
-
 	std::vector<DisplayRegion> displayRegions;
+};
+
+class DisplayRegion {	//used for holding the opengl buffer
+public:
+	float west, north, east, south;
+	//float c[4];
+	RGBA colour{ 1,2,3,4 };
 };
 
 struct WVFormat {
@@ -385,7 +381,7 @@ void DrawRegions(MapRegionsInfo* mapRegionsInfo);
 int CloseLocationFile(LocationHistory* lh);
 int OpenAndReadLocationFile(LocationHistory* lh);
 
-void CalculateEarliestAndLatest(LocationHistory *lh);
+void SortAndCalculateEarliestAndLatest(LocationHistory *lh);
 int SaveWVFormat(LocationHistory* lh, std::wstring);
 
 
