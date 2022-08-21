@@ -179,6 +179,7 @@
     <ClCompile Include="header.cpp" />
     <ClCompile Include="heatmap.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="mygl.cpp" />
     <ClCompile Include="mytimezone.cpp" />
     <ClCompile Include="nswe.cpp" />
     <ClCompile Include="palettes.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="highresmanager.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="loadjson.h" />
+    <ClInclude Include="mygl.h" />
     <ClInclude Include="mytimezone.h" />
     <ClInclude Include="nswe.h" />
     <ClInclude Include="palettes.h" />

@@ -5,6 +5,7 @@
 #include "nswe.h"
 #include "heatmap.h"
 #include "regions.h"
+#include "mygl.h"
 #include <stdio.h>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -14,6 +15,7 @@
 //extern WORLDCOORD longlatMouse;
 //extern BackgroundInfo bgInfo;
 extern LocationHistory* pLocationHistory;
+extern FrameBufferObjectInfo fboInfo;
 
 NSWE originalNSWE;
 
@@ -117,7 +119,7 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 	pLocationHistory->windowDimensions.height = windowNewHeight;
 	pLocationHistory->windowDimensions.width = windowNewWidth;
 	glViewport(0, 0, windowNewWidth, windowNewHeight);
-	glBindTexture(GL_TEXTURE_2D, pLocationHistory->fboInfo->fboTexture);
+	glBindTexture(GL_TEXTURE_2D, fboInfo.fboTexture);
 	//printf("fbo texture %i\n", pLocationHistory->fboInfo->fboTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 

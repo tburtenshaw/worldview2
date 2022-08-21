@@ -14,7 +14,6 @@
 class NSWE;
 struct Location;
 class Heatmap;
-class Shader;
 class FrameBufferObjectInfo;
 class BackgroundInfo;
 class MapPathInfo;
@@ -250,96 +249,11 @@ public:
 
 	std::vector<Region*> regions;
 
-	FrameBufferObjectInfo* fboInfo;
-	BackgroundInfo* bgInfo;
-	MapPathInfo* pathInfo;
-	MapPointsInfo* pointsInfo;
-	MapRegionsInfo* regionsInfo;
-
 	HighResManager* highres;
 
 	GlobalOptions* globalOptions;
 };
 
-class GLRenderLayer {
-public:
-	unsigned int vao;
-	unsigned int vbo;
-
-	Shader* shader;
-};
-
-class BackgroundInfo : public GLRenderLayer {
-public:
-	BackgroundInfo();
-	~BackgroundInfo();
-
-	//unsigned int vao;
-	//unsigned int vbo;
-
-	//Shader* shader;
-	unsigned int worldTexture;	//the background NASA map
-	//unsigned int highresTexture;
-	unsigned int heatmapTexture;
-
-	unsigned int worldTextureLocation;	//the location of this uniform
-	unsigned int highresTextureLocation;
-	unsigned int heatmapTextureLocation;
-};
-
-class FrameBufferObjectInfo {
-public:
-	//FrameBufferObjectInfo();
-	//~FrameBufferObjectInfo();
-
-	unsigned int fbo;
-	unsigned int fboTexture;
-
-	BackgroundInfo fboBGInfo;	//so can use other functions
-};
-
-class MapPathInfo : public GLRenderLayer {
-public:
-	MapPathInfo();
-	~MapPathInfo();
-};
-
-class MapPointsInfo : public GLRenderLayer {
-public:
-	MapPointsInfo();
-	~MapPointsInfo();
-
-	unsigned int uniformNswe;
-	unsigned int uniformResolution;
-	unsigned int uniformPointRadius;
-	unsigned int uniformPointAlpha;
-	unsigned int uniformSeconds;
-	unsigned int uniformCycleSeconds;
-	unsigned int uniformShowHighlights;
-	unsigned int uniformSecondsBetweenHighlights;
-	unsigned int uniformTravelTimeBetweenHighlights;
-	unsigned int uniformEarliestTimeToShow;
-	unsigned int uniformLatestTimeToShow;
-	unsigned int uniformPalette;
-	unsigned int uniformColourBy;
-
-	float palette[24][4];
-};
-
-class MapRegionsInfo : public GLRenderLayer {
-public:
-	MapRegionsInfo();
-	~MapRegionsInfo();
-
-	std::vector<DisplayRegion> displayRegions;
-};
-
-class DisplayRegion {	//used for holding the opengl buffer
-public:
-	float west, north, east, south;
-	//float c[4];
-	RGBA colour{ 1,2,3,4 };
-};
 
 struct WVFormat {
 	unsigned long timestamp;
