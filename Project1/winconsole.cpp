@@ -37,16 +37,11 @@
 LocationHistory* pLocationHistory;
 
 
-
 FrameBufferObjectInfo fboInfo;
-BackgroundInfo bgInfo;
+BackgroundInfo backgroundLayer;
 MapPathInfo pathInfo;
 MapPointsInfo pointsInfo;
 MapRegionsInfo regionsInfo;
-
-
-
-
 
 
 
@@ -229,16 +224,15 @@ int StartGLProgram(LocationHistory* lh)
 	
 
 	//set up the background
-	bgInfo.GenerateBackgroundSquareVertices();
-	//SetupBackgroundVertices(lh->bgInfo);
-	LoadBackgroundImageToTexture(&bgInfo.worldTexture);
+	backgroundLayer.GenerateBackgroundSquareVertices();
+	LoadBackgroundImageToTexture(&backgroundLayer.worldTexture);
 	MakeHighresImageTexture(&lh->highres->highresTexture);
-	MakeHeatmapTexture(lh->viewNSWE, &bgInfo.heatmapTexture);
+	MakeHeatmapTexture(lh->viewNSWE, &backgroundLayer.heatmapTexture);
 
 	//set up and compile the shaders
-	SetupBackgroundShaders(&bgInfo);
-	SetupPathsShaders(&pathInfo);
-	SetupPointsShaders(&pointsInfo);
+	backgroundLayer.SetupShaders();
+	pathInfo.SetupShaders();
+	pointsInfo.SetupShaders();
 
 	//Set up the FBO that we draw onto
 	SetupFrameBufferObject(&fboInfo, lh->windowDimensions.width, lh->windowDimensions.height);
@@ -254,8 +248,7 @@ int StartGLProgram(LocationHistory* lh)
 	regionsInfo.displayRegions.resize(1);
 
 	SetupRegionsBufferDataAndVertexAttribArrays(&regionsInfo);
-	SetupRegionsShaders(&regionsInfo);
-
+	regionsInfo.SetupShaders();
 	
 	//Trying to do better, GPU based, heatmap
 	printf("Start: glGetError %i\n", glGetError());
@@ -343,7 +336,7 @@ int StartGLProgram(LocationHistory* lh)
 			if (!lh->viewNSWE->isMoving() && lh->heatmap->IsDirty() && lh->globalOptions->showHeatmap) {
 				//NSWE expanded;
 				//expanded = lh->viewNSWE->target.createExpandedBy(1.0);
-				UpdateHeatmapTexture(&lh->viewNSWE->target, &bgInfo);
+				UpdateHeatmapTexture(&lh->viewNSWE->target, &backgroundLayer);
 				lh->heatmap->MakeClean();
 			}
 
@@ -404,31 +397,6 @@ int StartGLProgram(LocationHistory* lh)
 	return 0;
 }
 
-/*
-void SetupBackgroundVertices(BackgroundInfo* backgroundInfo)
-{
-	//This is just a square that covers the viewpoint.
-	static const GLfloat g_vertex_buffer_data[] = {
-	-1.0f, -1.0f,
-	1.0f, -1.0f,
-	-1.0f, 1.0f,
-	1.0f, 1.0f
-	};
-
-	glGenVertexArrays(1, &backgroundInfo->vao);
-	glBindVertexArray(backgroundInfo->vao);
-
-	glGenBuffers(1, &backgroundInfo->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glEnableVertexAttribArray(0);
-
-	return;
-}
-*/
 
 void LoadBackgroundImageToTexture(unsigned int* texture)
 {
@@ -504,21 +472,7 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 
 void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
 {
-	//Create the shader program
-	backgroundInfo->shader.LoadShaderFromFile("backgroundVS.glsl", GL_VERTEX_SHADER);
-	backgroundInfo->shader.LoadShaderFromFile("backgroundFS.glsl", GL_FRAGMENT_SHADER);
-	backgroundInfo->shader.CreateProgram();
 
-	//unsigned int worldTextureLocation, heatmapTextureLocation;
-	backgroundInfo->worldTextureLocation = glGetUniformLocation(backgroundInfo->shader.program, "worldTexture");
-	backgroundInfo->highresTextureLocation = glGetUniformLocation(backgroundInfo->shader.program, "highresTexture");
-	backgroundInfo->heatmapTextureLocation = glGetUniformLocation(backgroundInfo->shader.program, "heatmapTexture");
-
-	// Then bind the uniform samplers to texture units:
-	backgroundInfo->shader.UseMe();
-	glUniform1i(backgroundInfo->worldTextureLocation, 0);
-	glUniform1i(backgroundInfo->highresTextureLocation, 1);
-	glUniform1i(backgroundInfo->heatmapTextureLocation, 2);
 
 	return;
 }
@@ -579,7 +533,7 @@ void DrawBackgroundAndHeatmap(LocationHistory* lh)
 	HighResManager* highres;
 	NSWE* highresnswe;
 
-	backgroundInfo = &bgInfo;
+	backgroundInfo = &backgroundLayer;
 	viewnswe = pLocationHistory->viewNSWE;
 	heatmapnswe = pLocationHistory->heatmap->nswe;
 	highres = lh->highres;
@@ -648,14 +602,6 @@ void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
 	return;
 }
 
-void SetupPathsShaders(MapPathInfo* mapPathInfo)
-{
-	mapPathInfo->shader.LoadShaderFromFile("mappathsVS.glsl", GL_VERTEX_SHADER);
-	mapPathInfo->shader.LoadShaderFromFile("mappathsFS.glsl", GL_FRAGMENT_SHADER);
-	mapPathInfo->shader.LoadShaderFromFile("mappathsGS.glsl", GL_GEOMETRY_SHADER);
-	mapPathInfo->shader.CreateProgram();
-}
-
 void DrawPaths(MapPathInfo* mapPathInfo)
 {
 	GlobalOptions* options;
@@ -698,33 +644,6 @@ void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //
 	glEnableVertexAttribArray(2);
 
 	return;
-}
-
-void SetupPointsShaders(MapPointsInfo* mapPointsInfo)
-{
-	mapPointsInfo->shader.LoadShaderFromFile("pointsVS.glsl", GL_VERTEX_SHADER);
-	mapPointsInfo->shader.LoadShaderFromFile("pointsGS.glsl", GL_GEOMETRY_SHADER);
-	mapPointsInfo->shader.LoadShaderFromFile("pointsFS.glsl", GL_FRAGMENT_SHADER);
-	mapPointsInfo->shader.CreateProgram();
-
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformNswe, "nswe");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformResolution, "resolution");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformPointRadius, "pointradius");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformPointAlpha, "alpha");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformSeconds, "seconds");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformCycleSeconds, "cycleSeconds");
-
-	//Which times to show
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformEarliestTimeToShow, "earliesttimetoshow");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformLatestTimeToShow, "latesttimetoshow");
-
-	//A highlight is used to give an indication of travel speed, travels through as the peak of a sine wave
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformShowHighlights, "showhighlights");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformSecondsBetweenHighlights, "secondsbetweenhighlights");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformTravelTimeBetweenHighlights, "traveltimebetweenhighlights");
-
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformPalette, "palette");
-	mapPointsInfo->shader.LoadUniformLocation(&mapPointsInfo->uniformColourBy, "colourby");
 }
 
 void DrawPoints(MapPointsInfo* mapPointsInfo)
@@ -793,16 +712,6 @@ void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
 	return;
 }
 
-void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo)
-{
-	mapRegionsInfo->shader.LoadShaderFromFile("regionsVS.glsl", GL_VERTEX_SHADER);
-	mapRegionsInfo->shader.LoadShaderFromFile("regionsFS.glsl", GL_FRAGMENT_SHADER);
-	mapRegionsInfo->shader.LoadShaderFromFile("regionsGS.glsl", GL_GEOMETRY_SHADER);
-	mapRegionsInfo->shader.CreateProgram();
-
-	return;
-}
-
 void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
 {
 	int sizeOfRegionVector = pLocationHistory->regions.size();
@@ -860,26 +769,6 @@ void DrawRegions(MapRegionsInfo* mapRegionsInfo)
 	DisplayIfGLError("After DrawRegions.", false);
 
 	return;
-}
-
-MapRegionsInfo::MapRegionsInfo()
-{
-
-
-	displayRegions = {};
-}
-
-
-BackgroundInfo::BackgroundInfo()
-{
-
-
-	worldTexture = 0;
-	heatmapTexture = 0;
-
-	worldTextureLocation = 0;
-	heatmapTextureLocation = 0;
-	highresTextureLocation = 0;
 }
 
 

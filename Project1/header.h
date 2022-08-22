@@ -268,7 +268,6 @@ void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);
 void MakeHighresImageTexture(unsigned int* texture);
 void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
-void SetupBackgroundShaders(BackgroundInfo* backgroundInfo);
 void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
 void DrawFrameBuffer(LocationHistory* lh);
 
@@ -278,16 +277,13 @@ void DrawBackgroundAndHeatmap(LocationHistory* lh);
 
 //paths
 void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);
-void SetupPathsShaders(MapPathInfo* mapPathInfo);
 void DrawPaths(MapPathInfo* mapPathInfo);
 
 //points
 void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
-void SetupPointsShaders(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
 
 //regions
-void SetupRegionsShaders(MapRegionsInfo* mapRegionsInfo);
 void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
 void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
 void DrawRegions(MapRegionsInfo* mapRegionsInfo);

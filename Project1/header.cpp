@@ -31,13 +31,6 @@ LocationHistory::LocationHistory()
 
 	heatmap = new Heatmap;
 
-	/*
-	bgInfo = new BackgroundInfo;
-	pathInfo = new MapPathInfo;
-	pointsInfo = new MapPointsInfo;
-	regionsInfo = new MapRegionsInfo;
-	*/
-
 	highres = new HighResManager;
 
 	globalOptions = new GlobalOptions;

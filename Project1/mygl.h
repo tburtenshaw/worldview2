@@ -15,16 +15,14 @@ public:
 
 	GLRenderLayer()
 		:vao(0), vbo(0),shader(){
-
 	}
 
+	virtual void SetupShaders();
 	void GenerateBackgroundSquareVertices();
 };
 
 class BackgroundInfo : public GLRenderLayer {
 public:
-	BackgroundInfo();
-
 	unsigned int worldTexture;	//the background NASA map
 	//unsigned int highresTexture;
 	unsigned int heatmapTexture;
@@ -32,6 +30,12 @@ public:
 	unsigned int worldTextureLocation;	//the location of this uniform
 	unsigned int highresTextureLocation;
 	unsigned int heatmapTextureLocation;
+
+	void SetupShaders();
+
+	BackgroundInfo()
+		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
+
 };
 
 class FrameBufferObjectInfo {
@@ -47,6 +51,7 @@ public:
 
 class MapPathInfo : public GLRenderLayer {
 public:
+	void SetupShaders();
 };
 
 class MapPointsInfo : public GLRenderLayer {
@@ -66,13 +71,14 @@ public:
 	unsigned int uniformColourBy;
 
 	float palette[24][4];
+	void SetupShaders();
 };
 
 class MapRegionsInfo : public GLRenderLayer {
 public:
-	MapRegionsInfo();
-
 	std::vector<DisplayRegion> displayRegions;
+
+	void SetupShaders();
 };
 
 class DisplayRegion {	//used for holding the opengl buffer
