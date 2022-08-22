@@ -18,7 +18,7 @@ class FrameBufferObjectInfo;
 class BackgroundInfo;
 class MapPathInfo;
 class MapPointsInfo;
-class MapRegionsInfo;
+class DisplayRegionsLayer;
 class Region;
 class MovingTarget;
 class HighResManager;
@@ -268,8 +268,8 @@ void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
 void LoadBackgroundImageToTexture(unsigned int* texture);
 void MakeHighresImageTexture(unsigned int* texture);
 void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
-void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
-void DrawFrameBuffer(LocationHistory* lh);
+//void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
+//void DrawFrameBuffer(LocationHistory* lh);
 
 void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 
@@ -285,8 +285,8 @@ void DrawPoints(MapPointsInfo* mapPointsInfo);
 
 //regions
 //void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
-void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
-void DrawRegions(MapRegionsInfo* mapRegionsInfo);
+void UpdateDisplayRegions(DisplayRegionsLayer* mapRegionsInfo);
+//void DrawRegions(MapRegionsInfo* mapRegionsInfo);
 
 int CloseLocationFile(LocationHistory* lh);
 int OpenAndReadLocationFile(LocationHistory* lh);

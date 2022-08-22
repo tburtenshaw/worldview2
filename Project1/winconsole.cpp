@@ -41,7 +41,7 @@ FrameBufferObjectInfo fboInfo;
 BackgroundInfo backgroundLayer;
 MapPathInfo pathInfo;
 MapPointsInfo pointsInfo;
-MapRegionsInfo regionsInfo;
+DisplayRegionsLayer regionsInfo;
 
 
 
@@ -207,22 +207,22 @@ int StartGLProgram(LocationHistory* lh)
 	//	ImFont* pFont1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 16);
 	ImFont* pFont4 = io.Fonts->AddFontFromFileTTF("C:\\Users\\GGPC\\AppData\\Local\\Microsoft\\Windows\\Fonts\\OpenSans-Regular.ttf", 16);
 
-	glDisable(GL_DEPTH_TEST); //we're not doing 3d
+
 
 	glViewport(0, 0, lh->windowDimensions.width, lh->windowDimensions.height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetFramebufferSizeCallback(window, size_callback);
 
+	glDisable(GL_DEPTH_TEST); //we're not doing 3d
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
-	//glBlendEquation(GL_MAX);
 	
 
 	//set up the background
-	backgroundLayer.GenerateBackgroundSquareVertices();
+	backgroundLayer.SetupSquareVertices();
 	LoadBackgroundImageToTexture(&backgroundLayer.worldTexture);
 	MakeHighresImageTexture(&lh->highres->highresTexture);
 	MakeHeatmapTexture(lh->viewNSWE, &backgroundLayer.heatmapTexture);
@@ -243,8 +243,8 @@ int StartGLProgram(LocationHistory* lh)
 
 	//make a new region, which is the viewport
 	lh->regions.push_back(new Region());
-	regionsInfo.displayRegions.resize(1);
 
+	regionsInfo.displayRegions.resize(1);
 	regionsInfo.SetupVertices();
 	regionsInfo.SetupShaders();
 	
@@ -296,10 +296,12 @@ int StartGLProgram(LocationHistory* lh)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 
-
 		//try to do NewHeatmap rendering
 		glBlendFunc(GL_ONE, GL_ONE);
 
+	//	glBindFramebuffer(GL_FRAMEBUFFER, fboInfo.fbo);
+	//	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
+	//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 
@@ -309,19 +311,9 @@ int StartGLProgram(LocationHistory* lh)
 		glBlendEquation(GL_FUNC_ADD);
 
 
-
-		glBindFramebuffer(GL_FRAMEBUFFER, fboInfo.fbo);
-		glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
 		//Set the FBO as the draw surface
-		glBindFramebuffer(GL_FRAMEBUFFER, fboInfo.fbo);
-
-
-		//glBlendEquation(GL_MAX);
+		fboInfo.BindToDrawTo();
 		DrawBackgroundAndHeatmap(lh);
-		//glBlendEquation(GL_FUNC_ADD);
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
@@ -345,18 +337,17 @@ int StartGLProgram(LocationHistory* lh)
 					glBindBuffer(GL_ARRAY_BUFFER, pathInfo.vbo);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
 				}
-				DrawPaths(&pathInfo);
+				pathInfo.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, lh->viewNSWE, options->linewidth, options->seconds, options->cycleSeconds);
 			}
 
 			if (options->showPoints) {
 				DrawPoints(&pointsInfo);
 			}
 
-			UpdateDisplayRegions(&regionsInfo);
-			DrawRegions(&regionsInfo);	//this draws the selection box, and the rectangle where regions are
-		}
+			regionsInfo.UpdateFromRegionsData(lh->regions);
+			regionsInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height, lh->viewNSWE);
 
-		//		glBindFramebuffer(GL_FRAMEBUFFER, 0);	//Get out of the FBO
+		}
 
 				//Start the ImGui Frame
 		ImGui_ImplOpenGL3_NewFrame();
@@ -365,7 +356,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		//draw the FBO onto the screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		DrawFrameBuffer(lh);
+		fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);
 
 		if (lh->isLoadingFile == false) {
 			Gui::MakeGUI(lh);	//make the ImGui stuff
@@ -468,20 +459,6 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 	return;
 }
 
-void DrawFrameBuffer(LocationHistory* lh)
-{
-	fboInfo.shader.UseMe();
-	fboInfo.shader.SetUniformFromFloats("resolution", (float)lh->windowDimensions.width, (float)lh->windowDimensions.height);
-
-	glActiveTexture(GL_TEXTURE0 + 4);
-	glBindTexture(GL_TEXTURE_2D, fboInfo.fboTexture);
-	glDisable(GL_DEPTH_TEST);
-	glBindVertexArray(fboInfo.vao);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	return;
-}
-
 void DrawBackgroundAndHeatmap(LocationHistory* lh)
 {
 	NSWE* viewnswe;
@@ -527,28 +504,6 @@ void DrawBackgroundAndHeatmap(LocationHistory* lh)
 	return;
 }
 
-
-
-void DrawPaths(MapPathInfo* mapPathInfo)
-{
-	GlobalOptions* options;
-	options = pLocationHistory->globalOptions;
-
-	//update uniform shader variables
-	mapPathInfo->shader.UseMe();
-	mapPathInfo->shader.SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
-	mapPathInfo->shader.SetUniformFromFloats("seconds", options->seconds * 20.0f);
-	mapPathInfo->shader.SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
-	mapPathInfo->shader.SetUniformFromFloats("linewidth", options->linewidth);
-	mapPathInfo->shader.SetUniformFromFloats("cycle", options->cycleSeconds);
-
-	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
-	glBindVertexArray(mapPathInfo->vao);
-	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
-
-	return;
-}
-
 void DrawPoints(MapPointsInfo* mapPointsInfo)
 {
 	//update uniform shader variables
@@ -587,65 +542,6 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
 	glBindVertexArray(mapPointsInfo->vao);
 	glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
-
-	return;
-}
-
-void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo)
-{
-	int sizeOfRegionVector = pLocationHistory->regions.size();
-
-	//We'll just do a global redraw if any region has changed
-	bool needsRedraw = false;
-	for (std::size_t i = 0; (i < pLocationHistory->regions.size()) && (!needsRedraw); i++) {
-		if (pLocationHistory->regions[i]->needsRedraw) {
-			needsRedraw = true;
-			pLocationHistory->regions[i]->needsRedraw = false;
-		}
-	}
-
-	if (!needsRedraw) {
-		return;
-	}
-
-	if (mapRegionsInfo->displayRegions.size() != sizeOfRegionVector - 1) {
-		mapRegionsInfo->displayRegions.resize(sizeOfRegionVector - 1);
-		//printf("changing displayregions size to: %i\n",sizeOfRegionVector-1);
-	}
-
-	for (int r = 1; r < sizeOfRegionVector; r++) {
-		//printf("r:%i of %i.\t", r, sizeOfRegionVector);
-
-		mapRegionsInfo->displayRegions[r - 1].west = pLocationHistory->regions[r]->nswe.west;
-		mapRegionsInfo->displayRegions[r - 1].north = pLocationHistory->regions[r]->nswe.north;
-		mapRegionsInfo->displayRegions[r - 1].east = pLocationHistory->regions[r]->nswe.east;
-		mapRegionsInfo->displayRegions[r - 1].south = pLocationHistory->regions[r]->nswe.south;
-		
-		mapRegionsInfo->displayRegions[r - 1].colour = pLocationHistory->regions[r]->colour;
-		
-
-		//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
-		//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
-	
-	return;
-}
-
-void DrawRegions(MapRegionsInfo* mapRegionsInfo)
-{
-	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
-	mapRegionsInfo->shader.UseMe();
-	mapRegionsInfo->shader.SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
-	mapRegionsInfo->shader.SetUniformFromNSWE("nswe", pLocationHistory->viewNSWE);
-	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
-
-	glBindVertexArray(mapRegionsInfo->vao);
-	glDrawArrays(GL_POINTS, 0, mapRegionsInfo->displayRegions.size());//needs to be the number of vertices (not lines)
-	glBindVertexArray(0);
-	DisplayIfGLError("After DrawRegions.", false);
 
 	return;
 }

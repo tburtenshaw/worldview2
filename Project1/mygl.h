@@ -18,7 +18,7 @@ public:
 	}
 
 	virtual void SetupShaders();
-	void GenerateBackgroundSquareVertices();
+	void SetupSquareVertices();
 };
 
 class BackgroundInfo : public GLRenderLayer {
@@ -45,8 +45,10 @@ public:
 
 	unsigned int fbo;
 	unsigned int fboTexture;
+	void BindToDrawTo();	//binds this fbo
 
 	void SetupFrameBufferObject(int width, int height);
+	void Draw(float width, float height);
 
 	//BackgroundInfo fboBGInfo;	//so can use other functions
 };
@@ -55,6 +57,7 @@ class MapPathInfo : public GLRenderLayer {
 public:
 	void SetupShaders();
 	void SetupVertices(std::vector<PathPlotLocation>& locs);
+	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
 };
 
 class MapPointsInfo : public GLRenderLayer {
@@ -76,15 +79,17 @@ public:
 	float palette[24][4];
 	void SetupShaders();
 	void SetupVertices(std::vector<PathPlotLocation> &locs);
+	
 };
 
-class MapRegionsInfo : public GLRenderLayer {
+class DisplayRegionsLayer : public GLRenderLayer {
 public:
 	std::vector<DisplayRegion> displayRegions;
 
 	void SetupShaders();
 	void SetupVertices();
-	void Draw();
+	void UpdateFromRegionsData(std::vector<Region*> &dataRegions);
+	void Draw(float width, float height, NSWE *nswe);
 };
 
 class DisplayRegion {	//used for holding the opengl buffer

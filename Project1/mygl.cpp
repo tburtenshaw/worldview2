@@ -1,4 +1,7 @@
-#include "mygl.h";
+#include "header.h"
+#include "mygl.h"
+#include "nswe.h"
+#include "regions.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -8,7 +11,7 @@ void GLRenderLayer::SetupShaders()
 	printf("Shader not done yet");
 }
 
-void GLRenderLayer::GenerateBackgroundSquareVertices()	//this creates triangle mesh, gens vao/vbo for -1,-1, to 1,1 square
+void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao/vbo for -1,-1, to 1,1 square
 {
 	static const GLfloat g_vertex_buffer_data[] = {
 		-1.0f, -1.0f,
@@ -79,7 +82,9 @@ void MapPointsInfo::SetupVertices(std::vector<PathPlotLocation> &locs)
 	glEnableVertexAttribArray(2);
 }
 
-void MapRegionsInfo::SetupShaders()
+
+
+void DisplayRegionsLayer::SetupShaders()
 {
 	shader.LoadShaderFromFile("regionsVS.glsl", GL_VERTEX_SHADER);
 	shader.LoadShaderFromFile("regionsFS.glsl", GL_FRAGMENT_SHADER);
@@ -87,7 +92,7 @@ void MapRegionsInfo::SetupShaders()
 	shader.CreateProgram();
 }
 
-void MapRegionsInfo::SetupVertices()
+void DisplayRegionsLayer::SetupVertices()
 {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -106,6 +111,63 @@ void MapRegionsInfo::SetupVertices()
 
 	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
 	glEnableVertexAttribArray(2);
+}
+
+void DisplayRegionsLayer::UpdateFromRegionsData(std::vector<Region*>& dataRegions)
+{
+	int sizeOfRegionVector = dataRegions.size();
+
+	//We'll just do a global redraw if any region has changed
+	bool needsRedraw = false;
+	for (std::size_t i = 0; (i < sizeOfRegionVector) && (!needsRedraw); i++) {
+		if (dataRegions[i]->needsRedraw) {
+			needsRedraw = true;
+			dataRegions[i]->needsRedraw = false;
+		}
+	}
+
+	if (!needsRedraw) {
+		return;
+	}
+
+	if (displayRegions.size() != sizeOfRegionVector - 1) {
+		displayRegions.resize(sizeOfRegionVector - 1);
+		//printf("changing displayregions size to: %i\n",sizeOfRegionVector-1);
+	}
+
+	for (int r = 1; r < sizeOfRegionVector; r++) {
+		//printf("r:%i of %i.\t", r, sizeOfRegionVector);
+
+		displayRegions[r - 1].west = dataRegions[r]->nswe.west;
+		displayRegions[r - 1].north = dataRegions[r]->nswe.north;
+		displayRegions[r - 1].east = dataRegions[r]->nswe.east;
+		displayRegions[r - 1].south = dataRegions[r]->nswe.south;
+
+		displayRegions[r - 1].colour = dataRegions[r]->colour;
+
+
+		//printf("%f %f %f %f\n", mapRegionsInfo->displayRegions[r - 1].f[0], mapRegionsInfo->displayRegions[r - 1].f[1], mapRegionsInfo->displayRegions[r - 1].f[2], mapRegionsInfo->displayRegions[r - 1].f[3]);
+		//printf("%i - %i = %i\n", &mapRegionsInfo->displayRegions[1].f, &mapRegionsInfo->displayRegions[0].f, ((long)&mapRegionsInfo->displayRegions[1].f) - ((long)&mapRegionsInfo->displayRegions[0].f));
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, displayRegions.size() * sizeof(DisplayRegion), &displayRegions.front(), GL_STATIC_DRAW);
+
+}
+
+void DisplayRegionsLayer::Draw(float width, float height, NSWE* nswe)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	shader.UseMe();
+	shader.SetUniformFromFloats("resolution", width, height);
+	shader.SetUniformFromNSWE("nswe", nswe);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBindVertexArray(vao);
+	glDrawArrays(GL_POINTS, 0, displayRegions.size());//needs to be the number of vertices (not lines)
+	glBindVertexArray(0);
+	DisplayIfGLError("After DrawRegions.", false);
+
 }
 
 void MapPathInfo::SetupShaders()
@@ -142,6 +204,22 @@ void MapPathInfo::SetupVertices(std::vector<PathPlotLocation>& locs)
 	glEnableVertexAttribArray(2);
 }
 
+void MapPathInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleSeconds)
+{
+	//update uniform shader variables
+	shader.UseMe();
+	shader.SetUniformFromNSWE("nswe", nswe);
+	shader.SetUniformFromFloats("seconds", seconds * 20.0f);
+	shader.SetUniformFromFloats("resolution", width, height);
+	shader.SetUniformFromFloats("linewidth", linewidth);
+	shader.SetUniformFromFloats("cycle", cycleSeconds);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_LINE_STRIP, 0, locs.size());
+
+}
+
 void BackgroundInfo::SetupShaders()
 {
 	//Create the shader program
@@ -159,6 +237,11 @@ void BackgroundInfo::SetupShaders()
 	glUniform1i(worldTextureLocation, 0);
 	glUniform1i(highresTextureLocation, 1);
 	glUniform1i(heatmapTextureLocation, 2);
+}
+
+void FrameBufferObjectInfo::BindToDrawTo()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 }
 
 void FrameBufferObjectInfo::SetupFrameBufferObject(int width, int height) //makes FBO and its VAO, VBO, vertices and shaders
@@ -179,7 +262,7 @@ void FrameBufferObjectInfo::SetupFrameBufferObject(int width, int height) //make
 	else printf("Fbo generation finished\n");
 
 	//this sets up the vertices and shaders for the FBO
-	GenerateBackgroundSquareVertices();
+	SetupSquareVertices();
 	shader.LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
 	shader.LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
 	shader.CreateProgram();
@@ -193,4 +276,16 @@ void FrameBufferObjectInfo::SetupFrameBufferObject(int width, int height) //make
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	printf("After FBO all done. glGetError %i\n", glGetError());
+}
+
+void FrameBufferObjectInfo::Draw(float width, float height)
+{
+	shader.UseMe();
+	shader.SetUniformFromFloats("resolution", width, height);
+
+	glActiveTexture(GL_TEXTURE0 + 4);
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
+	glDisable(GL_DEPTH_TEST);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
