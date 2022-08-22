@@ -172,8 +172,6 @@ int StartGLProgram(LocationHistory* lh)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	//glfwWindowHint(GLFW_SAMPLES, 4);
-	//glEnable(GL_MULTISAMPLE);
 
 	GLFWwindow* window = glfwCreateWindow(lh->windowDimensions.width, lh->windowDimensions.height, "World Tracker", NULL, NULL);
 	if (!window) {
@@ -235,7 +233,7 @@ int StartGLProgram(LocationHistory* lh)
 	pointsInfo.SetupShaders();
 
 	//Set up the FBO that we draw onto
-	SetupFrameBufferObject(&fboInfo, lh->windowDimensions.width, lh->windowDimensions.height);
+	fboInfo.SetupFrameBufferObject(lh->windowDimensions.width, lh->windowDimensions.height);
 
 	//initial values
 	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
@@ -247,7 +245,7 @@ int StartGLProgram(LocationHistory* lh)
 	lh->regions.push_back(new Region());
 	regionsInfo.displayRegions.resize(1);
 
-	SetupRegionsBufferDataAndVertexAttribArrays(&regionsInfo);
+	regionsInfo.SetupVertices();
 	regionsInfo.SetupShaders();
 	
 	//Trying to do better, GPU based, heatmap
@@ -289,8 +287,8 @@ int StartGLProgram(LocationHistory* lh)
 
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
 			printf("Initialising things that need file to be fully loaded\n");
-			SetupPathsBufferDataAndVertexAttribArrays(&pathInfo);
-			SetupPointsBufferDataAndVertexAttribArrays(&pointsInfo);
+			pathInfo.SetupVertices(lh->pathPlotLocations);
+			pointsInfo.SetupVertices(lh->pathPlotLocations);
 			lh->heatmap->MakeDirty();
 			lh->isInitialised = true;
 		}
@@ -470,56 +468,15 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
 	return;
 }
 
-void SetupBackgroundShaders(BackgroundInfo* backgroundInfo)
-{
-
-
-	return;
-}
-
-void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height)
-{
-	glGenFramebuffers(1, &fboInfo->fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fboInfo->fbo);
-	glGenTextures(1, &fboInfo->fboTexture);
-	glBindTexture(GL_TEXTURE_2D, fboInfo->fboTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboInfo->fboTexture, 0);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		printf("Error: Framebuffer not completed\n");
-	else printf("Fbo generation finished\n");
-
-	//this sets up the vertices and shaders for the FBO
-	fboInfo->fboBGInfo.GenerateBackgroundSquareVertices();
-	fboInfo->fboBGInfo.shader.LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
-	fboInfo->fboBGInfo.shader.LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
-	fboInfo->fboBGInfo.shader.CreateProgram();
-	//printf("After create program. glGetError %i\n", glGetError());
-
-	fboInfo->fboBGInfo.shader.UseMe();
-	int uniloc = glGetUniformLocation(fboInfo->fboBGInfo.shader.program, "screenTexture");
-	//printf("FBO: After getuniloc. glGetError %i\n", glGetError());
-	glUniform1i(uniloc, 4);
-	//printf("FBO: After uniform set. glGetError %i\n", glGetError());
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	printf("After FBO all done. glGetError %i\n", glGetError());
-}
-
 void DrawFrameBuffer(LocationHistory* lh)
 {
-	fboInfo.fboBGInfo.shader.UseMe();
-	fboInfo.fboBGInfo.shader.SetUniformFromFloats("resolution", (float)lh->windowDimensions.width, (float)lh->windowDimensions.height);
+	fboInfo.shader.UseMe();
+	fboInfo.shader.SetUniformFromFloats("resolution", (float)lh->windowDimensions.width, (float)lh->windowDimensions.height);
 
 	glActiveTexture(GL_TEXTURE0 + 4);
 	glBindTexture(GL_TEXTURE_2D, fboInfo.fboTexture);
 	glDisable(GL_DEPTH_TEST);
-	glBindVertexArray(fboInfo.fboBGInfo.vao);
+	glBindVertexArray(fboInfo.vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	return;
@@ -570,37 +527,7 @@ void DrawBackgroundAndHeatmap(LocationHistory* lh)
 	return;
 }
 
-void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo)
-{
-	glGenBuffers(1, &mapPathInfo->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front(), GL_STATIC_DRAW);
 
-	glGenVertexArrays(1, &mapPathInfo->vao);
-	glBindVertexArray(mapPathInfo->vao);
-
-	//lat,long
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
-	glEnableVertexAttribArray(0);
-
-	//rgba colour
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
-	glEnableVertexAttribArray(1);
-
-	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
-	//glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
-	//glEnableVertexAttribArray(1);
-
-	//detail level
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, detaillevel));
-	glEnableVertexAttribArray(2);
-
-	//for (auto& element : pLocationHistory->pathPlotLocations) {
-//		printf("%f ",element.detaillevel);
-	//}
-
-	return;
-}
 
 void DrawPaths(MapPathInfo* mapPathInfo)
 {
@@ -618,30 +545,6 @@ void DrawPaths(MapPathInfo* mapPathInfo)
 	glBindBuffer(GL_ARRAY_BUFFER, mapPathInfo->vbo);
 	glBindVertexArray(mapPathInfo->vao);
 	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
-
-	return;
-}
-
-void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo) //currently just straight copy from paths, but i should do new array
-{
-	glGenBuffers(1, &mapPointsInfo->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
-	glBufferData(GL_ARRAY_BUFFER, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front(), GL_STATIC_DRAW);
-
-	glGenVertexArrays(1, &mapPointsInfo->vao);
-	glBindVertexArray(mapPointsInfo->vao);
-
-	//lat,long
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
-	glEnableVertexAttribArray(0);
-
-	//rgba colour
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
-	glEnableVertexAttribArray(1);
-
-	//timestamp
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
-	glEnableVertexAttribArray(2);
 
 	return;
 }
@@ -684,30 +587,6 @@ void DrawPoints(MapPointsInfo* mapPointsInfo)
 	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
 	glBindVertexArray(mapPointsInfo->vao);
 	glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
-
-	return;
-}
-
-
-void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo)
-{
-	glGenVertexArrays(1, &mapRegionsInfo->vao);
-	glBindVertexArray(mapRegionsInfo->vao);
-
-	glGenBuffers(1, &mapRegionsInfo->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, mapRegionsInfo->vbo);
-
-	glBufferData(GL_ARRAY_BUFFER, mapRegionsInfo->displayRegions.size() * sizeof(DisplayRegion), &mapRegionsInfo->displayRegions.front(), GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), 0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, east));
-	glEnableVertexAttribArray(1);
-
-
-	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
-	glEnableVertexAttribArray(2);
 
 	return;
 }

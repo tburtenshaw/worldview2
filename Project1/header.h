@@ -276,15 +276,15 @@ void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 void DrawBackgroundAndHeatmap(LocationHistory* lh);
 
 //paths
-void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);
+//void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);
 void DrawPaths(MapPathInfo* mapPathInfo);
 
 //points
-void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
+//void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
 void DrawPoints(MapPointsInfo* mapPointsInfo);
 
 //regions
-void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
+//void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
 void UpdateDisplayRegions(MapRegionsInfo* mapRegionsInfo);
 void DrawRegions(MapRegionsInfo* mapRegionsInfo);
 

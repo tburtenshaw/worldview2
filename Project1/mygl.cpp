@@ -1,7 +1,7 @@
 #include "mygl.h";
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
+#include <vector>
 
 void GLRenderLayer::SetupShaders()
 {
@@ -57,6 +57,28 @@ void MapPointsInfo::SetupShaders()
 	shader.LoadUniformLocation(&uniformColourBy, "colourby");
 }
 
+void MapPointsInfo::SetupVertices(std::vector<PathPlotLocation> &locs)
+{
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, locs.size() * sizeof(PathPlotLocation), &locs.front(), GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	//lat,long
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
+	glEnableVertexAttribArray(0);
+
+	//rgba colour
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
+	glEnableVertexAttribArray(1);
+
+	//timestamp
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
+	glEnableVertexAttribArray(2);
+}
+
 void MapRegionsInfo::SetupShaders()
 {
 	shader.LoadShaderFromFile("regionsVS.glsl", GL_VERTEX_SHADER);
@@ -65,12 +87,59 @@ void MapRegionsInfo::SetupShaders()
 	shader.CreateProgram();
 }
 
+void MapRegionsInfo::SetupVertices()
+{
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, displayRegions.size() * sizeof(DisplayRegion), &displayRegions.front(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), 0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, east));
+	glEnableVertexAttribArray(1);
+
+
+	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(DisplayRegion), (void*)offsetof(DisplayRegion, colour));
+	glEnableVertexAttribArray(2);
+}
+
 void MapPathInfo::SetupShaders()
 {
 	shader.LoadShaderFromFile("mappathsVS.glsl", GL_VERTEX_SHADER);
 	shader.LoadShaderFromFile("mappathsFS.glsl", GL_FRAGMENT_SHADER);
 	shader.LoadShaderFromFile("mappathsGS.glsl", GL_GEOMETRY_SHADER);
 	shader.CreateProgram();
+}
+
+void MapPathInfo::SetupVertices(std::vector<PathPlotLocation>& locs)
+{
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, locs.size() * sizeof(PathPlotLocation), &locs.front(), GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	//lat,long
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
+	glEnableVertexAttribArray(0);
+
+	//rgba colour
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
+	glEnableVertexAttribArray(1);
+
+	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
+	//glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
+	//glEnableVertexAttribArray(1);
+
+	//detail level
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, detaillevel));
+	glEnableVertexAttribArray(2);
 }
 
 void BackgroundInfo::SetupShaders()
@@ -90,4 +159,38 @@ void BackgroundInfo::SetupShaders()
 	glUniform1i(worldTextureLocation, 0);
 	glUniform1i(highresTextureLocation, 1);
 	glUniform1i(heatmapTextureLocation, 2);
+}
+
+void FrameBufferObjectInfo::SetupFrameBufferObject(int width, int height) //makes FBO and its VAO, VBO, vertices and shaders
+{
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glGenTextures(1, &fboTexture);
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		printf("Error: Framebuffer not completed\n");
+	else printf("Fbo generation finished\n");
+
+	//this sets up the vertices and shaders for the FBO
+	GenerateBackgroundSquareVertices();
+	shader.LoadShaderFromFile("fboVS.glsl", GL_VERTEX_SHADER);
+	shader.LoadShaderFromFile("fboFS.glsl", GL_FRAGMENT_SHADER);
+	shader.CreateProgram();
+	//printf("After create program. glGetError %i\n", glGetError());
+
+	shader.UseMe();
+	int uniloc = glGetUniformLocation(shader.program, "screenTexture");
+	//printf("FBO: After getuniloc. glGetError %i\n", glGetError());
+	glUniform1i(uniloc, 4);
+	//printf("FBO: After uniform set. glGetError %i\n", glGetError());
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	printf("After FBO all done. glGetError %i\n", glGetError());
 }
