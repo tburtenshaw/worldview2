@@ -1,5 +1,3 @@
-// Project1.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 #define IMGUI_IMPL_OPENGL_LOADER_GLEW
 //#define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
@@ -209,6 +207,7 @@ int StartGLProgram(LocationHistory* lh)
 
 
 
+	//Setup GL setings
 	glViewport(0, 0, lh->windowDimensions.width, lh->windowDimensions.height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -224,9 +223,6 @@ int StartGLProgram(LocationHistory* lh)
 	//set up the background
 	backgroundLayer.SetupSquareVertices();
 	backgroundLayer.SetupTextures();
-	//LoadBackgroundImageToTexture(&backgroundLayer.worldTexture);
-	//MakeHighresImageTexture(&backgroundLayer.highresTexture);
-	//MakeHeatmapTexture(lh->viewNSWE, &backgroundLayer.heatmapTexture);
 
 	//set up and compile the shaders
 	backgroundLayer.SetupShaders();
@@ -300,9 +296,9 @@ int StartGLProgram(LocationHistory* lh)
 		//try to do NewHeatmap rendering
 		glBlendFunc(GL_ONE, GL_ONE);
 
-	//	glBindFramebuffer(GL_FRAMEBUFFER, fboInfo.fbo);
-	//	glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
-	//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, HeatmapFBO);
+		//glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 

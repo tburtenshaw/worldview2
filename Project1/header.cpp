@@ -82,6 +82,7 @@ GlobalOptions::GlobalOptions()
 
 	colourby = 1;
 
+	regenPathColours = true;
 
 	minimumaccuracy = 24;
 	palette = 1;

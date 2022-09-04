@@ -73,7 +73,7 @@ public:
 	}
 
 	void operator=(const ImVec4 other) {
-		r = (unsigned char)(other.x *255.0f);
+		r = (unsigned char)(other.x * 255.0f);
 		g = (unsigned char)(other.y * 255.0f);
 		b = (unsigned char)(other.z * 255.0f);
 		a = (unsigned char)(other.w * 255.0f);
@@ -96,7 +96,7 @@ struct Location {
 	int velocity;
 	int verticalaccuracy;
 
-	bool operator< (Location const& rhs) {	//sorts just by timestamp
+	bool operator< (Location const& rhs) {	//compares (i.e. sorts) just by timestamp
 		return timestamp < rhs.timestamp;
 	}
 };
@@ -233,8 +233,6 @@ public:
 
 	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU
 
-	//Heatmap* heatmap;
-	//HighResManager* highres;
 
 	LocationHistory();
 	~LocationHistory();
@@ -282,11 +280,11 @@ void DisplayIfGLError(const char* message, bool alwaysshow);
 
 //points
 //void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
-void DrawPoints(MapPointsInfo* mapPointsInfo);
+//void DrawPoints(MapPointsInfo* mapPointsInfo);
 
 //regions
 //void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
-void UpdateDisplayRegions(DisplayRegionsLayer* mapRegionsInfo);
+//void UpdateDisplayRegions(DisplayRegionsLayer* mapRegionsInfo);
 //void DrawRegions(MapRegionsInfo* mapRegionsInfo);
 
 int CloseLocationFile(LocationHistory* lh);
