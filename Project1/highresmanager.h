@@ -17,15 +17,15 @@ public:
 	unsigned char* rawImageData;
 	int width, height, nrChannels;
 
-	unsigned int highresTexture;	//this is what the texture is stored in, we need it to bind things later.
+	//unsigned int highresTexture;	//this is what the texture is stored in, we need it to bind things later.
 
 	std::vector <std::string> filename;
 	std::vector <NSWE> nswe;
 
 	HighResManager();
 
-	void DecideBestTex(RectDimension windowSize, NSWE* viewportNSWE);
-	NSWE *GetBestNSWE();
+	void DecideBestTex(RectDimension windowSize, const NSWE & viewportNSWE);
+	NSWE *GetBestNSWE(unsigned int gltexture);
 	void ImageLoadThread(int n);
-	void LoadBestTex();
+	void LoadBestTex(unsigned int gltexture);
 };

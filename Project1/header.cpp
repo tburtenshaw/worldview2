@@ -27,13 +27,13 @@ LocationHistory::LocationHistory()
 	earliesttimestamp = 2145916800;
 	latesttimestamp = 0;
 
-	viewNSWE = new MovingTarget;
+	//viewNSWE = new MovingTarget;
 
-	heatmap = new Heatmap;
+	//heatmap = new Heatmap;
 
-	highres = new HighResManager;
+	//highres = new HighResManager;	//to move to background layer class
 
-	globalOptions = new GlobalOptions;
+	//globalOptions = new GlobalOptions;
 
 	isFileChosen = false;
 	isLoadingFile = false;
@@ -45,7 +45,7 @@ LocationHistory::LocationHistory()
 
 LocationHistory::~LocationHistory()
 {
-	delete heatmap;
+	
 }
 
 PathPlotLocation::PathPlotLocation()

@@ -23,16 +23,16 @@ public:
 	void setvalues(float n, float s, float w, float e);
 	void setvalues(NSWE setToThis);
 	void setto(NSWE *setthis);
-	float width();
-	float height();
-	float area();
+	float width() const;
+	float height() const;
+	float area() const;
 	void nudgehorizontal(float p);
 	void nudgevertical(float p);
 	void moveby(float x, float y);
 
 
-	NSWE createExpandedBy(float factor);
-	NSWE intersectionWith(NSWE otherNSWE);
+	NSWE createExpandedBy(float factor) const;
+	NSWE intersectionWith(NSWE otherNSWE) const;
 	WorldCoord centre();
 
 	void zoom(float z, WorldCoord c);

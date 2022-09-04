@@ -2,9 +2,11 @@
 #include "mygl.h"
 #include "nswe.h"
 #include "regions.h"
+#include "palettes.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <stb_image.h>
 
 void GLRenderLayer::SetupShaders()
 {
@@ -80,6 +82,46 @@ void MapPointsInfo::SetupVertices(std::vector<PathPlotLocation> &locs)
 	//timestamp
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
 	glEnableVertexAttribArray(2);
+}
+
+void MapPointsInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options)
+{
+	//update uniform shader variables
+	shader.UseMe();
+	shader.SetUniform(uniformNswe, nswe);
+	shader.SetUniform(uniformResolution, width, height);
+	shader.SetUniform(uniformPointRadius, options->pointdiameter / 2.0f);
+	shader.SetUniform(uniformPointAlpha, options->pointalpha);
+	shader.SetUniform(uniformSeconds, options->seconds);
+	shader.SetUniform(uniformCycleSeconds, options->cycleSeconds);
+
+	shader.SetUniform(uniformEarliestTimeToShow, options->earliestTimeToShow);
+	shader.SetUniform(uniformLatestTimeToShow, options->latestTimeToShow);
+
+	shader.SetUniform(uniformShowHighlights, options->showHighlights);
+	shader.SetUniform(uniformSecondsBetweenHighlights, options->secondsbetweenhighlights);
+	shader.SetUniform(uniformTravelTimeBetweenHighlights, options->minutestravelbetweenhighlights * 60.0f);
+
+	shader.SetUniform(uniformColourBy, options->colourby);
+
+	switch (options->colourby) {
+	case 1:
+		Palette_Handler::FillShaderPalette(palette, 24, options->indexPaletteHour);
+		shader.SetUniform(uniformPalette, 24, &palette[0][0]);
+		break;
+	case 4:
+		Palette_Handler::FillShaderPalette(palette, 24, options->indexPaletteYear);
+		shader.SetUniform(uniformPalette, 24, &palette[0][0]);
+		break;
+	default:
+		Palette_Handler::FillShaderPalette(palette, 24, options->indexPaletteWeekday);
+		shader.SetUniform(uniformPalette, 24, &palette[0][0]);
+		break;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_POINTS, 0, locs.size());
 }
 
 
@@ -220,6 +262,55 @@ void MapPathInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float h
 
 }
 
+void BackgroundInfo::LoadBackgroundImageToTexture()
+{
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
+
+	if (!data) {	//hack to try root until I get filenames better
+		stbi_image_free(data);
+		data = stbi_load("d:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
+	}
+	if (!data) {
+		printf("\nCan't load background\n");
+		return;
+	}
+
+	glGenTextures(1, &worldTexture);
+	glBindTexture(GL_TEXTURE_2D, worldTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	stbi_image_free(data);
+}
+
+void BackgroundInfo::MakeHighresImageTexture()
+{
+	GLint maxtexturesize;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxtexturesize);
+	printf("Max texture size: %i\n", maxtexturesize);
+	
+	glGenTextures(1, &highresTexture);
+	glBindTexture(GL_TEXTURE_2D, highresTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8192, 8192, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void BackgroundInfo::MakeHeatmapTexture()
+{
+	glGenTextures(1, &heatmapTexture);
+	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, heatmap.width, heatmap.height, 0, GL_RED, GL_FLOAT, NULL);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	//we don't wrap this at the moment, as funny things happen when zooming
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);	//this is the poles
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
 void BackgroundInfo::SetupShaders()
 {
 	//Create the shader program
@@ -237,6 +328,72 @@ void BackgroundInfo::SetupShaders()
 	glUniform1i(worldTextureLocation, 0);
 	glUniform1i(highresTextureLocation, 1);
 	glUniform1i(heatmapTextureLocation, 2);
+}
+
+void BackgroundInfo::SetupTextures()
+{
+	LoadBackgroundImageToTexture();
+	MakeHighresImageTexture();
+	MakeHeatmapTexture();
+}
+
+void BackgroundInfo::Draw(RectDimension windowsize, const NSWE &viewNSWE, const GlobalOptions &options)
+{
+	//NSWE* viewnswe;
+	//NSWE* heatmapnswe;
+	//BackgroundInfo* backgroundInfo;
+	//HighResManager* highres;
+	NSWE* highresnswe;
+
+	//viewnswe = pLocationHistory->viewNSWE;
+	//heatmapnswe = heatmap->nswe;
+	//highres = lh->highres;
+
+	highres.DecideBestTex(windowsize, viewNSWE);
+	highresnswe = highres.GetBestNSWE(highresTexture);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	shader.UseMe();
+	//shader.SetUniformFromFloats("seconds", seconds);
+	shader.SetUniformFromFloats("resolution", windowsize.width, windowsize.height);
+	shader.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	shader.SetUniformFromNSWE("highresnswe", highresnswe);
+	shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the
+	shader.SetUniformFromNSWE("heatmapnswe", heatmap.nswe);
+
+	shader.SetUniformFromFloats("maxheatmapvalue", heatmap.maxPixel);
+	shader.SetUniformFromInts("palette", options.palette);
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, worldTexture);
+
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, highresTexture);
+
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
+
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glBindVertexArray(0);
+}
+
+void BackgroundInfo::UpdateHeatmapTexture(const NSWE& viewNSWE)
+{
+	heatmap.CreateHeatmap(viewNSWE, 0);
+
+	//printf("Updated texture\n");
+	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1800, 1800, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
+	//**FIX
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, heatmap.width, heatmap.height, 0, GL_RED, GL_FLOAT, NULL);	//only need to do this if size changed
+	//we can probably just adjust the zooming in the shader, rather than resizing the texture
+
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, heatmap.width, heatmap.height, GL_RED, GL_FLOAT, heatmap.pixel);
+	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 void FrameBufferObjectInfo::BindToDrawTo()

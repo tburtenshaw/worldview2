@@ -11,14 +11,14 @@
 
 extern LocationHistory* pLocationHistory;
 
-void Heatmap::CreateHeatmap(NSWE * inputNswe, int n) {
+void Heatmap::CreateHeatmap(const NSWE & inputNswe, int n) {
 	
 	GlobalOptions* options;
-	options = pLocationHistory->globalOptions;
+	options = &pLocationHistory->globalOptions;
 
 	NSWE expanded;
 
-	expanded = inputNswe->createExpandedBy(overdrawfactor);
+	expanded = inputNswe.createExpandedBy(overdrawfactor);
 
 	nswe->setto(&expanded);
 	

@@ -50,21 +50,17 @@ void NSWE::setto(NSWE *setthis) {
 	east = setthis->east;
 }
 
-	float NSWE::width() {
-		float w = (east - west);
-		if (w == 0) {//don't allow this, as there'll be division by zero and crashes
-			west -= 10;
-			east += 10;
-			return 20;
-		}
-		return w;
+	float NSWE::width() const
+	{
+		return (east - west);
 	}
 
-	float NSWE::height() {
+	float NSWE::height() const
+	{
 		return (north - south);
 	}
 
-	float NSWE::area()
+	float NSWE::area() const
 	{
 		return (north - south) * (east - west);
 	}
@@ -106,7 +102,7 @@ void NSWE::setto(NSWE *setthis) {
 		return;
 	}
 
-	NSWE NSWE::createExpandedBy(float factor)
+	NSWE NSWE::createExpandedBy(float factor) const
 	{
 		//this makes the height and width both "factor" larger, centred at the middle, to a max of -180,90->180,-90.
 		NSWE outputNSWE;
@@ -127,7 +123,7 @@ void NSWE::setto(NSWE *setthis) {
 		return outputNSWE;
 	}
 
-	NSWE NSWE::intersectionWith(NSWE otherNSWE)
+	NSWE NSWE::intersectionWith(NSWE otherNSWE) const
 	{
 		NSWE outputNSWE;
 

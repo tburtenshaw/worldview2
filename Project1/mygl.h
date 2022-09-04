@@ -2,6 +2,8 @@
 #include <vector>
 #include "header.h"
 #include "shaders.h"
+#include "heatmap.h"
+#include "highresmanager.h"
 
 //forward decls
 class RGBA;
@@ -17,24 +19,36 @@ public:
 		:vao(0), vbo(0),shader(){
 	}
 
-	virtual void SetupShaders();
+	void SetupShaders();
 	void SetupSquareVertices();
 };
 
 class BackgroundInfo : public GLRenderLayer {
+private:
+	void LoadBackgroundImageToTexture();
+	void MakeHighresImageTexture();
+	void MakeHeatmapTexture();
 public:
 	unsigned int worldTexture;	//the background NASA map
-	//unsigned int highresTexture;
+	unsigned int highresTexture; //used for the higher res insert
 	unsigned int heatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
 	unsigned int highresTextureLocation;
 	unsigned int heatmapTextureLocation;
+	
+	Heatmap heatmap;
+	HighResManager highres;
+
 
 	void SetupShaders();
+	void SetupTextures();
+	void Draw(RectDimension window, const NSWE& viewNSWE, const GlobalOptions& options);
+
+	void UpdateHeatmapTexture(const NSWE& viewNSWE);
 
 	BackgroundInfo()
-		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
+		:worldTexture(0),highresTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
 
 };
 
@@ -79,6 +93,7 @@ public:
 	float palette[24][4];
 	void SetupShaders();
 	void SetupVertices(std::vector<PathPlotLocation> &locs);
+	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options);
 	
 };
 

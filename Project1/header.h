@@ -1,7 +1,7 @@
 #pragma once
 
 //#include "heatmap.h"
-//#include "nswe.h"
+#include "nswe.h"
 #include <string>
 #include <vector>
 #include <imgui.h>
@@ -11,7 +11,7 @@
 #define MAX_JSON_STRING 1024
 
 //forward declarations
-class NSWE;
+//class NSWE;
 struct Location;
 class Heatmap;
 class FrameBufferObjectInfo;
@@ -20,7 +20,7 @@ class MapPathInfo;
 class MapPointsInfo;
 class DisplayRegionsLayer;
 class Region;
-class MovingTarget;
+//class MovingTarget;
 class HighResManager;
 class RGBA;
 class DisplayRegion;
@@ -233,7 +233,8 @@ public:
 
 	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU
 
-	Heatmap* heatmap;
+	//Heatmap* heatmap;
+	//HighResManager* highres;
 
 	LocationHistory();
 	~LocationHistory();
@@ -244,14 +245,14 @@ public:
 	bool isInitialised;
 	unsigned long totalbytesread;
 
-	MovingTarget* viewNSWE;
+	MovingTarget viewNSWE;
 	RectDimension windowDimensions;
 
 	std::vector<Region*> regions;
 
-	HighResManager* highres;
+	
 
-	GlobalOptions* globalOptions;
+	GlobalOptions globalOptions;
 };
 
 
@@ -264,20 +265,20 @@ struct WVFormat {
 int StartGLProgram(LocationHistory* lh);
 void DisplayIfGLError(const char* message, bool alwaysshow);
 
-void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
-void LoadBackgroundImageToTexture(unsigned int* texture);
-void MakeHighresImageTexture(unsigned int* texture);
-void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
+//void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
+//void LoadBackgroundImageToTexture(unsigned int* texture);
+//void MakeHighresImageTexture(unsigned int* texture);
+//void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
 //void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
 //void DrawFrameBuffer(LocationHistory* lh);
 
-void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
+//void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
 
-void DrawBackgroundAndHeatmap(LocationHistory* lh);
+//void DrawBackgroundAndHeatmap(LocationHistory* lh);
 
 //paths
 //void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);
-void DrawPaths(MapPathInfo* mapPathInfo);
+//void DrawPaths(MapPathInfo* mapPathInfo);
 
 //points
 //void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);

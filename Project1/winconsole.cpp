@@ -67,7 +67,7 @@ int CloseLocationFile(LocationHistory* lh)	//closes the file, empties the arrays
 	//lh->filename = L"";	//can't do this, as it's where the file to load is stored.
 	lh->filesize = 0;
 
-	lh->heatmap->MakeDirty();
+	backgroundLayer.heatmap.MakeDirty();
 	
 	return 0;
 }
@@ -158,8 +158,8 @@ int SaveWVFormat(LocationHistory* lh, std::wstring filename)
 
 int StartGLProgram(LocationHistory* lh)
 {
-	GlobalOptions* options;
-	options = lh->globalOptions;
+	//GlobalOptions* options;
+	//using options = lh->globalOptions;
 
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
@@ -223,9 +223,10 @@ int StartGLProgram(LocationHistory* lh)
 
 	//set up the background
 	backgroundLayer.SetupSquareVertices();
-	LoadBackgroundImageToTexture(&backgroundLayer.worldTexture);
-	MakeHighresImageTexture(&lh->highres->highresTexture);
-	MakeHeatmapTexture(lh->viewNSWE, &backgroundLayer.heatmapTexture);
+	backgroundLayer.SetupTextures();
+	//LoadBackgroundImageToTexture(&backgroundLayer.worldTexture);
+	//MakeHighresImageTexture(&backgroundLayer.highresTexture);
+	//MakeHeatmapTexture(lh->viewNSWE, &backgroundLayer.heatmapTexture);
 
 	//set up and compile the shaders
 	backgroundLayer.SetupShaders();
@@ -236,10 +237,10 @@ int StartGLProgram(LocationHistory* lh)
 	fboInfo.SetupFrameBufferObject(lh->windowDimensions.width, lh->windowDimensions.height);
 
 	//initial values
-	lh->viewNSWE->target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
-	lh->viewNSWE->target.makeratio((float)lh->windowDimensions.height / (float)lh->windowDimensions.width);
-	lh->viewNSWE->setvalues(lh->viewNSWE->target);
-	lh->viewNSWE->movetowards(1000000000000.0);
+	lh->viewNSWE.target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
+	lh->viewNSWE.target.makeratio((float)lh->windowDimensions.height / (float)lh->windowDimensions.width);
+	lh->viewNSWE.setvalues(lh->viewNSWE.target);
+	lh->viewNSWE.movetowards(1000000000000.0);
 
 	//make a new region, which is the viewport
 	lh->regions.push_back(new Region());
@@ -275,10 +276,10 @@ int StartGLProgram(LocationHistory* lh)
 			ManageMouseMoveClickAndDrag(window, lh);
 		}
 
-		options->seconds = (float)glfwGetTime();
+		lh->globalOptions.seconds = (float)glfwGetTime();
 
 		//get the view moving towards the target
-		lh->viewNSWE->movetowards(lh->globalOptions->seconds);
+		lh->viewNSWE.movetowards(lh->globalOptions.seconds);
 
 		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
 			std::thread loadingthread(OpenAndReadLocationFile, pLocationHistory);
@@ -289,7 +290,7 @@ int StartGLProgram(LocationHistory* lh)
 			printf("Initialising things that need file to be fully loaded\n");
 			pathInfo.SetupVertices(lh->pathPlotLocations);
 			pointsInfo.SetupVertices(lh->pathPlotLocations);
-			lh->heatmap->MakeDirty();
+			backgroundLayer.heatmap.MakeDirty();
 			lh->isInitialised = true;
 		}
 
@@ -313,39 +314,40 @@ int StartGLProgram(LocationHistory* lh)
 
 		//Set the FBO as the draw surface
 		fboInfo.BindToDrawTo();
-		DrawBackgroundAndHeatmap(lh);
+
+		//Background layer has worldmap, heatmap and highres
+		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, lh->globalOptions);
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			if (lh->viewNSWE->isDirty()) {
-				lh->regions[0]->SetNSWE(&lh->viewNSWE->target);
+			if (lh->viewNSWE.isDirty()) {
+				lh->regions[0]->SetNSWE(&lh->viewNSWE.target);
 				lh->regions[0]->Populate(lh);
-				lh->heatmap->MakeDirty();
+				backgroundLayer.heatmap.MakeDirty();
 			}
 
-			if (!lh->viewNSWE->isMoving() && lh->heatmap->IsDirty() && lh->globalOptions->showHeatmap) {
-				//NSWE expanded;
-				//expanded = lh->viewNSWE->target.createExpandedBy(1.0);
-				UpdateHeatmapTexture(&lh->viewNSWE->target, &backgroundLayer);
-				lh->heatmap->MakeClean();
+			if (!lh->viewNSWE.isMoving() && backgroundLayer.heatmap.IsDirty() && lh->globalOptions.showHeatmap) {
+				backgroundLayer.UpdateHeatmapTexture(lh->viewNSWE.target);
+				backgroundLayer.heatmap.MakeClean();
 			}
 
-			if (options->showPaths) {
-				if (options->regenPathColours) {
+			if (lh->globalOptions.showPaths) {
+				if (lh->globalOptions.regenPathColours) {
 					printf("regen pathplot\n");
 					ColourPathPlot(lh);
 					glBindBuffer(GL_ARRAY_BUFFER, pathInfo.vbo);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
 				}
-				pathInfo.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, lh->viewNSWE, options->linewidth, options->seconds, options->cycleSeconds);
+				pathInfo.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
 			}
 
-			if (options->showPoints) {
-				DrawPoints(&pointsInfo);
+			if (lh->globalOptions.showPoints) {
+				//DrawPoints(&pointsInfo);
+				pointsInfo.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 			}
 
 			regionsInfo.UpdateFromRegionsData(lh->regions);
-			regionsInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height, lh->viewNSWE);
+			regionsInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
 
 		}
 
@@ -368,7 +370,7 @@ int StartGLProgram(LocationHistory* lh)
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		if (!lh->viewNSWE->isMoving())	glfwWaitEventsTimeout(1.0f / 60.0f);	//this runs constantly, but max of ~60fps
+		if (!lh->viewNSWE.isMoving())	glfwWaitEventsTimeout(1.0f / 60.0f);	//this runs constantly, but max of ~60fps
 		else {
 			glfwPollEvents();
 		}
@@ -384,166 +386,6 @@ int StartGLProgram(LocationHistory* lh)
 	// close GL context and any other GLFW resources
 	glfwTerminate();
 	return 0;
-}
-
-
-void LoadBackgroundImageToTexture(unsigned int* texture)
-{
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
-
-	if (!data) {	//hack to try root until I get filenames better
-		stbi_image_free(data);
-		data = stbi_load("d:/world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
-	}
-	if (!data) {
-		printf("\nCan't load background\n");
-		return;
-	}
-
-	glGenTextures(1, texture);
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	stbi_image_free(data);
-
-	return;
-}
-
-void MakeHighresImageTexture(unsigned int* texture)
-{
-	GLint maxtexturesize;
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxtexturesize);
-	printf("Max texture size: %i\n", maxtexturesize);
-
-	glGenTextures(1, texture);
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8192, 8192, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	return;
-}
-
-void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture)
-{
-	glGenTextures(1, texture);
-	glBindTexture(GL_TEXTURE_2D, *texture);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, NULL);
-
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	//we don't wrap this at the moment, as funny things happen when zooming
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);	//this is the poles
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	return;
-}
-
-void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo)
-{
-	pLocationHistory->heatmap->CreateHeatmap(nswe, 0);
-
-	//printf("Updated texture\n");
-	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1800, 1800, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
-	//**FIX
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, 0, GL_RED, GL_FLOAT, NULL);	//only need to do this if size changed
-	//we can probably just adjust the zooming in the shader, rather than resizing the texture
-
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pLocationHistory->heatmap->width, pLocationHistory->heatmap->height, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	return;
-}
-
-void DrawBackgroundAndHeatmap(LocationHistory* lh)
-{
-	NSWE* viewnswe;
-	NSWE* heatmapnswe;
-	BackgroundInfo* backgroundInfo;
-	HighResManager* highres;
-	NSWE* highresnswe;
-
-	backgroundInfo = &backgroundLayer;
-	viewnswe = pLocationHistory->viewNSWE;
-	heatmapnswe = pLocationHistory->heatmap->nswe;
-	highres = lh->highres;
-
-	highres->DecideBestTex(lh->windowDimensions, lh->viewNSWE);
-	highresnswe = highres->GetBestNSWE();
-
-	glBindBuffer(GL_ARRAY_BUFFER, backgroundInfo->vbo);
-
-	backgroundInfo->shader.UseMe();
-	//backgroundInfo->shader.SetUniformFromFloats("seconds", seconds);
-	backgroundInfo->shader.SetUniformFromFloats("resolution", (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
-	backgroundInfo->shader.SetUniformFromFloats("nswe", viewnswe->north, viewnswe->south, viewnswe->west, viewnswe->east);
-	backgroundInfo->shader.SetUniformFromNSWE("highresnswe", highresnswe);
-	backgroundInfo->shader.SetUniformFromFloats("highresscale", (float)highres->width / 8192.0f, (float)highres->height / 8192.0f); //as we're just loading the
-	backgroundInfo->shader.SetUniformFromNSWE("heatmapnswe", heatmapnswe);
-
-	backgroundInfo->shader.SetUniformFromFloats("maxheatmapvalue", pLocationHistory->heatmap->maxPixel);
-	backgroundInfo->shader.SetUniformFromInts("palette", pLocationHistory->globalOptions->palette);
-
-	glActiveTexture(GL_TEXTURE0 + 0);
-	glBindTexture(GL_TEXTURE_2D, backgroundInfo->worldTexture);
-
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, highres->highresTexture);
-
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, backgroundInfo->heatmapTexture);
-
-	glBindVertexArray(backgroundInfo->vao);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	glBindVertexArray(0);
-	return;
-}
-
-void DrawPoints(MapPointsInfo* mapPointsInfo)
-{
-	//update uniform shader variables
-	mapPointsInfo->shader.UseMe();
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformNswe, pLocationHistory->viewNSWE);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformResolution, (float)pLocationHistory->windowDimensions.width, (float)pLocationHistory->windowDimensions.height);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformPointRadius, pLocationHistory->globalOptions->pointdiameter / 2.0f);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformPointAlpha, pLocationHistory->globalOptions->pointalpha);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformSeconds, pLocationHistory->globalOptions->seconds);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformCycleSeconds, pLocationHistory->globalOptions->cycleSeconds);
-
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformEarliestTimeToShow, pLocationHistory->globalOptions->earliestTimeToShow);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformLatestTimeToShow, pLocationHistory->globalOptions->latestTimeToShow);
-
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformShowHighlights, pLocationHistory->globalOptions->showHighlights);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformSecondsBetweenHighlights, pLocationHistory->globalOptions->secondsbetweenhighlights);
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformTravelTimeBetweenHighlights, pLocationHistory->globalOptions->minutestravelbetweenhighlights * 60.0f);
-
-	mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformColourBy, pLocationHistory->globalOptions->colourby);
-
-	switch (pLocationHistory->globalOptions->colourby) {
-	case 1:
-		Palette_Handler::FillShaderPalette(mapPointsInfo->palette, 24, pLocationHistory->globalOptions->indexPaletteHour);
-		mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
-		break;
-	case 4:
-		Palette_Handler::FillShaderPalette(mapPointsInfo->palette, 24, pLocationHistory->globalOptions->indexPaletteYear);
-		mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
-		break;
-	default:
-		Palette_Handler::FillShaderPalette(mapPointsInfo->palette, 24, pLocationHistory->globalOptions->indexPaletteWeekday);
-		mapPointsInfo->shader.SetUniform(mapPointsInfo->uniformPalette, 24, &mapPointsInfo->palette[0][0]);
-		break;
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, mapPointsInfo->vbo);
-	glBindVertexArray(mapPointsInfo->vao);
-	glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
-
-	return;
 }
 
 

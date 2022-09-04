@@ -113,7 +113,7 @@ void ColourPathPlot(LocationHistory* lh)
 	ColourBy = ColourByDayOfWeek;
 	
 	
-	if (lh->globalOptions->colourby == 1) {
+	if (lh->globalOptions.colourby == 1) {
 		ColourBy = ColourByHourOfDay;
 	}
 	for (std::vector <PathPlotLocation> ::iterator it = lh->pathPlotLocations.begin(); it != lh->pathPlotLocations.end(); ++it) {
@@ -121,7 +121,7 @@ void ColourPathPlot(LocationHistory* lh)
 		//it->rgba = ColourByDayOfWeek(it->timestamp, lh);
 	}
 
-	lh->globalOptions->regenPathColours = false;
+	lh->globalOptions.regenPathColours = false;
 
 	return;
 }
@@ -132,7 +132,7 @@ RGBA ColourByDayOfWeek(unsigned long ts, LocationHistory* lh)
 
 	unsigned long dayofweek = (MyTimeZone::FixToLocalTime(ts) / 86400 + 4) % 7;
 
-	colour = lh->globalOptions->paletteDayOfWeek[dayofweek];
+	colour = lh->globalOptions.paletteDayOfWeek[dayofweek];
 
 	return colour;
 }

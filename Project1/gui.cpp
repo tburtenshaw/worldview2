@@ -43,11 +43,11 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 void Gui::MakeGUI(LocationHistory* lh)
 {
 	GlobalOptions* options;
-	options = lh->globalOptions;
+	options = &lh->globalOptions;
 
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
-	sigfigs = Gui::BestSigFigsFormat(lh->viewNSWE, lh->windowDimensions);
+	sigfigs = Gui::BestSigFigsFormat(&lh->viewNSWE, lh->windowDimensions);
 
 	ImGui::Begin("Map information");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -64,12 +64,12 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Text("Number of points: %i", lh->locations.size());
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
-	ImGui::Text(sCoords.c_str(), lh->viewNSWE->north, lh->viewNSWE->south, lh->viewNSWE->west, lh->viewNSWE->east);
+	ImGui::Text(sCoords.c_str(), lh->viewNSWE.north, lh->viewNSWE.south, lh->viewNSWE.west, lh->viewNSWE.east);
 
 	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->earliesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->latesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	Gui::ShowRegionInfo(lh->regions[0], lh->globalOptions);
+	Gui::ShowRegionInfo(lh->regions[0], &lh->globalOptions);
 
 	ImGui::End();
 
@@ -86,7 +86,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->shouldShowWindow) {
 			ImGui::Begin((lh->regions[i]->displayname + "###regionwindow" + std::to_string(lh->regions[i]->id)).c_str());
-			Gui::ShowRegionInfo(lh->regions[i], lh->globalOptions);
+			Gui::ShowRegionInfo(lh->regions[i], &lh->globalOptions);
 			ImGui::End();
 		}
 	}
@@ -108,16 +108,16 @@ void Gui::MakeGUI(LocationHistory* lh)
 
 	if (options->blurperaccuracy != oldBlurperaccurary) {
 		oldBlurperaccurary = options->blurperaccuracy;
-		lh->heatmap->MakeDirty();
+		//lh->heatmap->MakeDirty();
 	}
 
 	if (options->gaussianblur != oldBlur) {
 		oldBlur = options->gaussianblur;
-		lh->heatmap->MakeDirty();
+		//lh->heatmap->MakeDirty();
 	}
 	if (options->minimumaccuracy != oldMinimumaccuracy) {
 		oldMinimumaccuracy = options->minimumaccuracy;
-		lh->heatmap->MakeDirty();
+		//lh->heatmap->MakeDirty();
 	}
 
 	ImGui::End();
@@ -321,7 +321,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 			lh->isInitialised = false;
 			lh->isLoadingFile = false;
 		}
-		lh->heatmap->MakeDirty();
+		//lh->heatmap->MakeDirty();
 	}
 
 	bool disabled = false;

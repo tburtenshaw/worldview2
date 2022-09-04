@@ -52,7 +52,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	downpressed = glfwGetKey(window, GLFW_KEY_DOWN);
 
 	MovingTarget* viewNSWE;
-	viewNSWE = pLocationHistory->viewNSWE;
+	viewNSWE = &pLocationHistory->viewNSWE;
 
 	if (GLFW_PRESS == leftpressed) {
 		viewNSWE->target.nudgehorizontal(-step);
@@ -98,7 +98,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 	WorldCoord mapCoord;
 	MovingTarget* viewNSWE;
-	viewNSWE = pLocationHistory->viewNSWE;
+	viewNSWE = &pLocationHistory->viewNSWE;
 
 	mapCoord.SetFromWindowXY((float)xpos, (float)ypos, viewNSWE->target, pLocationHistory->windowDimensions);
 
@@ -123,7 +123,7 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 	//printf("fbo texture %i\n", pLocationHistory->fboInfo->fboTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-	pLocationHistory->viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
+	pLocationHistory->viewNSWE.target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
 
 	return;
 }
@@ -131,7 +131,7 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
 {
 	MovingTarget* viewNSWE;
-	viewNSWE = lh->viewNSWE;
+	viewNSWE = &lh->viewNSWE;
 	glfwGetCursorPos(window, &MouseActions::xpos, &MouseActions::ypos);
 	
 	MouseActions::longlatMouse.SetFromWindowXY(MouseActions::xpos, MouseActions::ypos, *viewNSWE, lh->windowDimensions);

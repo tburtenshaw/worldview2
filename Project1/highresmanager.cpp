@@ -28,8 +28,6 @@ HighResManager::HighResManager()
 	subImageLinesLoaded = 0;
 	subImageLoading = false;
 
-	highresTexture = 0;
-
 	filename.push_back("Background");
 	nswe.push_back(NSWE(10000.0f, 20000.0f, 30000.0f, 40000.0f));	//should never be displayed
 
@@ -68,11 +66,11 @@ HighResManager::HighResManager()
 
 }
 
-void HighResManager::DecideBestTex(RectDimension windowSize, NSWE* viewportNSWE)
+void HighResManager::DecideBestTex(RectDimension windowSize, const NSWE & viewportNSWE)
 {
 	float pixelsperdegree;
 
-	pixelsperdegree = (float)windowSize.width / (float)viewportNSWE->width();
+	pixelsperdegree = (float)windowSize.width / (float)viewportNSWE.width();
 
 	if (pixelsperdegree < (4096.0 / 360.0)) {	//does the background have a high enough pixel density
 		bestImage = 0;
@@ -80,12 +78,12 @@ void HighResManager::DecideBestTex(RectDimension windowSize, NSWE* viewportNSWE)
 	}
 	
 	
-	float areaofviewport = viewportNSWE->area();
+	float areaofviewport = viewportNSWE.area();
 	float bestscore;
 
 	bestscore = 0;
 	for (int i=1;i<nswe.size();i++)	{
-		NSWE intersection = viewportNSWE->intersectionWith(nswe[i]);
+		NSWE intersection = viewportNSWE.intersectionWith(nswe[i]);
 		float areatotest = nswe[i].area();
 		float areaofintersection = intersection.area();
 
@@ -100,14 +98,14 @@ void HighResManager::DecideBestTex(RectDimension windowSize, NSWE* viewportNSWE)
 
 }
 
-NSWE* HighResManager::GetBestNSWE()
+NSWE* HighResManager::GetBestNSWE(unsigned int gltexture)
 {
 	if ((bestImage == subImageLoaded) && ((bestImage==dataReady) || (dataReady==0))) {
 		return &nswe[bestImage];
 	}
 	else if (bestImage>0)
 	{
-		LoadBestTex();
+		LoadBestTex(gltexture);
 	}
 
 	return &nswe[0];
@@ -145,7 +143,7 @@ void HighResManager::ImageLoadThread(int n)
 	subImageLinesLoaded = 0;
 }
 
-void HighResManager::LoadBestTex()
+void HighResManager::LoadBestTex(unsigned int gltexture)
 {
 	//printf("Loading texture\n");
 	
@@ -161,9 +159,9 @@ void HighResManager::LoadBestTex()
 	}
 	if ((subImageLoading==true) && (fileThreadLoading==false)) {
 		//printf("subimageloading. W:%i H:%i\n", width, height);
-		glBindTexture(GL_TEXTURE_2D, highresTexture);
-		//if we try to load a whole image at once, it'll cause stutter, so we do a few lines at a time
+				//if we try to load a whole image at once, it'll cause stutter, so we do a few lines at a time
 		int linesToLoad = std::min(height - subImageLinesLoaded, 512); //load at most 512 lines
+		glBindTexture(GL_TEXTURE_2D, gltexture);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, subImageLinesLoaded, width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + (long)subImageLinesLoaded*width* nrChannels);
 		subImageLinesLoaded += linesToLoad;
 
