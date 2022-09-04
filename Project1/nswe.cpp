@@ -140,7 +140,7 @@ void NSWE::setto(NSWE *setthis) {
 		return outputNSWE;
 	}
 
-	WorldCoord NSWE::centre() {
+	WorldCoord NSWE::centre() const {
 		WorldCoord c;
 
 		c.longitude = (west + east) / 2;
@@ -205,7 +205,7 @@ void NSWE::setto(NSWE *setthis) {
 		
 	}
 
-	bool NSWE::containspoint(float latitude, float longitude)
+	bool NSWE::containspoint(float latitude, float longitude) const
 	{
 		if (latitude>north)
 			return false;

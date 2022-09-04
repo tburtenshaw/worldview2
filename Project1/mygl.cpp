@@ -339,15 +339,8 @@ void BackgroundInfo::SetupTextures()
 
 void BackgroundInfo::Draw(RectDimension windowsize, const NSWE &viewNSWE, const GlobalOptions &options)
 {
-	//NSWE* viewnswe;
-	//NSWE* heatmapnswe;
-	//BackgroundInfo* backgroundInfo;
-	//HighResManager* highres;
-	NSWE* highresnswe;
 
-	//viewnswe = pLocationHistory->viewNSWE;
-	//heatmapnswe = heatmap->nswe;
-	//highres = lh->highres;
+	NSWE* highresnswe;
 
 	highres.DecideBestTex(windowsize, viewNSWE);
 	highresnswe = highres.GetBestNSWE(highresTexture);

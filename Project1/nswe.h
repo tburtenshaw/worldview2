@@ -33,13 +33,13 @@ public:
 
 	NSWE createExpandedBy(float factor) const;
 	NSWE intersectionWith(NSWE otherNSWE) const;
-	WorldCoord centre();
+	WorldCoord centre() const;
 
 	void zoom(float z, WorldCoord c);
 
 	void makeratio(float ratio);
 
-	bool containspoint(float latitude, float longitude);
+	bool containspoint(float latitude, float longitude) const;
 
 };
 
