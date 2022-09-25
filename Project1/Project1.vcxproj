@@ -210,6 +210,9 @@
     <None Include="backgroundVS.glsl" />
     <None Include="fboFS.glsl" />
     <None Include="fboVS.glsl" />
+    <None Include="heatmapFS.glsl" />
+    <None Include="heatmapGS.glsl" />
+    <None Include="heatmapVS.glsl" />
     <None Include="mappathsFS.glsl" />
     <None Include="mappathsGS.glsl" />
     <None Include="mappathsVS.glsl" />

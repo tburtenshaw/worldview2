@@ -11,19 +11,20 @@ class RGBA;
 
 class GLRenderLayer {
 public:
-	unsigned int vao;
-	unsigned int vbo;
+	unsigned int vao;	//Vertex array object
+	unsigned int vbo;	//Vertex buffer object - ?maybe could share these
 	Shader shader;
 
 	GLRenderLayer()
 		:vao(0), vbo(0),shader(){
 	}
 
+	//virtual void Draw() = 0;
 	void SetupShaders();
 	void SetupSquareVertices();
 };
 
-class BackgroundInfo : public GLRenderLayer {
+class BackgroundLayer : public GLRenderLayer {
 private:
 	void LoadBackgroundImageToTexture();
 	void MakeHighresImageTexture();
@@ -47,7 +48,7 @@ public:
 
 	void UpdateHeatmapTexture(const NSWE& viewNSWE);
 
-	BackgroundInfo()
+	BackgroundLayer()
 		:worldTexture(0),highresTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
 
 };
@@ -64,17 +65,16 @@ public:
 	void SetupFrameBufferObject(int width, int height);
 	void Draw(float width, float height);
 
-	//BackgroundInfo fboBGInfo;	//so can use other functions
 };
 
-class MapPathInfo : public GLRenderLayer {
+class PathLayer : public GLRenderLayer {
 public:
 	void SetupShaders();
 	void SetupVertices(std::vector<PathPlotLocation>& locs);
 	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
 };
 
-class MapPointsInfo : public GLRenderLayer {
+class PointsLayer : public GLRenderLayer {
 public:
 	unsigned int uniformNswe;
 	unsigned int uniformResolution;
@@ -97,7 +97,7 @@ public:
 	
 };
 
-class DisplayRegionsLayer : public GLRenderLayer {
+class RegionsLayer : public GLRenderLayer {
 public:
 	std::vector<DisplayRegion> displayRegions;
 
@@ -112,6 +112,13 @@ public:
 	float west, north, east, south;
 	//float c[4];
 	RGBA colour{ 1,2,3,4 };
+};
 
-
+class HeatmapLayer : public GLRenderLayer {
+public:
+	void Setup(int width, int height);
+	void Draw();
+private:
+	unsigned int fbo;
+	unsigned int texture;
 };

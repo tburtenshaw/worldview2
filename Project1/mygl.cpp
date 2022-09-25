@@ -34,7 +34,7 @@ void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao
 	glEnableVertexAttribArray(0);
 }
 
-void MapPointsInfo::SetupShaders()
+void PointsLayer::SetupShaders()
 {
 	shader.LoadShaderFromFile("pointsVS.glsl", GL_VERTEX_SHADER);
 	shader.LoadShaderFromFile("pointsGS.glsl", GL_GEOMETRY_SHADER);
@@ -62,7 +62,7 @@ void MapPointsInfo::SetupShaders()
 	shader.LoadUniformLocation(&uniformColourBy, "colourby");
 }
 
-void MapPointsInfo::SetupVertices(std::vector<PathPlotLocation> &locs)
+void PointsLayer::SetupVertices(std::vector<PathPlotLocation> &locs)
 {
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -84,7 +84,7 @@ void MapPointsInfo::SetupVertices(std::vector<PathPlotLocation> &locs)
 	glEnableVertexAttribArray(2);
 }
 
-void MapPointsInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options)
+void PointsLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options)
 {
 	//update uniform shader variables
 	shader.UseMe();
@@ -126,7 +126,7 @@ void MapPointsInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float
 
 
 
-void DisplayRegionsLayer::SetupShaders()
+void RegionsLayer::SetupShaders()
 {
 	shader.LoadShaderFromFile("regionsVS.glsl", GL_VERTEX_SHADER);
 	shader.LoadShaderFromFile("regionsFS.glsl", GL_FRAGMENT_SHADER);
@@ -134,7 +134,7 @@ void DisplayRegionsLayer::SetupShaders()
 	shader.CreateProgram();
 }
 
-void DisplayRegionsLayer::SetupVertices()
+void RegionsLayer::SetupVertices()
 {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -155,7 +155,7 @@ void DisplayRegionsLayer::SetupVertices()
 	glEnableVertexAttribArray(2);
 }
 
-void DisplayRegionsLayer::UpdateFromRegionsData(std::vector<Region*>& dataRegions)
+void RegionsLayer::UpdateFromRegionsData(std::vector<Region*>& dataRegions)
 {
 	int sizeOfRegionVector = dataRegions.size();
 
@@ -197,7 +197,7 @@ void DisplayRegionsLayer::UpdateFromRegionsData(std::vector<Region*>& dataRegion
 
 }
 
-void DisplayRegionsLayer::Draw(float width, float height, NSWE* nswe)
+void RegionsLayer::Draw(float width, float height, NSWE* nswe)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	shader.UseMe();
@@ -212,7 +212,7 @@ void DisplayRegionsLayer::Draw(float width, float height, NSWE* nswe)
 
 }
 
-void MapPathInfo::SetupShaders()
+void PathLayer::SetupShaders()
 {
 	shader.LoadShaderFromFile("mappathsVS.glsl", GL_VERTEX_SHADER);
 	shader.LoadShaderFromFile("mappathsFS.glsl", GL_FRAGMENT_SHADER);
@@ -220,7 +220,7 @@ void MapPathInfo::SetupShaders()
 	shader.CreateProgram();
 }
 
-void MapPathInfo::SetupVertices(std::vector<PathPlotLocation>& locs)
+void PathLayer::SetupVertices(std::vector<PathPlotLocation>& locs)
 {
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -246,7 +246,7 @@ void MapPathInfo::SetupVertices(std::vector<PathPlotLocation>& locs)
 	glEnableVertexAttribArray(2);
 }
 
-void MapPathInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleSeconds)
+void PathLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleSeconds)
 {
 	//update uniform shader variables
 	shader.UseMe();
@@ -262,7 +262,7 @@ void MapPathInfo::Draw(std::vector<PathPlotLocation>& locs, float width, float h
 
 }
 
-void BackgroundInfo::LoadBackgroundImageToTexture()
+void BackgroundLayer::LoadBackgroundImageToTexture()
 {
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load("world.200409.3x4096x2048.png", &width, &height, &nrChannels, 0);
@@ -285,7 +285,7 @@ void BackgroundInfo::LoadBackgroundImageToTexture()
 	stbi_image_free(data);
 }
 
-void BackgroundInfo::MakeHighresImageTexture()
+void BackgroundLayer::MakeHighresImageTexture()
 {
 	GLint maxtexturesize;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxtexturesize);
@@ -297,7 +297,7 @@ void BackgroundInfo::MakeHighresImageTexture()
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void BackgroundInfo::MakeHeatmapTexture()
+void BackgroundLayer::MakeHeatmapTexture()
 {
 	glGenTextures(1, &heatmapTexture);
 	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
@@ -311,7 +311,7 @@ void BackgroundInfo::MakeHeatmapTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void BackgroundInfo::SetupShaders()
+void BackgroundLayer::SetupShaders()
 {
 	//Create the shader program
 	shader.LoadShaderFromFile("backgroundVS.glsl", GL_VERTEX_SHADER);
@@ -330,14 +330,14 @@ void BackgroundInfo::SetupShaders()
 	glUniform1i(heatmapTextureLocation, 2);
 }
 
-void BackgroundInfo::SetupTextures()
+void BackgroundLayer::SetupTextures()
 {
 	LoadBackgroundImageToTexture();
 	MakeHighresImageTexture();
 	MakeHeatmapTexture();
 }
 
-void BackgroundInfo::Draw(RectDimension windowsize, const NSWE &viewNSWE, const GlobalOptions &options)
+void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const GlobalOptions &options)
 {
 
 	NSWE* highresnswe;
@@ -374,7 +374,7 @@ void BackgroundInfo::Draw(RectDimension windowsize, const NSWE &viewNSWE, const 
 	glBindVertexArray(0);
 }
 
-void BackgroundInfo::UpdateHeatmapTexture(const NSWE& viewNSWE)
+void BackgroundLayer::UpdateHeatmapTexture(const NSWE& viewNSWE)
 {
 	heatmap.CreateHeatmap(viewNSWE, 0);
 
@@ -438,4 +438,49 @@ void FrameBufferObjectInfo::Draw(float width, float height)
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void HeatmapLayer::Setup(int width, int height)
+{
+	//Create the FBO which is drawn to
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	//create the texture, which is a single channel float.
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+	//Unbind everything
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//Set vao and vbo to zero.
+	vao = 0;
+	vbo = 0;
+}
+
+void HeatmapLayer::Draw()
+{
+	glBlendFunc(GL_ONE, GL_ONE);
+	glBlendEquation(GL_FUNC_ADD);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	//glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+
+	//now back to normal
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glBlendEquation(GL_FUNC_ADD);
+
 }

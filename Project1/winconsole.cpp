@@ -35,11 +35,13 @@
 LocationHistory* pLocationHistory;
 
 
-FrameBufferObjectInfo fboInfo;
-BackgroundInfo backgroundLayer;
-MapPathInfo pathInfo;
-MapPointsInfo pointsInfo;
-DisplayRegionsLayer regionsInfo;
+FrameBufferObjectInfo fboInfo;	//this is what everything is drawn to first.
+
+BackgroundLayer backgroundLayer;
+PathLayer pathLayer;
+PointsLayer pointsLayer;
+RegionsLayer regionsLayer;
+HeatmapLayer heatmapLayer;
 
 
 
@@ -226,8 +228,8 @@ int StartGLProgram(LocationHistory* lh)
 
 	//set up and compile the shaders
 	backgroundLayer.SetupShaders();
-	pathInfo.SetupShaders();
-	pointsInfo.SetupShaders();
+	pathLayer.SetupShaders();
+	pointsLayer.SetupShaders();
 
 	//Set up the FBO that we draw onto
 	fboInfo.SetupFrameBufferObject(lh->windowDimensions.width, lh->windowDimensions.height);
@@ -241,30 +243,14 @@ int StartGLProgram(LocationHistory* lh)
 	//make a new region, which is the viewport
 	lh->regions.push_back(new Region());
 
-	regionsInfo.displayRegions.resize(1);
-	regionsInfo.SetupVertices();
-	regionsInfo.SetupShaders();
+	regionsLayer.displayRegions.resize(1);
+	regionsLayer.SetupVertices();
+	regionsLayer.SetupShaders();
 	
 	//Trying to do better, GPU based, heatmap
 	printf("Start: glGetError %i\n", glGetError());
 	
-	unsigned int HeatmapFBO;
-	glGenFramebuffers(1, &HeatmapFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, HeatmapFBO);
-
-	unsigned int NewHeatmapTexture;
-	glGenTextures(1, &NewHeatmapTexture);
-	glBindTexture(GL_TEXTURE_2D, NewHeatmapTexture);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lh->windowDimensions.width, lh->windowDimensions.height, 0, GL_RED, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, NewHeatmapTexture, 0);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	printf("After unbind: glGetError %i\n", glGetError());
-
+	heatmapLayer.Setup(lh->windowDimensions.width, lh->windowDimensions.height);
 
 	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
@@ -284,8 +270,8 @@ int StartGLProgram(LocationHistory* lh)
 
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
 			printf("Initialising things that need file to be fully loaded\n");
-			pathInfo.SetupVertices(lh->pathPlotLocations);
-			pointsInfo.SetupVertices(lh->pathPlotLocations);
+			pathLayer.SetupVertices(lh->pathPlotLocations);
+			pointsLayer.SetupVertices(lh->pathPlotLocations);
 			backgroundLayer.heatmap.MakeDirty();
 			lh->isInitialised = true;
 		}
@@ -294,19 +280,8 @@ int StartGLProgram(LocationHistory* lh)
 
 
 		//try to do NewHeatmap rendering
-		glBlendFunc(GL_ONE, GL_ONE);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, HeatmapFBO);
-		//glDrawArrays(GL_LINE_STRIP, 0, pLocationHistory->pathPlotLocations.size());
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-		//now back to normal
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glClearColor(0.0, 0.0, 0.0, 0.0);
-		glBlendEquation(GL_FUNC_ADD);
-
+		heatmapLayer.Draw();
+		
 
 		//Set the FBO as the draw surface
 		fboInfo.BindToDrawTo();
@@ -331,19 +306,19 @@ int StartGLProgram(LocationHistory* lh)
 				if (lh->globalOptions.regenPathColours) {
 					printf("regen pathplot\n");
 					ColourPathPlot(lh);
-					glBindBuffer(GL_ARRAY_BUFFER, pathInfo.vbo);
+					glBindBuffer(GL_ARRAY_BUFFER, pathLayer.vbo);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
 				}
-				pathInfo.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
+				pathLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
 			}
 
 			if (lh->globalOptions.showPoints) {
 				//DrawPoints(&pointsInfo);
-				pointsInfo.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+				pointsLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 			}
 
-			regionsInfo.UpdateFromRegionsData(lh->regions);
-			regionsInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
+			regionsLayer.UpdateFromRegionsData(lh->regions);
+			regionsLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
 
 		}
 

@@ -163,5 +163,14 @@
     <None Include="regionsVS.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="heatmapGS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="heatmapVS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="heatmapFS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

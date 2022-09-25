@@ -15,10 +15,10 @@
 struct Location;
 class Heatmap;
 class FrameBufferObjectInfo;
-class BackgroundInfo;
-class MapPathInfo;
-class MapPointsInfo;
-class DisplayRegionsLayer;
+class BackgroundLayer;
+class PathLayer;
+class PointsLayer;
+class RegionsLayer;
 class Region;
 //class MovingTarget;
 class HighResManager;
