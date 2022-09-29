@@ -8,11 +8,6 @@
 #include <vector>
 #include <stb_image.h>
 
-void GLRenderLayer::SetupShaders()
-{
-	printf("Shader not done yet");
-}
-
 void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao/vbo for -1,-1, to 1,1 square
 {
 	static const GLfloat g_vertex_buffer_data[] = {
@@ -462,25 +457,62 @@ void HeatmapLayer::Setup(int width, int height)
 	//Set vao and vbo to zero.
 	vao = 0;
 	vbo = 0;
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	SetupShaders();
 }
 
-void HeatmapLayer::Draw()
+void HeatmapLayer::SetupVertices(std::vector<PathPlotLocation>& locs)
 {
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, locs.size() * sizeof(PathPlotLocation), &locs.front(), GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	//lat,long
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, longitude));
+	glEnableVertexAttribArray(0);
+
+	//timestamp
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
+	glEnableVertexAttribArray(1);
+}
+
+void HeatmapLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe)
+{
+	shader.UseMe();
+	shader.SetUniformFromFloats("resolution", width, height);
+	shader.SetUniformFromNSWE("nswe", nswe);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	//change the blending options
+
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
+	glDrawArrays(GL_POINTS, 0, locs.size());
 
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	//glDrawArrays(GL_POINTS, 0, pLocationHistory->pathPlotLocations.size());
+	//now back to normal
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-
-	//now back to normal
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
 
+}
+
+void HeatmapLayer::SetupShaders()
+{
+	shader.LoadShaderFromFile("heatmapVS.glsl", GL_VERTEX_SHADER);
+	shader.LoadShaderFromFile("heatmapFS.glsl", GL_FRAGMENT_SHADER);
+	shader.LoadShaderFromFile("heatmapGS.glsl", GL_GEOMETRY_SHADER);
+	shader.CreateProgram();
 }

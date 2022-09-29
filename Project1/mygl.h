@@ -20,7 +20,7 @@ public:
 	}
 
 	//virtual void Draw() = 0;
-	void SetupShaders();
+	//void SetupShaders();
 	void SetupSquareVertices();
 };
 
@@ -117,8 +117,10 @@ public:
 class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
-	void Draw();
+	void SetupVertices(std::vector<PathPlotLocation>& locs);
+	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe);
 private:
+	void SetupShaders();
 	unsigned int fbo;
 	unsigned int texture;
 };

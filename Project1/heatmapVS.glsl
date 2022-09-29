@@ -1,14 +1,14 @@
 #version 330
 
 layout (location = 0) in vec2 vp;
-layout (location = 2) in uint timestamp;
+layout (location = 1) in uint timestamp;
 
 uniform vec4 nswe;
 uniform vec2 resolution;
-uniform float seconds;
+//uniform float seconds;
 
-uniform uint earliesttimetoshow;
-uniform uint latesttimetoshow;
+//uniform uint earliesttimetoshow;
+//uniform uint latesttimetoshow;
 
 out uint ts;
 

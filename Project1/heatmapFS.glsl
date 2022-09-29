@@ -1,8 +1,6 @@
 #version 330
 uniform vec2 resolution;
-uniform float pointradius;
-//uniform float alpha;
-//uniform float seconds;
+//uniform float pointradius;
 
 out vec4 fragColor;
 in vec4 gcolour;
@@ -14,6 +12,7 @@ return 1.0-clamp(d, 0.0, 1.0);
 }
 
 void main() {
+float pointradius=5.0;
 
 vec2 uv = gl_FragCoord.xy;
 
@@ -26,7 +25,7 @@ float circleFactor = circle(uv, tempPos, pointradius);
 
 
 vec4 outputColour;
-outputColour=vec4(gcolour.r, circleFactor*alpha*gcolour.a);
+outputColour=vec4(gcolour.r, vec3(0.0));
 
 fragColor=outputColour;
 }

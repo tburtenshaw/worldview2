@@ -249,7 +249,6 @@ int StartGLProgram(LocationHistory* lh)
 	
 	//Trying to do better, GPU based, heatmap
 	printf("Start: glGetError %i\n", glGetError());
-	
 	heatmapLayer.Setup(lh->windowDimensions.width, lh->windowDimensions.height);
 
 	//MAIN LOOP
@@ -272,16 +271,20 @@ int StartGLProgram(LocationHistory* lh)
 			printf("Initialising things that need file to be fully loaded\n");
 			pathLayer.SetupVertices(lh->pathPlotLocations);
 			pointsLayer.SetupVertices(lh->pathPlotLocations);
+			heatmapLayer.SetupVertices(lh->pathPlotLocations);
+
 			backgroundLayer.heatmap.MakeDirty();
 			lh->isInitialised = true;
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-
 		//try to do NewHeatmap rendering
-		heatmapLayer.Draw();
-		
+		if (lh->isInitialised && lh->isFullyLoaded) {
+			heatmapLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
+			printf("hml ");
+		}
+
 
 		//Set the FBO as the draw surface
 		fboInfo.BindToDrawTo();
@@ -322,7 +325,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		}
 
-				//Start the ImGui Frame
+		//Start the ImGui Frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
