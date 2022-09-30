@@ -12,7 +12,7 @@ return 1.0-clamp(d, 0.0, 1.0);
 }
 
 void main() {
-float pointradius=5.0;
+float pointradius=2.0;
 
 vec2 uv = gl_FragCoord.xy;
 
@@ -23,9 +23,8 @@ tempPos=(centre/vec2(2.0)+vec2(0.5))*vec2(resolution.xy);
 
 float circleFactor = circle(uv, tempPos, pointradius);
 
-
 vec4 outputColour;
-outputColour=vec4(gcolour.r, vec3(0.0));
+outputColour=vec4(gcolour.r*circleFactor, vec3(0.0));
 
 fragColor=outputColour;
 }

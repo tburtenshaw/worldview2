@@ -9,24 +9,6 @@ void SortAndCalculateEarliestAndLatest(LocationHistory* lh)
 	std::sort(lh->locations.begin(), lh->locations.end());	//stable_sort might be better, as doesn't muck around if the same size
 	lh->earliesttimestamp = lh->locations.front().timestamp;
 	lh->latesttimestamp = lh->locations.back().timestamp;
-	
-	return;
-	/*
-	int locationssize = lh->locations.size();
-	
-	if (locationssize < 1)	return;
-
-	lh->earliesttimestamp = 2147400000;	//set these to be easily beaten.
-	lh->latesttimestamp = 0;
-
-	for (int i = 0; i < locationssize; i++) {
-		if (lh->locations[i].timestamp < lh->earliesttimestamp)
-			lh->earliesttimestamp = lh->locations[i].timestamp;
-
-		if (lh->locations[i].timestamp > lh->latesttimestamp)
-			lh->latesttimestamp = lh->locations[i].timestamp;
-	}
-	*/
 }
 
 bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {

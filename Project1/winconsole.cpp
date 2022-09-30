@@ -113,6 +113,8 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 	SortAndCalculateEarliestAndLatest(lh);
 
 	CreatePathPlotLocations(lh);
+	lh->globalOptions.earliestTimeToShow = lh->earliesttimestamp;
+	lh->globalOptions.latestTimeToShow = lh->latesttimestamp;
 
 	lh->isLoadingFile = false;
 	lh->isFullyLoaded = true;
@@ -251,6 +253,8 @@ int StartGLProgram(LocationHistory* lh)
 	printf("Start: glGetError %i\n", glGetError());
 	heatmapLayer.Setup(lh->windowDimensions.width, lh->windowDimensions.height);
 
+
+
 	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
 		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
@@ -269,9 +273,11 @@ int StartGLProgram(LocationHistory* lh)
 
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
 			printf("Initialising things that need file to be fully loaded\n");
-			pathLayer.SetupVertices(lh->pathPlotLocations);
-			pointsLayer.SetupVertices(lh->pathPlotLocations);
-			heatmapLayer.SetupVertices(lh->pathPlotLocations);
+			GLRenderLayer::CreateLocationVBO(lh->pathPlotLocations);
+			
+			pathLayer.SetupVertices();
+			pointsLayer.SetupVertices();
+			heatmapLayer.SetupVertices();
 
 			backgroundLayer.heatmap.MakeDirty();
 			lh->isInitialised = true;
@@ -282,7 +288,6 @@ int StartGLProgram(LocationHistory* lh)
 		//try to do NewHeatmap rendering
 		if (lh->isInitialised && lh->isFullyLoaded) {
 			heatmapLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
-			printf("hml ");
 		}
 
 
@@ -290,6 +295,7 @@ int StartGLProgram(LocationHistory* lh)
 		fboInfo.BindToDrawTo();
 
 		//Background layer has worldmap, heatmap and highres
+		backgroundLayer.NEWheatmapTexture = heatmapLayer.texture;
 		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, lh->globalOptions);
 
 		//We only draw the points if everything is loaded and initialised.
@@ -309,7 +315,7 @@ int StartGLProgram(LocationHistory* lh)
 				if (lh->globalOptions.regenPathColours) {
 					printf("regen pathplot\n");
 					ColourPathPlot(lh);
-					glBindBuffer(GL_ARRAY_BUFFER, pathLayer.vbo);
+					pathLayer.BindBuffer();
 					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
 				}
 				pathLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);

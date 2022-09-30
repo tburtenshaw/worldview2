@@ -137,7 +137,7 @@ void main() {
 
 	heatmapuv.x=(width* gl_FragCoord.x/resolution.x + nswe.z-heatmapnswe.z)/heatmapwidth;
 
-	heatmapuv.y=(heatmapnswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
+	heatmapuv.y=-(heatmapnswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
 
 	float heatvalue;
 	heatvalue=texture(heatmapTexture, heatmapuv).r;

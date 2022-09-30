@@ -10,10 +10,17 @@ class RGBA;
 //class Shader;
 
 class GLRenderLayer {
-public:
+private:
+	static unsigned int vboLocations;	//VBO that is the location data, so we don't use it multiple times
+protected:
 	unsigned int vao;	//Vertex array object
 	unsigned int vbo;	//Vertex buffer object - ?maybe could share these
+	
+	void UseLocationVBO();
+
+public:
 	Shader shader;
+	void SetupSquareVertices();
 
 	GLRenderLayer()
 		:vao(0), vbo(0),shader(){
@@ -21,7 +28,7 @@ public:
 
 	//virtual void Draw() = 0;
 	//void SetupShaders();
-	void SetupSquareVertices();
+	static void CreateLocationVBO(std::vector<PathPlotLocation>& locs);
 };
 
 class BackgroundLayer : public GLRenderLayer {
@@ -33,6 +40,7 @@ public:
 	unsigned int worldTexture;	//the background NASA map
 	unsigned int highresTexture; //used for the higher res insert
 	unsigned int heatmapTexture;
+	unsigned int NEWheatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
 	unsigned int highresTextureLocation;
@@ -70,7 +78,8 @@ public:
 class PathLayer : public GLRenderLayer {
 public:
 	void SetupShaders();
-	void SetupVertices(std::vector<PathPlotLocation>& locs);
+	void SetupVertices();
+	void BindBuffer(); //this just temporary most likely, as we should bind only in the layer code
 	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
 };
 
@@ -92,7 +101,7 @@ public:
 
 	float palette[24][4];
 	void SetupShaders();
-	void SetupVertices(std::vector<PathPlotLocation> &locs);
+	void SetupVertices();
 	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options);
 	
 };
@@ -117,10 +126,11 @@ public:
 class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
-	void SetupVertices(std::vector<PathPlotLocation>& locs);
+	void SetupVertices();
 	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe);
+	unsigned int texture;
 private:
 	void SetupShaders();
 	unsigned int fbo;
-	unsigned int texture;
+	
 };
