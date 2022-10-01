@@ -99,7 +99,8 @@ void Gui::MakeGUI(LocationHistory* lh)
 	static float oldBlurperaccurary = 0;
 	ImGui::Begin("Heatmap");
 	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
-	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 10.0f, "%.1f");
+	
+	ImGui::SliderFloat("Size", &options->heatmapmaxvalue, 0.0f, 1000.0f, "%.1f");
 	ImGui::Checkbox("_Predict paths", &options->predictpath);
 	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");

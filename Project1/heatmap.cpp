@@ -1,3 +1,4 @@
+/*
 #include "header.h"
 #include "nswe.h"
 #include "heatmap.h"
@@ -130,7 +131,7 @@ void Heatmap::CreateHeatmap(const NSWE & inputNswe, int n) {
 
 	return;
 	*/
-	
+	/*
 	//this acts as a mask, so we don't try to blur nothing
 	memset(roughHeatmap, 0, sizeof(roughHeatmap));
 
@@ -539,3 +540,4 @@ Heatmap::~Heatmap()
 }
 
 
+*/

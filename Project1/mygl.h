@@ -35,18 +35,15 @@ class BackgroundLayer : public GLRenderLayer {
 private:
 	void LoadBackgroundImageToTexture();
 	void MakeHighresImageTexture();
-	void MakeHeatmapTexture();
 public:
 	unsigned int worldTexture;	//the background NASA map
 	unsigned int highresTexture; //used for the higher res insert
-	unsigned int heatmapTexture;
 	unsigned int NEWheatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
 	unsigned int highresTextureLocation;
 	unsigned int heatmapTextureLocation;
 	
-	Heatmap heatmap;
 	HighResManager highres;
 
 
@@ -54,10 +51,8 @@ public:
 	void SetupTextures();
 	void Draw(RectDimension window, const NSWE& viewNSWE, const GlobalOptions& options);
 
-	void UpdateHeatmapTexture(const NSWE& viewNSWE);
-
 	BackgroundLayer()
-		:worldTexture(0),highresTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
+		:worldTexture(0),highresTexture(0), NEWheatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
 
 };
 
@@ -128,6 +123,8 @@ public:
 	void Setup(int width, int height);
 	void SetupVertices();
 	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe);
+	void UpdateSize(int width, int height);
+
 	unsigned int texture;
 private:
 	void SetupShaders();

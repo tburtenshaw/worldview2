@@ -220,6 +220,8 @@ public:
 	int minimumaccuracy;
 	bool predictpath;
 	float gaussianblur;
+
+	float heatmapmaxvalue;
 };
 
 class LocationHistory {
@@ -260,6 +262,7 @@ struct WVFormat {
 	float lat;
 };
 
+void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
 int StartGLProgram(LocationHistory* lh);
 void DisplayIfGLError(const char* message, bool alwaysshow);
 

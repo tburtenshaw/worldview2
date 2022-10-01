@@ -2,9 +2,11 @@
 //class NSWE;
 //class Shader;
 //#include "header.h"
+/*
 #include "nswe.h"
 
 #define MAX_HEATMAP_DIMENSION 2048
+
 
 class Heatmap {
 private:
@@ -35,3 +37,5 @@ public:
 	~Heatmap();
 };
 
+
+*/

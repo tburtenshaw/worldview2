@@ -23,6 +23,13 @@ tempPos=(centre/vec2(2.0)+vec2(0.5))*vec2(resolution.xy);
 
 float circleFactor = circle(uv, tempPos, pointradius);
 
+//circleFactor=1.0-clamp(length(tempPos-uv)-1.0,0.0,1.0);
+
+//float stddev=1.0;
+//const float pi=3.1415926;
+//circleFactor=1/(2*pi*stddev*stddev)*exp(-((tempPos.x-uv.x)*(tempPos.x-uv.x)+(tempPos.y-uv.y)*(tempPos.y-uv.y))/2*stddev*stddev);
+
+
 vec4 outputColour;
 outputColour=vec4(gcolour.r*circleFactor, vec3(0.0));
 

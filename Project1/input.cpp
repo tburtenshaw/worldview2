@@ -15,7 +15,7 @@
 //extern WORLDCOORD longlatMouse;
 //extern BackgroundInfo bgInfo;
 extern LocationHistory* pLocationHistory;
-extern FrameBufferObjectInfo fboInfo;
+//extern FrameBufferObjectInfo fboInfo;
 
 NSWE originalNSWE;
 
@@ -113,20 +113,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	return;
 }
 
-void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
-{
-	//printf("Resize %i %i\t", windowNewWidth, windowNewHeight);
-	pLocationHistory->windowDimensions.height = windowNewHeight;
-	pLocationHistory->windowDimensions.width = windowNewWidth;
-	glViewport(0, 0, windowNewWidth, windowNewHeight);
-	glBindTexture(GL_TEXTURE_2D, fboInfo.fboTexture);
-	//printf("fbo texture %i\n", pLocationHistory->fboInfo->fboTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-	pLocationHistory->viewNSWE.target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
-
-	return;
-}
 
 void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
 {

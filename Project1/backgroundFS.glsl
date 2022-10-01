@@ -9,7 +9,7 @@ uniform vec4 nswe;	//the view
 uniform vec4 highresnswe;
 uniform vec2 highresscale;
 
-uniform vec4 heatmapnswe;	//where the heatmap covers
+//uniform vec4 heatmapnswe;	//where the heatmap covers
 
 uniform float maxheatmapvalue;
 uniform int palette;
@@ -110,8 +110,8 @@ void main() {
 	highresheight = (highresnswe.x-highresnswe.y);
 
 
-	highresuv.y=uv.y/(highresheight/180);
-	highresuv.y+=(highresnswe.x-90)/highresheight;
+	highresuv.y=uv.y/(highresheight/180.0);
+	highresuv.y+=(highresnswe.x-90.0)/highresheight;
 
 	
 	highresuv.x=(gl_FragCoord.x/resolution.x*(nswe.w-nswe.z) + (nswe.z-highresnswe.z))/(highresnswe.w-highresnswe.z);
@@ -132,12 +132,12 @@ void main() {
 	//find the UV of the heatmap, then add it.
 	vec2 heatmapuv;
 	float heatmapwidth, heatmapheight;
-	heatmapwidth = (heatmapnswe.w-heatmapnswe.z);
-	heatmapheight = (heatmapnswe.x-heatmapnswe.y);
+	heatmapwidth = (nswe.w-nswe.z);
+	heatmapheight = (nswe.x-nswe.y);
 
-	heatmapuv.x=(width* gl_FragCoord.x/resolution.x + nswe.z-heatmapnswe.z)/heatmapwidth;
+	heatmapuv.x=(width* gl_FragCoord.x/resolution.x + nswe.z-nswe.z)/heatmapwidth;
 
-	heatmapuv.y=-(heatmapnswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
+	heatmapuv.y=-(nswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
 
 	float heatvalue;
 	heatvalue=texture(heatmapTexture, heatmapuv).r;

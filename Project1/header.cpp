@@ -90,4 +90,6 @@ GlobalOptions::GlobalOptions()
 	gaussianblur = 0.0f;
 	blurperaccuracy = false;
 	predictpath = false;
+	heatmapmaxvalue = 500;
+
 }

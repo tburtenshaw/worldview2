@@ -44,7 +44,6 @@ public:
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
 void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh);
 void MouseNavigation(MovingTarget* viewNSWE, LocationHistory* lh);
 void RegionSelect(MovingTarget* viewNSWE, LocationHistory* lh);

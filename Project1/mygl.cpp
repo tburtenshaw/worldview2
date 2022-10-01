@@ -315,19 +315,6 @@ void BackgroundLayer::MakeHighresImageTexture()
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void BackgroundLayer::MakeHeatmapTexture()
-{
-	glGenTextures(1, &heatmapTexture);
-	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, heatmap.width, heatmap.height, 0, GL_RED, GL_FLOAT, NULL);
-
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	//we don't wrap this at the moment, as funny things happen when zooming
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);	//this is the poles
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
 
 void BackgroundLayer::SetupShaders()
 {
@@ -352,7 +339,6 @@ void BackgroundLayer::SetupTextures()
 {
 	LoadBackgroundImageToTexture();
 	MakeHighresImageTexture();
-	MakeHeatmapTexture();
 }
 
 void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const GlobalOptions &options)
@@ -372,10 +358,10 @@ void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const
 	shader.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
 	shader.SetUniformFromNSWE("highresnswe", highresnswe);
 	shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the
-	shader.SetUniformFromFloats("heatmapnswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	//shader.SetUniformFromFloats("heatmapnswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
 	
 
-	shader.SetUniformFromFloats("maxheatmapvalue", 100.0);// heatmap.maxPixel);
+	shader.SetUniformFromFloats("maxheatmapvalue", options.heatmapmaxvalue);// heatmap.maxPixel);
 	shader.SetUniformFromInts("palette", options.palette);
 
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -393,20 +379,7 @@ void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const
 	glBindVertexArray(0);
 }
 
-void BackgroundLayer::UpdateHeatmapTexture(const NSWE& viewNSWE)
-{
-	heatmap.CreateHeatmap(viewNSWE, 0);
 
-	//printf("Updated texture\n");
-	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1800, 1800, GL_RED, GL_FLOAT, pLocationHistory->heatmap->pixel);
-	//**FIX
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, heatmap.width, heatmap.height, 0, GL_RED, GL_FLOAT, NULL);	//only need to do this if size changed
-	//we can probably just adjust the zooming in the shader, rather than resizing the texture
-
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, heatmap.width, heatmap.height, GL_RED, GL_FLOAT, heatmap.pixel);
-	glGenerateMipmap(GL_TEXTURE_2D);
-}
 
 void FrameBufferObjectInfo::BindToDrawTo()
 {
@@ -540,6 +513,13 @@ void HeatmapLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
 
+}
+
+void HeatmapLayer::UpdateSize(int width, int height)
+{
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL);
+	
 }
 
 void HeatmapLayer::SetupShaders()

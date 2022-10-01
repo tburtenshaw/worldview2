@@ -66,8 +66,6 @@ int CloseLocationFile(LocationHistory* lh)	//closes the file, empties the arrays
 
 	//lh->filename = L"";	//can't do this, as it's where the file to load is stored.
 	lh->filesize = 0;
-
-	backgroundLayer.heatmap.MakeDirty();
 	
 	return 0;
 }
@@ -237,7 +235,7 @@ int StartGLProgram(LocationHistory* lh)
 	fboInfo.SetupFrameBufferObject(lh->windowDimensions.width, lh->windowDimensions.height);
 
 	//initial values
-	lh->viewNSWE.target.setvalues(-36.83, -37.11, 174.677 - 0.0, 174.961 - 0.0);
+	lh->viewNSWE.target.setvalues(-36.83f, -37.11f, 174.677f - 0.0f, 174.961f - 0.0f);
 	lh->viewNSWE.target.makeratio((float)lh->windowDimensions.height / (float)lh->windowDimensions.width);
 	lh->viewNSWE.setvalues(lh->viewNSWE.target);
 	lh->viewNSWE.movetowards(1000000000000.0);
@@ -279,7 +277,6 @@ int StartGLProgram(LocationHistory* lh)
 			pointsLayer.SetupVertices();
 			heatmapLayer.SetupVertices();
 
-			backgroundLayer.heatmap.MakeDirty();
 			lh->isInitialised = true;
 		}
 
@@ -303,13 +300,8 @@ int StartGLProgram(LocationHistory* lh)
 			if (lh->viewNSWE.isDirty()) {
 				lh->regions[0]->SetNSWE(&lh->viewNSWE.target);
 				lh->regions[0]->Populate(lh);
-				backgroundLayer.heatmap.MakeDirty();
 			}
 
-			if (!lh->viewNSWE.isMoving() && backgroundLayer.heatmap.IsDirty() && lh->globalOptions.showHeatmap) {
-				backgroundLayer.UpdateHeatmapTexture(lh->viewNSWE.target);
-				backgroundLayer.heatmap.MakeClean();
-			}
 
 			if (lh->globalOptions.showPaths) {
 				if (lh->globalOptions.regenPathColours) {
@@ -368,6 +360,21 @@ int StartGLProgram(LocationHistory* lh)
 	return 0;
 }
 
+
+void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
+{
+	//printf("Resize %i %i\t", windowNewWidth, windowNewHeight);
+	pLocationHistory->windowDimensions.height = windowNewHeight;
+	pLocationHistory->windowDimensions.width = windowNewWidth;
+	glViewport(0, 0, windowNewWidth, windowNewHeight);
+	glBindTexture(GL_TEXTURE_2D, fboInfo.fboTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	heatmapLayer.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
+	pLocationHistory->viewNSWE.target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
+
+	return;
+}
 
 void DisplayIfGLError(const char* message, bool alwaysshow)
 {
