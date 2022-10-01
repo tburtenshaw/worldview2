@@ -432,6 +432,13 @@ void FrameBufferObjectInfo::Draw(float width, float height)
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
+void FrameBufferObjectInfo::UpdateSize(int width, int height)
+{
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+}
+
 void HeatmapLayer::Setup(int width, int height)
 {
 	//Create the FBO which is drawn to
@@ -443,9 +450,9 @@ void HeatmapLayer::Setup(int width, int height)
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 
 	//Unbind everything
@@ -482,13 +489,23 @@ void HeatmapLayer::SetupVertices()
 	//timestamp
 	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
 	glEnableVertexAttribArray(1);
+
+	//accuracy
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, accuracy));
+	glEnableVertexAttribArray(2);
+
 }
 
-void HeatmapLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe)
+void HeatmapLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options)
 {
 	shader.UseMe();
-	shader.SetUniformFromFloats("resolution", width, height);
-	shader.SetUniformFromNSWE("nswe", nswe);
+	
+	shader.SetUniform(uniformNswe, nswe);
+	shader.SetUniform(uniformResolution, width, height);
+	shader.SetUniform(uniformEarliestTimeToShow, options->earliestTimeToShow);
+	shader.SetUniform(uniformLatestTimeToShow, options->latestTimeToShow);
+	shader.SetUniform(uniformMinimumAccuracy, (unsigned long)options->minimumaccuracy);
+
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	//change the blending options
@@ -528,4 +545,12 @@ void HeatmapLayer::SetupShaders()
 	shader.LoadShaderFromFile("heatmapFS.glsl", GL_FRAGMENT_SHADER);
 	shader.LoadShaderFromFile("heatmapGS.glsl", GL_GEOMETRY_SHADER);
 	shader.CreateProgram();
+
+	//load the uniform locations by names into integers
+	shader.LoadUniformLocation(&uniformNswe, "nswe");
+	shader.LoadUniformLocation(&uniformResolution, "resolution");
+	shader.LoadUniformLocation(&uniformEarliestTimeToShow, "earliesttimetoshow");
+	shader.LoadUniformLocation(&uniformLatestTimeToShow, "latesttimetoshow");
+	shader.LoadUniformLocation(&uniformMinimumAccuracy, "minimumaccuracy");
+
 }

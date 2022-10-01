@@ -100,17 +100,11 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Begin("Heatmap");
 	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
 	
-	ImGui::SliderFloat("Size", &options->heatmapmaxvalue, 0.0f, 1000.0f, "%.1f");
-	ImGui::Checkbox("_Predict paths", &options->predictpath);
-	ImGui::Checkbox("_Blur by accurracy", &options->blurperaccuracy);
+	ImGui::SliderFloat("Max value", &options->heatmapmaxvalue, 0.0f, 1000.0f, "%.1f");
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
 	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
 	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
 
-	if (options->blurperaccuracy != oldBlurperaccurary) {
-		oldBlurperaccurary = options->blurperaccuracy;
-		//lh->heatmap->MakeDirty();
-	}
 
 	if (options->gaussianblur != oldBlur) {
 		oldBlur = options->gaussianblur;

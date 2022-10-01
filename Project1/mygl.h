@@ -57,17 +57,17 @@ public:
 };
 
 class FrameBufferObjectInfo :public GLRenderLayer {
+private:
+	unsigned int fbo;
+	unsigned int fboTexture;
+
 public:
 	//FrameBufferObjectInfo();
 	//~FrameBufferObjectInfo();
-
-	unsigned int fbo;
-	unsigned int fboTexture;
 	void BindToDrawTo();	//binds this fbo
-
 	void SetupFrameBufferObject(int width, int height);
 	void Draw(float width, float height);
-
+	void UpdateSize(int width, int height);
 };
 
 class PathLayer : public GLRenderLayer {
@@ -79,7 +79,7 @@ public:
 };
 
 class PointsLayer : public GLRenderLayer {
-public:
+private:
 	unsigned int uniformNswe;
 	unsigned int uniformResolution;
 	unsigned int uniformPointRadius;
@@ -93,7 +93,7 @@ public:
 	unsigned int uniformLatestTimeToShow;
 	unsigned int uniformPalette;
 	unsigned int uniformColourBy;
-
+public:
 	float palette[24][4];
 	void SetupShaders();
 	void SetupVertices();
@@ -122,12 +122,18 @@ class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
 	void SetupVertices();
-	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe);
+	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options);
 	void UpdateSize(int width, int height);
 
 	unsigned int texture;
 private:
 	void SetupShaders();
 	unsigned int fbo;
-	
+
+	//shader uniforms
+	unsigned int uniformNswe;
+	unsigned int uniformResolution;
+	unsigned int uniformEarliestTimeToShow;
+	unsigned int uniformLatestTimeToShow;
+	unsigned int uniformMinimumAccuracy;
 };

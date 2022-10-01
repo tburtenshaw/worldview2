@@ -59,12 +59,17 @@ PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : 
 
 }
 
+PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_, int accuracy_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f), rgba({ 0,0,0,0 }), accuracy(accuracy_)
+{
+
+}
+
 GlobalOptions::GlobalOptions()
 {
 	seconds = 0.0f;	//an easy way for anyone to get the seconds counter (it's set in main loop by ImGui IO)
 	
 	showPaths = false;
-	showPoints = true;
+	showPoints = false;
 	showHeatmap = false;
 
 	linewidth = 2.0;

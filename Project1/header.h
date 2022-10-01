@@ -109,9 +109,11 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 	RGBA rgba;
 
 	float detaillevel;
+	int accuracy;
 
 	PathPlotLocation();
 	PathPlotLocation(float lat, float lon, unsigned long ts);
+	PathPlotLocation(float lat, float lon, unsigned long ts, int accuracy);
 };
 
 class GlobalOptions {

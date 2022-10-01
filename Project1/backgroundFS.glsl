@@ -61,10 +61,10 @@ vec3 turbo(float t) {
 
 vec4 FloatToColour(float vraw, float mraw)	{
 	
-	if (vraw>2)	{
+	if (vraw>0.0)	{
 		vec4 c;
-		float r=log(vraw)/log(mraw); //value/max
-		float a=smoothstep(0.0,0.2,r);
+		float r=log(vraw+1.0)/log(mraw+1.0); //value/max
+		float a=smoothstep(0.0,0.05,r);
 		if (palette==1)	{
 			c=vec4(inferno(r),a);
 		}

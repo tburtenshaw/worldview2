@@ -2,6 +2,7 @@
 
 layout (location = 0) in vec2 vp;
 layout (location = 1) in uint timestamp;
+layout (location = 2) in uint accuracy;
 
 uniform vec4 nswe;
 uniform vec2 resolution;
@@ -11,6 +12,7 @@ uniform vec2 resolution;
 //uniform uint latesttimetoshow;
 
 out uint ts;
+out uint acc;
 
 
 void main()
@@ -24,6 +26,7 @@ void main()
 	midy = (nswe.x+nswe.y)/2; 
 	
 	ts=timestamp;	//pass on to the geometry shader
+	acc=accuracy;
 
 	float correctedLongitude=vp.x;
 

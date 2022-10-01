@@ -77,7 +77,7 @@ void CreatePathPlotLocations(LocationHistory* lh)
 	lh->pathPlotLocations.reserve(lh->locations.size());	//it'll be as big as the number of locations
 
 	for (std::vector<Location>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
-		lh->pathPlotLocations.emplace_back((float)iter->latitude, (float)iter->longitude, MyTimeZone::FixToLocalTime(iter->timestamp));
+		lh->pathPlotLocations.emplace_back((float)iter->latitude, (float)iter->longitude, MyTimeZone::FixToLocalTime(iter->timestamp),iter->accuracy);
 	}
 
 	OptimiseDetail(lh->pathPlotLocations);

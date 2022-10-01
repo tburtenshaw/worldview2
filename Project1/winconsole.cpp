@@ -111,8 +111,23 @@ int OpenAndReadLocationFile(LocationHistory* lh)
 	SortAndCalculateEarliestAndLatest(lh);
 
 	CreatePathPlotLocations(lh);
+	
+	//Statistics
 	lh->globalOptions.earliestTimeToShow = lh->earliesttimestamp;
 	lh->globalOptions.latestTimeToShow = lh->latesttimestamp;
+
+	//histogram of accuracy
+	constexpr int binsize = 5;
+	constexpr int bins = 21; //last is 100+
+	int histoAccuracyTenth[bins] = { 0 };
+	for (auto &loc : lh->pathPlotLocations) {
+		histoAccuracyTenth[max(0,min(loc.accuracy / binsize,bins-1))]+=1;
+	}
+
+	for (int i = 0; i < bins; i++) {
+		printf("%i %i (%f%%)\n", i * binsize, histoAccuracyTenth[i],100.0f*(float)histoAccuracyTenth[i]/(float)lh->pathPlotLocations.size());
+	}
+
 
 	lh->isLoadingFile = false;
 	lh->isFullyLoaded = true;
@@ -284,7 +299,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		//try to do NewHeatmap rendering
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			heatmapLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
+			heatmapLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 		}
 
 
@@ -366,11 +381,12 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 	//printf("Resize %i %i\t", windowNewWidth, windowNewHeight);
 	pLocationHistory->windowDimensions.height = windowNewHeight;
 	pLocationHistory->windowDimensions.width = windowNewWidth;
-	glViewport(0, 0, windowNewWidth, windowNewHeight);
-	glBindTexture(GL_TEXTURE_2D, fboInfo.fboTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
+	glViewport(0, 0, windowNewWidth, windowNewHeight);
+
+	fboInfo.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
 	heatmapLayer.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
+
 	pLocationHistory->viewNSWE.target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
 
 	return;
