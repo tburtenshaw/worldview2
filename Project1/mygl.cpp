@@ -443,7 +443,7 @@ void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const
 	glBindTexture(GL_TEXTURE_2D, highresTexture);
 
 	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, NEWheatmapTexture);
+	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
 
 	DisplayIfGLError("before bva background", false);
 	glBindVertexArray(vao);

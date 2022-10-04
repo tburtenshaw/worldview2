@@ -317,7 +317,7 @@ int StartGLProgram(LocationHistory* lh)
 		fboInfo.BindToDrawTo();
 
 		//Background layer has worldmap, heatmap and highres
-		backgroundLayer.NEWheatmapTexture = heatmapLayer.texture;
+		backgroundLayer.heatmapTexture = heatmapLayer.texture;
 		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, lh->globalOptions);
 
 		//We only draw the points if everything is loaded and initialised.
@@ -327,19 +327,11 @@ int StartGLProgram(LocationHistory* lh)
 				lh->regions[0]->Populate(lh);
 			}
 
-
 			if (lh->globalOptions.showPaths) {
-				if (lh->globalOptions.regenPathColours) {
-					//printf("regen pathplot\n");
-					//ColourPathPlot(lh);
-					//pathLayer.BindBuffer();
-					//glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
-				}
 				pathLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
 			}
 
 			if (lh->globalOptions.showPoints) {
-				//DrawPoints(&pointsInfo);
 				pointsLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 			}
 

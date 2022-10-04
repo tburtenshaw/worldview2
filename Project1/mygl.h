@@ -52,7 +52,7 @@ private:
 public:
 	unsigned int worldTexture;	//the background NASA map
 	unsigned int highresTexture; //used for the higher res insert
-	unsigned int NEWheatmapTexture;
+	unsigned int heatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
 	unsigned int highresTextureLocation;
@@ -66,7 +66,7 @@ public:
 	void Draw(RectDimension window, const NSWE& viewNSWE, const GlobalOptions& options);
 
 	BackgroundLayer()
-		:worldTexture(0),highresTexture(0), NEWheatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
+		:worldTexture(0),highresTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
 
 };
 
@@ -88,7 +88,6 @@ class PathLayer : public GLRenderLayer {
 public:
 	void SetupShaders();
 	void SetupVertices();
-	void BindBuffer(); //this just temporary most likely, as we should bind only in the layer code
 	void Draw(float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
 };
 

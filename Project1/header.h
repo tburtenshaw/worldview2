@@ -106,7 +106,6 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 	float latitude;
 
 	unsigned long timestamp;
-	//RGBA rgba;
 
 	float detaillevel;
 	int accuracy;
@@ -204,7 +203,6 @@ public:
 	};
 
 	RGBA paletteMonthOfYear[12];
-	bool regenPathColours;
 
 	//points
 	float pointdiameter;
@@ -253,7 +251,6 @@ public:
 	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU, it's what we should use
 
 	static constexpr int numberOfLODs = 4;
-	std::vector<PathPlotLocation> locationsLOD[numberOfLODs];
 
 
 	int OpenAndReadLocationFile();
@@ -291,9 +288,6 @@ struct WVFormat {
 void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
 int StartGLProgram(LocationHistory* lh);
 void DisplayIfGLError(const char* message, bool alwaysshow);
-
-
-//int CloseLocationFile(LocationHistory* lh);
 
 
 int SaveWVFormat(LocationHistory* lh, std::wstring);
