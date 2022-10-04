@@ -130,6 +130,7 @@ void main() {
 	
 	
 	//find the UV of the heatmap, then add it.
+	/*
 	vec2 heatmapuv;
 	float heatmapwidth, heatmapheight;
 	heatmapwidth = (nswe.w-nswe.z);
@@ -138,9 +139,13 @@ void main() {
 	heatmapuv.x=(width* gl_FragCoord.x/resolution.x + nswe.z-nswe.z)/heatmapwidth;
 
 	heatmapuv.y=-(nswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
-
+	*/
 	float heatvalue;
-	heatvalue=texture(heatmapTexture, heatmapuv).r;
+	//heatvalue=texture(heatmapTexture, heatmapuv).r;
+	
+	//the heatmap now exactly must match the background (previously it had its own coords)
+	//this makes getting the coord easier
+	heatvalue=texelFetch(heatmapTexture,ivec2(gl_FragCoord.xy),0).r;
 
 	vec4 ht=FloatToColour(heatvalue, maxheatmapvalue);
 	

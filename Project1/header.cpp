@@ -24,17 +24,7 @@ LocationHistory::LocationHistory()
 	//filename = L"d:\\Location History.json";
 	filename = L"test.wvf";
 
-	earliesttimestamp = 2145916800;
-	latesttimestamp = 0;
-
-	//viewNSWE = new MovingTarget;
-
-	//heatmap = new Heatmap;
-
-	//highres = new HighResManager;	//to move to background layer class
-
-	//globalOptions = new GlobalOptions;
-
+	
 	isFileChosen = false;
 	isLoadingFile = false;
 	isFullyLoaded = false;
@@ -49,17 +39,17 @@ LocationHistory::~LocationHistory()
 }
 
 PathPlotLocation::PathPlotLocation()
-	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f), rgba({ 0,0,0,0 })
+	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f) 
 {
 
 }
 
-PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f), rgba({0,0,0,0})
+PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f)
 {
 
 }
 
-PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_, int accuracy_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f), rgba({ 0,0,0,0 }), accuracy(accuracy_)
+PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_, int accuracy_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f),accuracy(accuracy_)
 {
 
 }
@@ -97,4 +87,27 @@ GlobalOptions::GlobalOptions()
 	predictpath = false;
 	heatmapmaxvalue = 500;
 
+}
+
+//should be moved to a better cpp file
+
+void LocationHistory::Statistics::GenerateStatsOnLoad(const std::vector<PathPlotLocation>& locs)
+{
+	numberOfLocations = locs.size();
+	earliestTimestamp = locs.front().timestamp;
+	latestTimestamp = locs.back().timestamp;
+
+	AccuracyHistogram(locs);
+}
+
+void LocationHistory::Statistics::AccuracyHistogram(const std::vector<PathPlotLocation>& locs)
+{
+
+	for (auto& loc : locs) {
+		histoAccuracy[std::max(0, std::min(loc.accuracy / accuracyBinSize, accuracyBins - 1))] += 1; //the integer division is deliberate, to floor it to the bin required
+	}
+
+	for (int i = 0; i < accuracyBins; i++) {
+		printf("%i %i (%f%%)\n", i * accuracyBinSize, histoAccuracy[i], 100.0f * (float)histoAccuracy[i] / (float)numberOfLocations);
+	}
 }

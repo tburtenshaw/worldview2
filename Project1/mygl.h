@@ -9,14 +9,28 @@
 class RGBA;
 //class Shader;
 
+struct TimeLookup {
+	unsigned long t;
+	size_t index;
+};
+
 class GLRenderLayer {
 private:
 	static unsigned int vboLocations;	//VBO that is the location data, so we don't use it multiple times
+	static constexpr int lookupPieces = 32;
+	static TimeLookup timeLookup[lookupPieces];	//cut up into 32 pieces, so can reduce draw data sent if not using whole time
+	static void CreateTimeLookupTable(std::vector<PathPlotLocation>& locs);
+	static TimeLookup knownStart;	//store these, so only does loop if it's different
+	static TimeLookup knownEnd;
+
 protected:
 	unsigned int vao;	//Vertex array object
 	unsigned int vbo;	//Vertex buffer object - ?maybe could share these
-	
 	void UseLocationVBO();
+	
+	static void LookupFirstAndCount(unsigned long starttime, unsigned long endtime, GLint *first, GLsizei *count);
+	static void *locationsFront;
+	static size_t locationsCount;
 
 public:
 	Shader shader;
@@ -75,7 +89,7 @@ public:
 	void SetupShaders();
 	void SetupVertices();
 	void BindBuffer(); //this just temporary most likely, as we should bind only in the layer code
-	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
+	void Draw(float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
 };
 
 class PointsLayer : public GLRenderLayer {
@@ -97,7 +111,7 @@ public:
 	float palette[24][4];
 	void SetupShaders();
 	void SetupVertices();
-	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options);
+	void Draw(float width, float height, NSWE* nswe, GlobalOptions* options);
 	
 };
 
@@ -122,7 +136,7 @@ class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
 	void SetupVertices();
-	void Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options);
+	void Draw(float width, float height, NSWE* nswe, GlobalOptions* options);
 	void UpdateSize(int width, int height);
 
 	unsigned int texture;

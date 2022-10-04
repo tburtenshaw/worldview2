@@ -45,94 +45,104 @@ HeatmapLayer heatmapLayer;
 
 
 
-int CloseLocationFile(LocationHistory* lh)	//closes the file, empties the arrays, resets names/counts
+int LocationHistory::CloseLocationFile()	//closes the file, empties the arrays, resets names/counts
 {
-	//this should probably be method of LocationHistory
-	if (lh->isLoadingFile) {
+	if (isLoadingFile) {
 		return 2;
 	}
 
-	lh->isFileChosen = false;
-	lh->isFullyLoaded = true;	//we're loaded with nothing
-	lh->isInitialised = false;
-	lh->isLoadingFile = false;
+	isFileChosen = false;
+	isFullyLoaded = true;	//we're loaded with nothing
+	isInitialised = false;
+	isLoadingFile = false;
 
-	if (!lh->locations.empty()) {
-		lh->locations.clear();
+	if (!locations.empty()) {
+		locations.clear();
 	}
-	if (!lh->pathPlotLocations.empty()) {
-		lh->pathPlotLocations.clear();
+	if (!pathPlotLocations.empty()) {
+		pathPlotLocations.clear();
 	}
 
 	//lh->filename = L"";	//can't do this, as it's where the file to load is stored.
-	lh->filesize = 0;
+	filesize = 0;
 	
 	return 0;
 }
 
-int OpenAndReadLocationFile(LocationHistory* lh)
+int LocationHistory::OpenAndReadLocationFile()
 {
 	HANDLE hLocationFile;
 
-	if (lh->isLoadingFile) {	//we don't want to load if we're already loading something
+	if (isLoadingFile) {	//we don't want to load if we're already loading something
 		return 2;
 	}
 
-	hLocationFile = CreateFile(lh->filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	hLocationFile = CreateFile(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
 	if (hLocationFile == INVALID_HANDLE_VALUE) {
-		lh->isFileChosen = false;
-		lh->isLoadingFile = false;
-		lh->isFullyLoaded = false;
+		isFileChosen = false;
+		isLoadingFile = false;
+		isFullyLoaded = false;
 		return 1;
 	}
 
-	CloseLocationFile(lh);	//close any existing file
-	lh->isLoadingFile = true;
-	lh->isFileChosen = true;
-	lh->isInitialised = false;
+	CloseLocationFile();	//close any existing file
+	isLoadingFile = true;
+	isFileChosen = true;
+	isInitialised = false;
 
+	LARGE_INTEGER LIfilesize;
+	GetFileSizeEx(hLocationFile, &LIfilesize);
+	filesize = LIfilesize.QuadPart;
+	printf("File size: %i\n", filesize);
 
-	LARGE_INTEGER filesize;
-	GetFileSizeEx(hLocationFile, &filesize);
-	lh->filesize = filesize.QuadPart;
-	printf("File size: %i\n", lh->filesize);
-
-
-	std::string extension = std::filesystem::path(lh->filename).extension().string();
+	std::string extension = std::filesystem::path(filename).extension().string();
 	if (extension == ".json") {
-		LoadJsonFile(lh, hLocationFile);
+		LoadJsonFile(this, hLocationFile);
 	}
 	else if (extension == ".wvf") {
-		LoadWVFormat(lh, hLocationFile);
+		LoadWVFormat(this, hLocationFile);
 	}
 	CloseHandle(hLocationFile);
 
-	SortAndCalculateEarliestAndLatest(lh);
+	//sort by timestamp
+	std::sort(locations.begin(), locations.end());	//stable_sort might be better, as doesn't muck around if the same size
 
-	CreatePathPlotLocations(lh);
-	
-	//Statistics
-	lh->globalOptions.earliestTimeToShow = lh->earliesttimestamp;
-	lh->globalOptions.latestTimeToShow = lh->latesttimestamp;
+	//copy the array to a more compact one for sending to GPU
+	CreatePathPlotLocations();
 
-	//histogram of accuracy
-	constexpr int binsize = 5;
-	constexpr int bins = 21; //last is 100+
-	int histoAccuracyTenth[bins] = { 0 };
-	for (auto &loc : lh->pathPlotLocations) {
-		histoAccuracyTenth[max(0,min(loc.accuracy / binsize,bins-1))]+=1;
+	//Statistics, including count, earliest/latest etc.
+	statistics.GenerateStatsOnLoad(pathPlotLocations);
+
+	globalOptions.earliestTimeToShow = statistics.earliestTimestamp;
+	globalOptions.latestTimeToShow = statistics.latestTimestamp;
+
+	PathPlotLocation currentloc;
+	float precisiontarget=10.0f/1000000.0f; //24 deg per 1 million pixels
+	int totalnumber=0;
+	while (precisiontarget < 150000.0 / 1000000.0f) {
+		int number = 0;
+		for (auto& loc : pathPlotLocations) {
+			if ((fabsf(currentloc.longitude - loc.longitude) > precisiontarget) || (fabsf(currentloc.latitude - loc.latitude) > precisiontarget) ||
+				(loc.timestamp - currentloc.timestamp > 60 * 60 * 24)) {
+				currentloc = loc;
+				number++;
+			}
+		}
+		printf("%f %i.\n", precisiontarget, number);
+		totalnumber += number;
+		precisiontarget *= 10.0f;
 	}
+	printf("Total: %i. Size of struct: %i. Total MB: %f\n", totalnumber,sizeof(PathPlotLocation), (float)(totalnumber* sizeof(PathPlotLocation))/(2<<20));
 
-	for (int i = 0; i < bins; i++) {
-		printf("%i %i (%f%%)\n", i * binsize, histoAccuracyTenth[i],100.0f*(float)histoAccuracyTenth[i]/(float)lh->pathPlotLocations.size());
-	}
+	//Plan: to have five levels of detail (5 LoDs) from [0] to [4]. These are used just for plotting.
+	//0 is detail <10 degrees per million pixels, then 1 is <100 DPMP etc.
+	//All get reset if 24 hours passes.
 
-
-	lh->isLoadingFile = false;
-	lh->isFullyLoaded = true;
-	lh->isInitialised = false;
-	lh->isFileChosen = false;
+	isLoadingFile = false;
+	isFullyLoaded = true;
+	isInitialised = false;
+	isFileChosen = false;
 	return 0;
 }
 
@@ -280,7 +290,7 @@ int StartGLProgram(LocationHistory* lh)
 		lh->viewNSWE.movetowards(lh->globalOptions.seconds);
 
 		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
-			std::thread loadingthread(OpenAndReadLocationFile, pLocationHistory);
+			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, pLocationHistory);
 			loadingthread.detach();
 		}
 
@@ -299,7 +309,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		//try to do NewHeatmap rendering
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			heatmapLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+			heatmapLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 		}
 
 
@@ -320,17 +330,17 @@ int StartGLProgram(LocationHistory* lh)
 
 			if (lh->globalOptions.showPaths) {
 				if (lh->globalOptions.regenPathColours) {
-					printf("regen pathplot\n");
-					ColourPathPlot(lh);
-					pathLayer.BindBuffer();
-					glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
+					//printf("regen pathplot\n");
+					//ColourPathPlot(lh);
+					//pathLayer.BindBuffer();
+					//glBufferSubData(GL_ARRAY_BUFFER, 0, pLocationHistory->pathPlotLocations.size() * sizeof(PathPlotLocation), &pLocationHistory->pathPlotLocations.front());
 				}
-				pathLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
+				pathLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
 			}
 
 			if (lh->globalOptions.showPoints) {
 				//DrawPoints(&pointsInfo);
-				pointsLayer.Draw(pLocationHistory->pathPlotLocations, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+				pointsLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 			}
 
 			regionsLayer.UpdateFromRegionsData(lh->regions);
@@ -409,7 +419,7 @@ int main(int argc, char** argv)
 
 	pLocationHistory->isFileChosen = true;
 	if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
-		std::thread loadingthread(OpenAndReadLocationFile, pLocationHistory);
+		std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, &locationHistory);
 		loadingthread.detach();
 	}
 

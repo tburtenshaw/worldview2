@@ -106,7 +106,7 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 	float latitude;
 
 	unsigned long timestamp;
-	RGBA rgba;
+	//RGBA rgba;
 
 	float detaillevel;
 	int accuracy;
@@ -137,9 +137,6 @@ public:
 	int indexPaletteHour = 0;
 	int indexPaletteWeekday = 0;
 	int indexPaletteYear = 0;
-
-
-
 
 
 	RGBA paletteHourOfDay[24]
@@ -226,35 +223,62 @@ public:
 	float heatmapmaxvalue;
 };
 
+
+
 class LocationHistory {
+private:
+	class Statistics {	//contains less necessary data calculated either when loading LH, or later
+		public:
+			void GenerateStatsOnLoad(const std::vector<PathPlotLocation>& locs);
+			unsigned long numberOfLocations;
+			unsigned long earliestTimestamp;
+			unsigned long latestTimestamp;
+			Statistics() :numberOfLocations(0), earliestTimestamp(0), latestTimestamp(0) {}
+
+		private:
+			//histogram of accuracy
+			static constexpr int accuracyBinSize = 5;
+			static constexpr int accuracyBins = 21; //last is 100+
+			int histoAccuracy[accuracyBins] = { 0 };
+			void AccuracyHistogram(const std::vector<PathPlotLocation>& locs);
+
+
+		};
 public:
 	std::wstring filename;
 	unsigned long filesize;
 
 	std::vector<Location> locations;	//this holds the raw data from the json file, double precision
-	unsigned long earliesttimestamp;
-	unsigned long latesttimestamp;
 
-	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU
+	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU, it's what we should use
 
+	static constexpr int numberOfLODs = 4;
+	std::vector<PathPlotLocation> locationsLOD[numberOfLODs];
+
+
+	int OpenAndReadLocationFile();
+	int CloseLocationFile();
+	void CreatePathPlotLocations();
 
 	LocationHistory();
 	~LocationHistory();
 
+//should be in another class re file loading
 	bool isFileChosen;
 	bool isFullyLoaded;
 	bool isLoadingFile;
 	bool isInitialised;
 	unsigned long totalbytesread;
 
+//should be in another class re: overall view
 	MovingTarget viewNSWE;
 	RectDimension windowDimensions;
 
 	std::vector<Region*> regions;
 
 	
-
 	GlobalOptions globalOptions;
+	Statistics statistics;
 };
 
 
@@ -268,34 +292,10 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
 int StartGLProgram(LocationHistory* lh);
 void DisplayIfGLError(const char* message, bool alwaysshow);
 
-//void SetupBackgroundVertices(BackgroundInfo* backgroundInfo);
-//void LoadBackgroundImageToTexture(unsigned int* texture);
-//void MakeHighresImageTexture(unsigned int* texture);
-//void MakeHeatmapTexture(NSWE* nswe, unsigned int* texture);
-//void SetupFrameBufferObject(FrameBufferObjectInfo* fboInfo, int width, int height);
-//void DrawFrameBuffer(LocationHistory* lh);
 
-//void UpdateHeatmapTexture(NSWE* nswe, BackgroundInfo* backgroundInfo);
+//int CloseLocationFile(LocationHistory* lh);
 
-//void DrawBackgroundAndHeatmap(LocationHistory* lh);
 
-//paths
-//void SetupPathsBufferDataAndVertexAttribArrays(MapPathInfo* mapPathInfo);
-//void DrawPaths(MapPathInfo* mapPathInfo);
-
-//points
-//void SetupPointsBufferDataAndVertexAttribArrays(MapPointsInfo* mapPointsInfo);
-//void DrawPoints(MapPointsInfo* mapPointsInfo);
-
-//regions
-//void SetupRegionsBufferDataAndVertexAttribArrays(MapRegionsInfo* mapRegionsInfo);
-//void UpdateDisplayRegions(DisplayRegionsLayer* mapRegionsInfo);
-//void DrawRegions(MapRegionsInfo* mapRegionsInfo);
-
-int CloseLocationFile(LocationHistory* lh);
-int OpenAndReadLocationFile(LocationHistory* lh);
-
-void SortAndCalculateEarliestAndLatest(LocationHistory *lh);
 int SaveWVFormat(LocationHistory* lh, std::wstring);
 
 

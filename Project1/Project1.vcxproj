@@ -177,7 +177,6 @@
     <ClCompile Include="..\..\imgui-master\imgui_widgets.cpp" />
     <ClCompile Include="gui.cpp" />
     <ClCompile Include="header.cpp" />
-    <ClCompile Include="heatmap.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="mygl.cpp" />
     <ClCompile Include="mytimezone.cpp" />
@@ -193,7 +192,6 @@
   <ItemGroup>
     <ClInclude Include="gui.h" />
     <ClInclude Include="header.h" />
-    <ClInclude Include="heatmap.h" />
     <ClInclude Include="highresmanager.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="loadjson.h" />

@@ -8,7 +8,14 @@
 #include <vector>
 #include <stb_image.h>
 
+//Static members need setting
 unsigned int GLRenderLayer::vboLocations = 0;
+void* GLRenderLayer::locationsFront = nullptr;
+size_t GLRenderLayer::locationsCount = 0;
+TimeLookup GLRenderLayer::timeLookup[] = { 0 };
+TimeLookup GLRenderLayer::knownStart = { 0 };
+TimeLookup GLRenderLayer::knownEnd = { 0 };
+
 
 void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao/vbo for -1,-1, to 1,1 square
 {
@@ -31,17 +38,80 @@ void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao
 	glEnableVertexAttribArray(0);
 }
 
+void GLRenderLayer::CreateTimeLookupTable(std::vector<PathPlotLocation>& locs)
+{
+	//Lookup table for start/end times
+	//we divide the list into 33 (pieces+1) sections, (start and end are known), so can start DrawArray at that point
+	size_t interval = locationsCount / (lookupPieces+1);
+	size_t c = 0;
+	
+	for (int i = 0; i < lookupPieces; i++) {
+		c += interval;
+		timeLookup[i].index = c;
+		timeLookup[i].t = locs[c].timestamp;
+
+		//printf("Lookup %i. Count: %i, ts:%i\n", i, c, locs[c].timestamp);
+	}
+}
+
 void GLRenderLayer::UseLocationVBO()
 {
 	vbo = vboLocations;
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 }
 
+void GLRenderLayer::LookupFirstAndCount(unsigned long starttime, unsigned long endtime, GLint* first, GLsizei* count)
+{
+	//Check if we've already calculated it
+	if ((starttime == knownStart.t) && (endtime == knownEnd.t)) {
+		*first = knownStart.index;
+		*count = knownEnd.index- knownStart.index;
+		//printf("k");
+		return;
+	}
+	
+	
+	*first = 0;
+	int i = 0;
+	for (; (i < 32) && (timeLookup[i].t < starttime); i++) {	//don't run if we've exceeded start time
+		*first = timeLookup[i].index;	//will only be changed if
+	}
+	knownStart.t = starttime;
+	knownStart.index = *first;
+
+	//after this, 'i' will be at the next lookup index
+	//printf("start time:%i. i %i, s: %i. \n", starttime, i, *first);
+	for (int e = i; e < 32; e++) {
+		//printf("endtime %i. e:%i, t:%i.\n", endtime, e, timeLookup[e].t);
+		if (timeLookup[e].t >= endtime) {
+			*count = timeLookup[e].index-1 - *first;
+			knownEnd.t = endtime;
+			knownEnd.index = timeLookup[e].index-1;
+			//printf("E:%i\n", e);
+			return;
+		}
+	}
+	
+	*count = locationsCount - *first;
+	knownEnd.t = endtime;
+	knownEnd.index = locationsCount-1;
+
+
+}
+
 void GLRenderLayer::CreateLocationVBO(std::vector<PathPlotLocation>& locs)
 {
+	//store these for use in other functions
+	locationsFront = &locs.front();
+	locationsCount = locs.size();
+
+	//Generate the buffer
 	glGenBuffers(1, &vboLocations);
 	glBindBuffer(GL_ARRAY_BUFFER, vboLocations);
-	glBufferData(GL_ARRAY_BUFFER, locs.size() * sizeof(PathPlotLocation), &locs.front(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, locationsCount * sizeof(PathPlotLocation), locationsFront, GL_STATIC_DRAW);
+
+	CreateTimeLookupTable(locs);
+	
 }
 
 void PointsLayer::SetupShaders()
@@ -87,15 +157,15 @@ void PointsLayer::SetupVertices()
 	glEnableVertexAttribArray(0);
 
 	//rgba colour
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
-	glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
+	//glEnableVertexAttribArray(1);
 
 	//timestamp
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
 	glEnableVertexAttribArray(2);
 }
 
-void PointsLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options)
+void PointsLayer::Draw(float width, float height, NSWE* nswe, GlobalOptions* options)
 {
 	//update uniform shader variables
 	shader.UseMe();
@@ -132,7 +202,8 @@ void PointsLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float h
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindVertexArray(vao);
-	glDrawArrays(GL_POINTS, 0, locs.size());
+	DisplayIfGLError("before dapts", false);
+	glDrawArrays(GL_POINTS, 0, locationsCount);
 }
 
 
@@ -217,6 +288,7 @@ void RegionsLayer::Draw(float width, float height, NSWE* nswe)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 	glBindVertexArray(vao);
+	DisplayIfGLError("before regions", false);
 	glDrawArrays(GL_POINTS, 0, displayRegions.size());//needs to be the number of vertices (not lines)
 	glBindVertexArray(0);
 	DisplayIfGLError("After DrawRegions.", false);
@@ -247,12 +319,12 @@ void PathLayer::SetupVertices()
 	glEnableVertexAttribArray(0);
 
 	//rgba colour
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
-	glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, rgba));
+	//glEnableVertexAttribArray(1);
 
 	//timestamp (maybe replace the whole array with a smaller copy, and let this be a colour)
-	//glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
-	//glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, timestamp));
+	glEnableVertexAttribArray(1);
 
 	//detail level
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(PathPlotLocation), (void*)offsetof(PathPlotLocation, detaillevel));
@@ -264,7 +336,7 @@ void PathLayer::BindBuffer()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 }
 
-void PathLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleSeconds)
+void PathLayer::Draw(float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleSeconds)
 {
 	//update uniform shader variables
 	shader.UseMe();
@@ -276,7 +348,7 @@ void PathLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float hei
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindVertexArray(vao);
-	glDrawArrays(GL_LINE_STRIP, 0, locs.size());
+	glDrawArrays(GL_LINE_STRIP, 0, locationsCount);
 
 }
 
@@ -373,6 +445,7 @@ void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, NEWheatmapTexture);
 
+	DisplayIfGLError("before bva background", false);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -496,7 +569,7 @@ void HeatmapLayer::SetupVertices()
 
 }
 
-void HeatmapLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float height, NSWE* nswe, GlobalOptions* options)
+void HeatmapLayer::Draw(float width, float height, NSWE* nswe, GlobalOptions* options)
 {
 	shader.UseMe();
 	
@@ -520,7 +593,18 @@ void HeatmapLayer::Draw(std::vector<PathPlotLocation>& locs, float width, float 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
 
-	glDrawArrays(GL_POINTS, 0, locs.size());
+	//Use lookup table to skip some
+	GLint first = 0;
+	GLsizei count = locationsCount;
+
+	LookupFirstAndCount(options->earliestTimeToShow, options->latestTimeToShow, &first, &count);
+	//printf("first: %i, count: %i.\n", first, count);
+	
+	DisplayIfGLError("before dahm", false);
+	glDrawArrays(GL_POINTS, first, count);
+	
+	//glDrawArrays(GL_POINTS, 0, locationsCount );
+	DisplayIfGLError("after dahm", false);
 
 	//now back to normal
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

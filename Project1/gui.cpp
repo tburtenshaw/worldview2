@@ -66,8 +66,10 @@ void Gui::MakeGUI(LocationHistory* lh)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->viewNSWE.north, lh->viewNSWE.south, lh->viewNSWE.west, lh->viewNSWE.east);
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->earliesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
-	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->latesttimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
+	ImGui::Text("DPMP: %f. PPD: %f",1000000.0f*lh->viewNSWE.width()/lh->windowDimensions.width, lh->windowDimensions.width/ lh->viewNSWE.width());
+
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->statistics.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->statistics.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
 	Gui::ShowRegionInfo(lh->regions[0], &lh->globalOptions);
 
@@ -163,17 +165,17 @@ void Gui::MakeGUI(LocationHistory* lh)
 		}
 	}
 
-	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp), ImGuiSliderFlags_AlwaysClamp)) {
+	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->statistics.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
 		correctedTime.tm_year = earliestYear - 1900;
 		options->earliestTimeToShow = mktime(&correctedTime);
 	}
 
-	if (options->earliestTimeToShow > lh->latesttimestamp) {
-		options->earliestTimeToShow = lh->latesttimestamp;
+	if (options->earliestTimeToShow > lh->statistics.latestTimestamp) {
+		options->earliestTimeToShow = lh->statistics.latestTimestamp;
 	}
 
-	if (options->earliestTimeToShow < lh->earliesttimestamp) {
-		options->earliestTimeToShow = lh->earliesttimestamp;
+	if (options->earliestTimeToShow < lh->statistics.earliestTimestamp) {
+		options->earliestTimeToShow = lh->statistics.earliestTimestamp;
 	}
 
 	//ensure the earliest time is always H=0, min=0,sec=0
@@ -192,7 +194,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	options->earliestTimeToShow = mktime(&correctedTime);
 
 	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
-	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->statistics.earliestTimestamp, &lh->statistics.latestTimestamp, "%u");
 
 	t = options->latestTimeToShow;
 	gmtime_s(&correctedTime, &t);
@@ -201,7 +203,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	latestYear = correctedTime.tm_year + 1900;
 
 	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
-	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->earliesttimestamp, &lh->latesttimestamp, "%u");
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->statistics.earliestTimestamp, &lh->statistics.latestTimestamp, "%u");
 
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
@@ -228,7 +230,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	if (options->colourby == 4) {
 		options->indexPaletteYear = Palette_Handler::MatchingPalette(options->indexPaletteYear, Palette::YEAR);
 		int n = 0;
-		for (int year = MyTimeZone::GetYearFromTimestamp(lh->earliesttimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->latesttimestamp) + 1) && (n < 24); year++) {
+		for (int year = MyTimeZone::GetYearFromTimestamp(lh->statistics.earliestTimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->statistics.latestTimestamp) + 1) && (n < 24); year++) {
 			color[n] = Palette_Handler::PaletteColorImVec4(options->indexPaletteYear, year);
 
 			std::string text = "Year ";
@@ -328,7 +330,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 		ImGui::BeginDisabled();
 
 	if (ImGui::Button("Close")) {
-		CloseLocationFile(lh);
+		lh->CloseLocationFile();
 		lh->filename = L"";
 	}
 	if (disabled)

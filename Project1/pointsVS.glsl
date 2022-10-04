@@ -2,7 +2,7 @@
 #define PI 3.1415926538
 
 layout (location = 0) in vec2 vp;
-layout (location = 1) in vec4 pointcolour;
+//layout (location = 1) in vec4 pointcolour;
 layout (location = 2) in uint timestamp;
 
 uniform vec4 nswe;
@@ -124,7 +124,7 @@ void main()
 
 	gl_Position = vec4(((correctedLongitude-midx)/width*2),(vp.y-midy)/height*2,0.0,1.0);
 	
-	vcolour = pointcolour.rgba; //vec3(0.7,0.9,0.25);
+	//vcolour = pointcolour.rgba; //vec3(0.7,0.9,0.25);
 	
 	
 	if (colourby==1)	{
