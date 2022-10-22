@@ -40,11 +40,8 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::MakeGUI(LocationHistory* lh)
+void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options)
 {
-	GlobalOptions* options;
-	options = &lh->globalOptions;
-
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
 	sigfigs = Gui::BestSigFigsFormat(&lh->viewNSWE, lh->windowDimensions);
@@ -73,7 +70,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	Gui::ShowRegionInfo(lh->regions[0], &lh->globalOptions);
+	Gui::ShowRegionInfo(lh->regions[0], options);
 
 	ImGui::End();
 
@@ -90,12 +87,12 @@ void Gui::MakeGUI(LocationHistory* lh)
 	for (std::size_t i = 1; i < lh->regions.size(); i++) {
 		if (lh->regions[i]->shouldShowWindow) {
 			ImGui::Begin((lh->regions[i]->displayname + "###regionwindow" + std::to_string(lh->regions[i]->id)).c_str());
-			Gui::ShowRegionInfo(lh->regions[i], &lh->globalOptions);
+			Gui::ShowRegionInfo(lh->regions[i], options);
 			ImGui::End();
 		}
 	}
 
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
 
 	static float oldBlur = 0;

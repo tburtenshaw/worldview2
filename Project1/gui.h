@@ -12,7 +12,7 @@ struct RectDimension;
 
 namespace Gui {
 	void ShowLoadingWindow(LocationHistory* lh);
-	void MakeGUI(LocationHistory* lh);
+	void MakeGUI(LocationHistory* lh, GlobalOptions* options);
 	void ShowRegionInfo(Region* r, GlobalOptions* options);
 	void DayHistogram(Region* r, GlobalOptions* options, float height);
 	void ListDatesInRegion(Region* r);

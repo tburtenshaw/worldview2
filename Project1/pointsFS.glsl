@@ -18,9 +18,8 @@ void main() {
 vec2 uv = gl_FragCoord.xy;
 
 // Circle
-vec2 tempPos=vec2(400.0);
 
-tempPos=(centre/vec2(2.0)+vec2(0.5))*vec2(resolution.xy);
+vec2 tempPos=(centre/vec2(2.0)+vec2(0.5))*vec2(resolution.xy);
 
 float circleFactor = circle(uv, tempPos, pointradius);
 

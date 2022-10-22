@@ -44,7 +44,8 @@ PointsLayer pointsLayer;
 RegionsLayer regionsLayer;
 HeatmapLayer heatmapLayer;
 
-
+//Options
+GlobalOptions globalOptions;
 
 int LocationHistory::CloseLocationFile()	//closes the file, empties the arrays, resets names/counts
 {
@@ -276,10 +277,10 @@ int StartGLProgram(LocationHistory* lh)
 			ManageMouseMoveClickAndDrag(window, lh);
 		}
 
-		lh->globalOptions.seconds = (float)glfwGetTime();
+		globalOptions.seconds = (float)glfwGetTime();
 
 		//get the view moving towards the target
-		lh->viewNSWE.movetowards(lh->globalOptions.seconds);
+		lh->viewNSWE.movetowards(globalOptions.seconds);
 
 		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
 			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, pLocationHistory);
@@ -313,7 +314,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		//Heatmap rendering to FBO
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			heatmapLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+			heatmapLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &globalOptions);
 		}
 
 
@@ -324,7 +325,7 @@ int StartGLProgram(LocationHistory* lh)
 		//Background layer has worldmap, heatmap and highres
 		backgroundLayer.heatmapTexture = heatmapLayer.texture;
 		DisplayIfGLError("before backgroundLayer.Draw", false);
-		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, lh->globalOptions);
+		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, globalOptions);
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
@@ -333,12 +334,12 @@ int StartGLProgram(LocationHistory* lh)
 				lh->regions[0]->Populate(lh);
 			}
 
-			if (lh->globalOptions.showPaths) {
-				pathLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
+			if (globalOptions.showPaths) {
+				pathLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);
 			}
 
-			if (lh->globalOptions.showPoints) {
-				pointsLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+			if (globalOptions.showPoints) {
+				pointsLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &globalOptions);
 			}
 
 			regionsLayer.UpdateFromRegionsData(lh->regions);
@@ -359,7 +360,7 @@ int StartGLProgram(LocationHistory* lh)
 		DisplayIfGLError("after fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 
 		if (lh->isLoadingFile == false) {
-			Gui::MakeGUI(lh);	//make the ImGui stuff
+			Gui::MakeGUI(lh, &globalOptions);	//make the ImGui stuff
 		}
 		else if (lh->isLoadingFile == true) {
 			Gui::ShowLoadingWindow(lh);

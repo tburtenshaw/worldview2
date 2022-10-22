@@ -9,8 +9,6 @@ uniform vec4 nswe;	//the view
 uniform vec4 highresnswe;
 uniform vec2 highresscale;
 
-//uniform vec4 heatmapnswe;	//where the heatmap covers
-
 uniform float maxheatmapvalue;
 uniform int palette;
 
@@ -97,8 +95,8 @@ void main() {
 	float height = (nswe.x-nswe.y);
 
 	vec2 uv=vec2(1,-1)*gl_FragCoord.xy/resolution.xy;
-	uv*=vec2(width,height)/vec2(360,180); //convert the NSWE locations to between 0 and 1
-	uv+=vec2(nswe.z+180,nswe.y-90)/vec2(360,-180); //shift them so aligned right
+	uv*=vec2(width,height)/vec2(360.0,180.0); //convert the NSWE locations to between 0 and 1
+	uv+=vec2(nswe.z+180.0, nswe.y-90.0)/vec2(360.0,-180.0); //shift them so aligned right
 
 	vec4 wt=texture(worldTexture, uv);
 
@@ -127,25 +125,7 @@ void main() {
 		wt = mix(wt, texture(highresTexture, highresuv*highresscale),square);
 	}
 	
-	
-	
-	//find the UV of the heatmap, then add it.
-	/*
-	vec2 heatmapuv;
-	float heatmapwidth, heatmapheight;
-	heatmapwidth = (nswe.w-nswe.z);
-	heatmapheight = (nswe.x-nswe.y);
-
-	heatmapuv.x=(width* gl_FragCoord.x/resolution.x + nswe.z-nswe.z)/heatmapwidth;
-
-	heatmapuv.y=-(nswe.x - gl_FragCoord.y/resolution.y*height - nswe.y)/heatmapheight;
-	*/
-	float heatvalue;
-	//heatvalue=texture(heatmapTexture, heatmapuv).r;
-	
-	//the heatmap now exactly must match the background (previously it had its own coords)
-	//this makes getting the coord easier
-	heatvalue=texelFetch(heatmapTexture,ivec2(gl_FragCoord.xy),0).r;
+	float heatvalue=texelFetch(heatmapTexture,ivec2(gl_FragCoord.xy),0).r;
 
 	vec4 ht=FloatToColour(heatvalue, maxheatmapvalue);
 	
