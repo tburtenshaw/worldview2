@@ -31,12 +31,13 @@
 #include <stb_image.h>
 #include <filesystem>
 #include <string>
+#include "mytimezone.h"
 
 LocationHistory* pLocationHistory;
 
-
 FrameBufferObjectInfo fboInfo;	//this is what everything is drawn to first.
 
+//Different things I might draw to the map
 BackgroundLayer backgroundLayer;
 PathLayer pathLayer;
 PointsLayer pointsLayer;
@@ -59,8 +60,8 @@ int LocationHistory::CloseLocationFile()	//closes the file, empties the arrays, 
 	if (!locations.empty()) {
 		locations.clear();
 	}
-	if (!pathPlotLocations.empty()) {
-		pathPlotLocations.clear();
+	if (!lodInfo.pathPlotLocations.empty()) {
+		lodInfo.pathPlotLocations.clear();
 	}
 
 	//lh->filename = L"";	//can't do this, as it's where the file to load is stored.
@@ -105,35 +106,29 @@ int LocationHistory::OpenAndReadLocationFile()
 	}
 	CloseHandle(hLocationFile);
 
-	//sort by timestamp
+	//sort by GMT timestamp
 	std::sort(locations.begin(), locations.end());	//stable_sort might be better, as doesn't muck around if the same size
 
+	//generate local timestamps
+	for (auto& loc : locations) {
+		loc.correctedTimestamp = MyTimeZone::FixToLocalTime(loc.timestamp);
+	}
+
 	//copy the array to a more compact one for sending to GPU
-	CreatePathPlotLocations();
+	GenerateLocationLODs();
 
 	//Statistics, including count, earliest/latest etc.
-	statistics.GenerateStatsOnLoad(pathPlotLocations);
+	GenerateStatsOnLoad();
 
-	globalOptions.earliestTimeToShow = statistics.earliestTimestamp;
-	globalOptions.latestTimeToShow = statistics.latestTimestamp;
 
-	PathPlotLocation currentloc;
-	float precisiontarget=10.0f/1000000.0f; //24 deg per 1 million pixels
-	int totalnumber=0;
-	while (precisiontarget < 150000.0 / 1000000.0f) {
-		int number = 0;
-		for (auto& loc : pathPlotLocations) {
-			if ((fabsf(currentloc.longitude - loc.longitude) > precisiontarget) || (fabsf(currentloc.latitude - loc.latitude) > precisiontarget) ||
-				(loc.timestamp - currentloc.timestamp > 60 * 60 * 24)) {
-				currentloc = loc;
-				number++;
-			}
-		}
-		printf("%f %i.\n", precisiontarget, number);
-		totalnumber += number;
-		precisiontarget *= 10.0f;
-	}
-	printf("Total: %i. Size of struct: %i. Total MB: %f\n", totalnumber,sizeof(PathPlotLocation), (float)(totalnumber* sizeof(PathPlotLocation))/(2<<20));
+
+	//adjust view, options based on loaded.
+	globalOptions.earliestTimeToShow = stats.earliestTimestamp;
+	globalOptions.latestTimeToShow = stats.latestTimestamp;
+
+	viewNSWE.target=FindBestView();
+	viewNSWE.target.makeratio((float)windowDimensions.height / (float)windowDimensions.width);
+
 
 	//Plan: to have five levels of detail (5 LoDs) from [0] to [4]. These are used just for plotting.
 	//0 is detail <10 degrees per million pixels, then 1 is <100 DPMP etc.
@@ -183,9 +178,6 @@ int SaveWVFormat(LocationHistory* lh, std::wstring filename)
 
 int StartGLProgram(LocationHistory* lh)
 {
-	//GlobalOptions* options;
-	//using options = lh->globalOptions;
-
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
 		fprintf(stderr, "ERROR: could not start GLFW3\n");
@@ -248,13 +240,15 @@ int StartGLProgram(LocationHistory* lh)
 	
 
 	//set up the background
-	backgroundLayer.SetupSquareVertices();
+	backgroundLayer.Setup();
 	backgroundLayer.SetupTextures();
 
 	//set up and compile the shaders
 	backgroundLayer.SetupShaders();
 	pathLayer.SetupShaders();
 	pointsLayer.SetupShaders();
+
+	DisplayIfGLError("after set up and compile the shaders", false);
 
 	//Set up the FBO that we draw onto
 	fboInfo.SetupFrameBufferObject(lh->windowDimensions.width, lh->windowDimensions.height);
@@ -271,9 +265,7 @@ int StartGLProgram(LocationHistory* lh)
 	regionsLayer.displayRegions.resize(1);
 	regionsLayer.SetupVertices();
 	regionsLayer.SetupShaders();
-	
-	//Trying to do better, GPU based, heatmap
-	printf("Start: glGetError %i\n", glGetError());
+
 	heatmapLayer.Setup(lh->windowDimensions.width, lh->windowDimensions.height);
 
 
@@ -296,28 +288,42 @@ int StartGLProgram(LocationHistory* lh)
 
 		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
 			printf("Initialising things that need file to be fully loaded\n");
-			GLRenderLayer::CreateLocationVBO(lh->pathPlotLocations);
-			
+			DisplayIfGLError("before GLRenderLayer::CreateLocationVBO(lh->lodInfo);", false);
+
+			GLRenderLayer::CreateLocationVBO(lh->lodInfo);
+			DisplayIfGLError("after GLRenderLayer::CreateLocationVBO(lh->lodInfo);", false);
+
+
 			pathLayer.SetupVertices();
 			pointsLayer.SetupVertices();
 			heatmapLayer.SetupVertices();
 
+			DisplayIfGLError("after *SetupVertices", false);
+
 			lh->isInitialised = true;
 		}
 
+		
+		
+		
 		glClear(GL_COLOR_BUFFER_BIT);
+		
+		int currentLod= lh->lodInfo.LodFromDPP(lh->viewNSWE.width() / lh->windowDimensions.width);
 
-		//try to do NewHeatmap rendering
+
+		//Heatmap rendering to FBO
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			heatmapLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+			heatmapLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 		}
 
 
-		//Set the FBO as the draw surface
+		//Set an offscreen FBO as the main draw surface
+		DisplayIfGLError("before fboInfo.BindToDrawTo();", false);
 		fboInfo.BindToDrawTo();
 
 		//Background layer has worldmap, heatmap and highres
 		backgroundLayer.heatmapTexture = heatmapLayer.texture;
+		DisplayIfGLError("before backgroundLayer.Draw", false);
 		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, lh->globalOptions);
 
 		//We only draw the points if everything is loaded and initialised.
@@ -328,11 +334,11 @@ int StartGLProgram(LocationHistory* lh)
 			}
 
 			if (lh->globalOptions.showPaths) {
-				pathLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
+				pathLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, lh->globalOptions.linewidth, lh->globalOptions.seconds, lh->globalOptions.cycleSeconds);
 			}
 
 			if (lh->globalOptions.showPoints) {
-				pointsLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
+				pointsLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &lh->globalOptions);
 			}
 
 			regionsLayer.UpdateFromRegionsData(lh->regions);
@@ -345,9 +351,12 @@ int StartGLProgram(LocationHistory* lh)
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+
+		DisplayIfGLError("before fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 		//draw the FBO onto the screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);
+		DisplayIfGLError("after fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 
 		if (lh->isLoadingFile == false) {
 			Gui::MakeGUI(lh);	//make the ImGui stuff

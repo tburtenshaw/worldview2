@@ -166,5 +166,17 @@
     <None Include="heatmapFS.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="blurFS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="blurVS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="maxvalFS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="maxvalVS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

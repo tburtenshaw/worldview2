@@ -56,5 +56,5 @@ void main() {
     float opacity = (smoothstep(uvwidth+blur,uvwidth,dline( uv, pointa, pointb ))); //this blurs the edges of the line (really a quadrilateral) to help avoid aliasing
 
     // Output to screen
-    frag_colour = vec4(fcol.xyz,opacity*fcol.w);  
+    frag_colour = vec4(fcol.rgb, opacity*fcol.a);  
 }

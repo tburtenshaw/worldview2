@@ -11,6 +11,11 @@ NSWE::NSWE(float n, float s, float w, float e) {
 	setvalues(n, s, w, e);
 }
 
+NSWE::NSWE(int n, int s, int w, int e)
+{
+	setvalues((float)n, (float)s, (float)w, (float)e);
+}
+
 void NSWE::operator=(const NSWE sourceNSWE)
 {
 	north = sourceNSWE.north;
@@ -72,17 +77,6 @@ void NSWE::setto(NSWE *setthis) {
 		west += w * p;
 
 		constrainvalues();
-		/*
-		if (west > 180.0) {//constrain the left part of view
-			east = east - (west - 180);
-			west = 180;
-		}
-		if (east < -180.0) {//constrain the left part of view
-			west = west+(-180-east);
-			east = -180;
-		}
-		*/
-
 	}
 
 	void NSWE::nudgevertical(float p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
@@ -102,7 +96,7 @@ void NSWE::setto(NSWE *setthis) {
 		return;
 	}
 
-	NSWE NSWE::createExpandedBy(float factor) const
+	NSWE NSWE::createExpandedBy(const float factor) const
 	{
 		//this makes the height and width both "factor" larger, centred at the middle, to a max of -180,90->180,-90.
 		NSWE outputNSWE;
@@ -292,7 +286,7 @@ void NSWE::setto(NSWE *setthis) {
 			south = target.south;
 			west = target.west;
 			east = target.east;
-			targettime = 0;
+			targettime = 0.0;
 			moving = false;
 			dirty = true;
 			return;
@@ -338,7 +332,7 @@ void NSWE::setto(NSWE *setthis) {
 
 	float MovingTarget::abs(float f)
 	{
-		if (f < 0) {
+		if (f < 0.0f) {
 			return -f;
 		}
 		return f;

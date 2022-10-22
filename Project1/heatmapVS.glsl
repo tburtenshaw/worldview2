@@ -22,8 +22,8 @@ void main()
 	
 	width = (nswe.w-nswe.z); 
 	height = (nswe.x-nswe.y);
-	midx = (nswe.w+nswe.z)/2; 
-	midy = (nswe.x+nswe.y)/2; 
+	midx = (nswe.w+nswe.z)/2.0; 
+	midy = (nswe.x+nswe.y)/2.0; 
 	
 	ts=timestamp;	//pass on to the geometry shader
 	acc=accuracy;
@@ -38,7 +38,7 @@ void main()
 		correctedLongitude+=360.0;
 	}
 
-	gl_Position = vec4(((correctedLongitude-midx)/width*2),(vp.y-midy)/height*2,0.0,1.0);
+	gl_Position = vec4(((correctedLongitude-midx)/width*2.0),(vp.y-midy)/height*2.0,0.0,1.0);
 	
 
 }

@@ -1,7 +1,6 @@
 #version 330
 layout (location = 0) in vec2 vp;
 layout (location = 1) in uint ts;
-//layout (location = 1) in vec4 colour;
 layout (location = 2) in float detail;
 
 uniform float seconds;
@@ -14,6 +13,7 @@ out VS_OUT {
     vec4 color;
 	float dontdraw;		//whether or not we draw the (?next) line
 	vec2 origcoords;	//these are the map coords
+	float timefrom2010;
 } vs_out;
 
 vec3 hsv2rgb(vec3 c)
@@ -44,7 +44,7 @@ void main() {
 	gl_Position = vec4(((vp.x-midx)/width*2.0),(vp.y-midy)/height*2.0,0.0,1.0);
 	
 	//temp
-	vs_out.color=vec4(0.5,0.2,0.8,0.9);
+	vs_out.color=vec4(rainbow(float(ts/uint(60*60))/24.0),0.9);
 
 	float res;
 	vs_out.dontdraw=1.0;
@@ -55,5 +55,7 @@ void main() {
 	if (detail>res)	{
 		vs_out.dontdraw=0.0;
 	}
+
+	vs_out.timefrom2010 = float(ts-uint(1262304000));
 
 }

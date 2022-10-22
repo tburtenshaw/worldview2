@@ -66,10 +66,12 @@ void Gui::MakeGUI(LocationHistory* lh)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), lh->viewNSWE.north, lh->viewNSWE.south, lh->viewNSWE.west, lh->viewNSWE.east);
 
-	ImGui::Text("DPMP: %f. PPD: %f",1000000.0f*lh->viewNSWE.width()/lh->windowDimensions.width, lh->windowDimensions.width/ lh->viewNSWE.width());
+	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i",1000000.0f*lh->viewNSWE.width()/lh->windowDimensions.width, 
+		lh->windowDimensions.width/ lh->viewNSWE.width(), 
+		lh->lodInfo.LodFromDPP(lh->viewNSWE.width() / lh->windowDimensions.width));
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->statistics.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
-	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->statistics.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
 	Gui::ShowRegionInfo(lh->regions[0], &lh->globalOptions);
 
@@ -101,9 +103,11 @@ void Gui::MakeGUI(LocationHistory* lh)
 	static float oldBlurperaccurary = 0;
 	ImGui::Begin("Heatmap");
 	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
-	
-	ImGui::SliderFloat("Max value", &options->heatmapmaxvalue, 0.0f, 1000.0f, "%.1f");
+	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 25.0f, "%.1f");
+	ImGui::SliderFloat("Max value", &options->heatmapmaxvalue, 0.0f, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
 	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
+	ImGui::SliderFloat("Debug", &options->debug, 0.0f, 1.0f, "%.1f");
+
 	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
 	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
 
@@ -165,17 +169,17 @@ void Gui::MakeGUI(LocationHistory* lh)
 		}
 	}
 
-	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->statistics.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
+	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
 		correctedTime.tm_year = earliestYear - 1900;
 		options->earliestTimeToShow = mktime(&correctedTime);
 	}
 
-	if (options->earliestTimeToShow > lh->statistics.latestTimestamp) {
-		options->earliestTimeToShow = lh->statistics.latestTimestamp;
+	if (options->earliestTimeToShow > lh->stats.latestTimestamp) {
+		options->earliestTimeToShow = lh->stats.latestTimestamp;
 	}
 
-	if (options->earliestTimeToShow < lh->statistics.earliestTimestamp) {
-		options->earliestTimeToShow = lh->statistics.earliestTimestamp;
+	if (options->earliestTimeToShow < lh->stats.earliestTimestamp) {
+		options->earliestTimeToShow = lh->stats.earliestTimestamp;
 	}
 
 	//ensure the earliest time is always H=0, min=0,sec=0
@@ -194,7 +198,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	options->earliestTimeToShow = mktime(&correctedTime);
 
 	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
-	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->statistics.earliestTimestamp, &lh->statistics.latestTimestamp, "%u");
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
 
 	t = options->latestTimeToShow;
 	gmtime_s(&correctedTime, &t);
@@ -203,7 +207,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	latestYear = correctedTime.tm_year + 1900;
 
 	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
-	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->statistics.earliestTimestamp, &lh->statistics.latestTimestamp, "%u");
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
 
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
@@ -230,7 +234,7 @@ void Gui::MakeGUI(LocationHistory* lh)
 	if (options->colourby == 4) {
 		options->indexPaletteYear = Palette_Handler::MatchingPalette(options->indexPaletteYear, Palette::YEAR);
 		int n = 0;
-		for (int year = MyTimeZone::GetYearFromTimestamp(lh->statistics.earliestTimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->statistics.latestTimestamp) + 1) && (n < 24); year++) {
+		for (int year = MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->stats.latestTimestamp) + 1) && (n < 24); year++) {
 			color[n] = Palette_Handler::PaletteColorImVec4(options->indexPaletteYear, year);
 
 			std::string text = "Year ";

@@ -11,7 +11,7 @@ in VS_OUT {
     vec4 color;
 	float dontdraw;
 	vec2 origcoords;	//these are the map coords
-
+	float timefrom2010;
 } gs_in[]; 
 
 out vec4 fcol;
@@ -63,19 +63,12 @@ void main()
 
 
 
-	
-
-
 
 	//For the frag shader if required.
 	pointa=start;
 	pointb=end;
-	//float linelength;
-	//linelength = distance(start,end);
-
-
-
-
+	float linelength = distance(start,end);
+	
 
 	//this gets a perpendicular vector of length one
 	vec2 slope1;
@@ -87,7 +80,13 @@ void main()
 
 	vec2 extendlength = normalize(start-end)*thickness;
 
-	fcol = gs_in[0].color;
+
+
+	//fcol = gs_in[0].color;
+	fcol=vec4((gs_in[1].timefrom2010 - gs_in[0].timefrom2010)/linelength/3600.0);
+
+	fcol.a=min(1.0/linelength,1.0);	//fades away long lines (i.e. crossing the screen)
+
 	
 	gl_Position = vec4(start,1.0,1.0) + vec4(-thickness1, 0.0, 0.0) + vec4(extendlength, 0.0, 0.0);
 	EmitVertex();
@@ -95,15 +94,8 @@ void main()
 	gl_Position = vec4(start,1.0,1.0) + vec4(thickness1, 0.0, 0.0)+ vec4(extendlength, 0.0, 0.0);
     EmitVertex();
 
-	
-	
-	fcol = gs_in[1].color;
-
-//	if (start.x-end.x > (0.0000000005/ ((nswe.w-nswe.z)/resolution.x)))	{
-		////end+=vec2(1.0/ ((nswe.w-nswe.z)/resolution.x),100.0);
-		//fcol=vec4(1.0,1.0,1.0,1.0);
-	//}
-
+	//fcol = gs_in[1].color;
+//	fcol.a=min(1.0/linelength,1.0);
 
 	gl_Position = vec4(end,1.0,1.0) + vec4(-thickness1, 0.0, 0.0)- vec4(extendlength, 0.0, 0.0);
     EmitVertex();

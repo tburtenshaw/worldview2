@@ -19,22 +19,25 @@ private:
 	static unsigned int vboLocations;	//VBO that is the location data, so we don't use it multiple times
 	static constexpr int lookupPieces = 32;
 	static TimeLookup timeLookup[lookupPieces];	//cut up into 32 pieces, so can reduce draw data sent if not using whole time
-	static void CreateTimeLookupTable(std::vector<PathPlotLocation>& locs);
+	static void CreateTimeLookupTable(LODInfo& lodInfo, int lod);
 	static TimeLookup knownStart;	//store these, so only does loop if it's different
 	static TimeLookup knownEnd;
 
 protected:
 	unsigned int vao;	//Vertex array object
 	unsigned int vbo;	//Vertex buffer object - ?maybe could share these
+	static unsigned int vaoSquare;
+	static unsigned int vboSquare;
+
 	void UseLocationVBO();
-	
-	static void LookupFirstAndCount(unsigned long starttime, unsigned long endtime, GLint *first, GLsizei *count);
-	static void *locationsFront;
-	static size_t locationsCount;
+	void SetupSquareVertices();
+
+	static void LookupFirstAndCount(unsigned long starttime, unsigned long endtime, int lod, GLint *first, GLsizei *count);
+	static LocationHistory & lh;
 
 public:
 	Shader shader;
-	void SetupSquareVertices();
+
 
 	GLRenderLayer()
 		:vao(0), vbo(0),shader(){
@@ -42,7 +45,7 @@ public:
 
 	//virtual void Draw() = 0;
 	//void SetupShaders();
-	static void CreateLocationVBO(std::vector<PathPlotLocation>& locs);
+	static void CreateLocationVBO(LODInfo& lodInfo);
 };
 
 class BackgroundLayer : public GLRenderLayer {
@@ -60,7 +63,7 @@ public:
 	
 	HighResManager highres;
 
-
+	void Setup();
 	void SetupShaders();
 	void SetupTextures();
 	void Draw(RectDimension window, const NSWE& viewNSWE, const GlobalOptions& options);
@@ -88,7 +91,7 @@ class PathLayer : public GLRenderLayer {
 public:
 	void SetupShaders();
 	void SetupVertices();
-	void Draw(float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
+	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, float linewidth, float seconds, float cycleseconds);
 };
 
 class PointsLayer : public GLRenderLayer {
@@ -110,7 +113,7 @@ public:
 	float palette[24][4];
 	void SetupShaders();
 	void SetupVertices();
-	void Draw(float width, float height, NSWE* nswe, GlobalOptions* options);
+	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, GlobalOptions* options);
 	
 };
 
@@ -135,18 +138,46 @@ class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
 	void SetupVertices();
-	void Draw(float width, float height, NSWE* nswe, GlobalOptions* options);
+	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, GlobalOptions* options);
 	void UpdateSize(int width, int height);
 
-	unsigned int texture;
+	unsigned int texture;	//main texture for heatmap
 private:
 	void SetupShaders();
-	unsigned int fbo;
+	void GaussianBlur(float blurSigma, float width, float height);
+	size_t FetchGaussianValues(float sigma, float* offsets, float* weights, int maxnumber);
+	float FindMaxValueWithReductionShader(int width, int height, int reductionFactor);
+	float ReadPixelsAndFindMax(int width, int height);
 
-	//shader uniforms
+	//FBOs
+	unsigned int fboToDrawHeatmap;
+	unsigned int fboBlur;
+	unsigned int fboMaxVal[2];
+	
+	//texture to blur to first
+	unsigned int blurTexture;
+
+	//blur shader and uniforms.
+	Shader blurShader;
+	unsigned int blurUniformPixels;
+	unsigned int blurUniformGaussianValues;
+	unsigned int blurUniformGaussianOffsets;
+
+	unsigned int blurUniformResolution;
+	unsigned int blurUniformDirection;
+	unsigned int blurTextureLocation;
+
+	//main shader uniforms
 	unsigned int uniformNswe;
 	unsigned int uniformResolution;
 	unsigned int uniformEarliestTimeToShow;
 	unsigned int uniformLatestTimeToShow;
 	unsigned int uniformMinimumAccuracy;
+
+	//max shader uniforms
+	Shader maxvalShader;
+	unsigned int maxvalUniformSquareSize;
+	unsigned int maxvalTextureLocation;
+	//texture
+	unsigned int maxvalTexture[2];
 };

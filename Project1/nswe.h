@@ -5,11 +5,13 @@
 class WorldCoord;
 class MovingTarget;
 #include <algorithm>
+#include <ostream>
 
 class NSWE {
 public:
 	NSWE();
 	NSWE(float n, float s, float w, float e);
+	NSWE(int n, int s, int w, int e);
 
 	void operator=(const NSWE sourceNSWE);
 	void operator=(const MovingTarget sourceMT);
@@ -31,7 +33,7 @@ public:
 	void moveby(float x, float y);
 
 
-	NSWE createExpandedBy(float factor) const;
+	NSWE createExpandedBy(const float factor) const;
 	NSWE intersectionWith(NSWE otherNSWE) const;
 	WorldCoord centre() const;
 
@@ -41,7 +43,13 @@ public:
 
 	bool containspoint(float latitude, float longitude) const;
 
+	friend std::ostream& operator<<(std::ostream& os, NSWE const& m) {
+		return os << "N: " << m.north << ", S: " << m.south << ", W: " << m.west << ", E: " << m.east;
+	}
+
 };
+
+
 
 class MovingTarget : public NSWE {
 

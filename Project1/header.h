@@ -96,6 +96,8 @@ struct Location {
 	int velocity;
 	int verticalaccuracy;
 
+	unsigned long correctedTimestamp;
+
 	bool operator< (Location const& rhs) {	//compares (i.e. sorts) just by timestamp
 		return timestamp < rhs.timestamp;
 	}
@@ -213,52 +215,51 @@ public:
 
 	//heatmap
 	int palette; //viridis = 1, inferno = 2
-	bool blurperaccuracy;
 	int minimumaccuracy;
 	bool predictpath;
 	float gaussianblur;
-
 	float heatmapmaxvalue;
+	float debug;
+
 };
 
 
+class LODInfo {
+public:
+	static constexpr int numberOfLODs = 4;
+	unsigned long lodStart[numberOfLODs];
+	unsigned long lodLength[numberOfLODs];
+	float lodPrecision[numberOfLODs];
+
+	std::vector<PathPlotLocation> pathPlotLocations;	//contains multiple LODs after each other with some info removed, floats vs doubles etc.
+
+	int LodFromDPP(float dpp);
+};
 
 class LocationHistory {
 private:
-	class Statistics {	//contains less necessary data calculated either when loading LH, or later
-		public:
-			void GenerateStatsOnLoad(const std::vector<PathPlotLocation>& locs);
-			unsigned long numberOfLocations;
-			unsigned long earliestTimestamp;
-			unsigned long latestTimestamp;
-			Statistics() :numberOfLocations(0), earliestTimestamp(0), latestTimestamp(0) {}
 
-		private:
-			//histogram of accuracy
-			static constexpr int accuracyBinSize = 5;
-			static constexpr int accuracyBins = 21; //last is 100+
-			int histoAccuracy[accuracyBins] = { 0 };
-			void AccuracyHistogram(const std::vector<PathPlotLocation>& locs);
-
-
-		};
 public:
+	void GenerateStatsOnLoad();
+	void AccuracyHistogram();
+
 	std::wstring filename;
 	unsigned long filesize;
 
 	std::vector<Location> locations;	//this holds the raw data from the json file, double precision
 
-	std::vector<PathPlotLocation> pathPlotLocations;	//a more minimal version with floats, ready for the GPU, it's what we should use
-
-	static constexpr int numberOfLODs = 4;
+	LODInfo lodInfo;
 
 
 	int OpenAndReadLocationFile();
 	int CloseLocationFile();
-	void CreatePathPlotLocations();
+	void GenerateLocationLODs();
+	void OptimiseForPaths();
 
 	LocationHistory();
 	~LocationHistory();
+
+	NSWE FindBestView();
 
 //should be in another class re file loading
 	bool isFileChosen;
@@ -275,7 +276,28 @@ public:
 
 	
 	GlobalOptions globalOptions;
-	Statistics statistics;
+
+	class Statistics {	//contains less necessary data calculated either when loading LH, or later
+	public:
+		unsigned long numberOfLocations;
+		unsigned long earliestTimestamp;
+		unsigned long latestTimestamp;
+		Statistics() :numberOfLocations(0), earliestTimestamp(0), latestTimestamp(0) {}
+
+	private:
+		//histogram of accuracy
+		static constexpr int accuracyBinSize = 5;
+		static constexpr int accuracyBins = 21; //last is 100+
+		int histoAccuracy[accuracyBins] = { 0 };
+
+		static constexpr int velocityBins = 320;
+		int histoVelocity[velocityBins] = {0};
+		int fastestVelocity = 0;
+
+
+		friend class LocationHistory;
+	} stats;
+
 };
 
 

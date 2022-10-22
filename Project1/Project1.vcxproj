@@ -206,6 +206,8 @@
   <ItemGroup>
     <None Include="backgroundFS.glsl" />
     <None Include="backgroundVS.glsl" />
+    <None Include="blurFS.glsl" />
+    <None Include="blurVS.glsl" />
     <None Include="fboFS.glsl" />
     <None Include="fboVS.glsl" />
     <None Include="heatmapFS.glsl" />
@@ -214,6 +216,8 @@
     <None Include="mappathsFS.glsl" />
     <None Include="mappathsGS.glsl" />
     <None Include="mappathsVS.glsl" />
+    <None Include="maxvalFS.glsl" />
+    <None Include="maxvalVS.glsl" />
     <None Include="pointsFS.glsl" />
     <None Include="pointsGS.glsl" />
     <None Include="pointsVS.glsl" />
