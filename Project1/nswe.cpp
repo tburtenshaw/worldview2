@@ -4,16 +4,17 @@
 
 NSWE::NSWE()
 {
-	north = 90; south = -90; west = -180; east = 180;
+	north = 90.0; south = -90.0; west = -180.0; east = 180.0;
 }
 
-NSWE::NSWE(float n, float s, float w, float e) {
-	setvalues(n, s, w, e);
+NSWE::NSWE(double n, double s, double w, double e)
+{
+	setvalues((double)n, (double)s, (double)w, (double)e);
 }
 
 NSWE::NSWE(int n, int s, int w, int e)
 {
-	setvalues((float)n, (float)s, (float)w, (float)e);
+	setvalues((double)n, (double)s, (double)w, (double)e);
 }
 
 void NSWE::operator=(const NSWE sourceNSWE)
@@ -38,7 +39,7 @@ void NSWE::constrainvalues() {
 
 }
 
-void NSWE::setvalues(float n, float s, float w, float e) {
+void NSWE::setvalues(double n, double s, double w, double e) {
 	north = n; south = s; west = w; east = e;
 	constrainvalues();
 }
@@ -55,23 +56,23 @@ void NSWE::setto(NSWE *setthis) {
 	east = setthis->east;
 }
 
-	float NSWE::width() const
+double NSWE::width() const
 	{
 		return (east - west);
 	}
 
-	float NSWE::height() const
+double NSWE::height() const
 	{
 		return (north - south);
 	}
 
-	float NSWE::area() const
+double NSWE::area() const
 	{
 		return (north - south) * (east - west);
 	}
 
-	void NSWE::nudgehorizontal(float p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
-		float w;
+	void NSWE::nudgehorizontal(double p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
+		double w;
 		w = east - west;
 		east += w * p;
 		west += w * p;
@@ -79,15 +80,15 @@ void NSWE::setto(NSWE *setthis) {
 		constrainvalues();
 	}
 
-	void NSWE::nudgevertical(float p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
-		float h;
+	void NSWE::nudgevertical(double p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
+		double h;
 		h = north - south;
 		north += h * p;
 		south += h * p;
 		return;
 	}
 
-	void NSWE::moveby(float x, float y)
+	void NSWE::moveby(double x, double y)
 	{
 		west += x;
 		east += x;
@@ -96,16 +97,16 @@ void NSWE::setto(NSWE *setthis) {
 		return;
 	}
 
-	NSWE NSWE::createExpandedBy(const float factor) const
+	NSWE NSWE::createExpandedBy(const double factor) const
 	{
 		//this makes the height and width both "factor" larger, centred at the middle, to a max of -180,90->180,-90.
 		NSWE outputNSWE;
 		
-		float h = north - south;
-		float w = east - west;
+		double h = north - south;
+		double w = east - west;
 
-		float midlat = (north + south) / 2;
-		float midlong = (east + west) / 2;
+		double midlat = (north + south) / 2;
+		double midlong = (east + west) / 2;
 
 		outputNSWE.north = midlat + (h / 2) * factor;
 		outputNSWE.south = midlat - (h / 2) * factor;
@@ -137,15 +138,15 @@ void NSWE::setto(NSWE *setthis) {
 	WorldCoord NSWE::centre() const {
 		WorldCoord c;
 
-		c.longitude = (west + east) / 2;
-		c.latitude = (north + south) / 2;
+		c.longitude = (west + east) / 2.0;
+		c.latitude = (north + south) / 2.0;
 
 		return c;
 	}
 
 
 
-	void NSWE::zoom(float z, WorldCoord c) {
+	void NSWE::zoom(double z, WorldCoord c) {
 
 		//printf("Zoom into %f %f, by %f.\n", c.latitude, c.longitude, z);
 		//printf("Before: N%f,S%f,W%f,E%f\n", north, south, west, east);
@@ -187,19 +188,19 @@ void NSWE::setto(NSWE *setthis) {
 
 	}
 
-	void NSWE::makeratio(float ratio) {
-		float width, height;
+	void NSWE::makeratio(double ratio) {
+		double width, height;
 		width = east - west;
 		height = north - south;
 
-		float targetheight = width * ratio;
+		double targetheight = width * ratio;
 
-		north += (targetheight - height) / 2;
-		south -= (targetheight - height) / 2;
+		north += (targetheight - height) / 2.0;
+		south -= (targetheight - height) / 2.0;
 		
 	}
 
-	bool NSWE::containspoint(float latitude, float longitude) const
+	bool NSWE::containspoint(double latitude, double longitude) const
 	{
 		if (latitude>north)
 			return false;
@@ -242,12 +243,12 @@ void NSWE::setto(NSWE *setthis) {
 		double duration = targettime - starttime;
 		double tdiff = targettime - currenttime;
 
-		float normalisedtime = 1 - (tdiff / duration);
+		double normalisedtime = 1 - (tdiff / duration);
 
 		int sidesright = 0;
 
 		//check if close enough (within 0.1%)
-		if (abs(north - target.north) / target.height() < 0.001) {
+		if (std::abs(north - target.north) / target.height() < 0.001) {
 			north = target.north;
 			sidesright++;
 		}
@@ -255,7 +256,7 @@ void NSWE::setto(NSWE *setthis) {
 			north = north * (1 - normalisedtime) + (target.north * normalisedtime);
 		}
 
-		if (abs(south - target.south) / target.height() < 0.001) {
+		if (std::abs(south - target.south) / target.height() < 0.001) {
 			south = target.south;
 			sidesright++;
 		}
@@ -263,7 +264,7 @@ void NSWE::setto(NSWE *setthis) {
 			south = south * (1 - normalisedtime) + (target.south * normalisedtime);
 		}
 
-		if (abs(west - target.west) / target.width() < 0.001) {
+		if (std::abs(west - target.west) / target.width() < 0.001) {
 			west = target.west;
 			sidesright++;
 		}
@@ -272,7 +273,7 @@ void NSWE::setto(NSWE *setthis) {
 			//printf("w: %.9f %.9f", east, abs(west - target.west));
 		}
 
-		if (abs(east - target.east) / target.width() < 0.001) {
+		if (std::abs(east - target.east) / target.width() < 0.001) {
 			east = target.east;
 			sidesright++;
 		}
@@ -328,12 +329,4 @@ void NSWE::setto(NSWE *setthis) {
 	{
 		if (moving)	return true;
 		return false;
-	}
-
-	float MovingTarget::abs(float f)
-	{
-		if (f < 0.0f) {
-			return -f;
-		}
-		return f;
 	}

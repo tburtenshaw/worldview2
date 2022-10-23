@@ -10,12 +10,8 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 
-//extern MovingTarget viewNSWE;
-//extern RECTDIMENSION windowDimensions;
-//extern WORLDCOORD longlatMouse;
-//extern BackgroundInfo bgInfo;
+
 extern LocationHistory* pLocationHistory;
-//extern FrameBufferObjectInfo fboInfo;
 
 NSWE originalNSWE;
 
@@ -247,8 +243,8 @@ bool MouseActions::IsDragging()
 XY MouseActions::GetDragDelta()
 {
 	XY delta;
-	delta.x =(float)xpos - dragStartXY.x;
-	delta.y = (float)ypos - dragStartXY.y;
+	delta.x =xpos - dragStartXY.x;
+	delta.y = ypos - dragStartXY.y;
 	
 	return delta;
 }

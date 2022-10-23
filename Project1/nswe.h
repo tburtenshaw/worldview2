@@ -10,38 +10,38 @@ class MovingTarget;
 class NSWE {
 public:
 	NSWE();
-	NSWE(float n, float s, float w, float e);
+	NSWE(double n, double s, double w, double e);
 	NSWE(int n, int s, int w, int e);
 
 	void operator=(const NSWE sourceNSWE);
 	void operator=(const MovingTarget sourceMT);
 
-	float north;
-	float south;
-	float west;
-	float east;
+	double north;
+	double south;
+	double west;
+	double east;
 
 	void constrainvalues();
-	void setvalues(float n, float s, float w, float e);
+	void setvalues(double n, double s, double w, double e);
 	void setvalues(NSWE setToThis);
 	void setto(NSWE *setthis);
-	float width() const;
-	float height() const;
-	float area() const;
-	void nudgehorizontal(float p);
-	void nudgevertical(float p);
-	void moveby(float x, float y);
+	double width() const;
+	double height() const;
+	double area() const;
+	void nudgehorizontal(double p);
+	void nudgevertical(double p);
+	void moveby(double x, double y);
 
 
-	NSWE createExpandedBy(const float factor) const;
+	NSWE createExpandedBy(const double factor) const;
 	NSWE intersectionWith(NSWE otherNSWE) const;
 	WorldCoord centre() const;
 
-	void zoom(float z, WorldCoord c);
+	void zoom(double z, WorldCoord c);
 
-	void makeratio(float ratio);
+	void makeratio(double ratio);
 
-	bool containspoint(float latitude, float longitude) const;
+	bool containspoint(double latitude, double longitude) const;
 
 	friend std::ostream& operator<<(std::ostream& os, NSWE const& m) {
 		return os << "N: " << m.north << ", S: " << m.south << ", W: " << m.west << ", E: " << m.east;
@@ -59,9 +59,6 @@ public:
 	double targettime;
 	double starttime;
 
-	
-
-
 	void movetowards(double currenttime);	//true if we're still moving, false if we're done
 	void settarget(NSWE nsweTarget, double stime, double ttime);
 
@@ -72,10 +69,7 @@ public:
 
 
 private:
-	float abs(float f);
-
-	float oldnorth, oldsouth, oldwest, oldeast;
-
+	double oldnorth, oldsouth, oldwest, oldeast;
 
 	bool dirty;
 	bool moving;

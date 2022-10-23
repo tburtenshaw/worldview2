@@ -146,7 +146,6 @@ void HighResManager::ImageLoadThread(int n)
 void HighResManager::LoadBestTex(unsigned int gltexture)
 {
 	//printf("Loading texture\n");
-	
 
 	if ((dataReady != bestImage) && (subImageLoading==false)) {
 		//load the image from file

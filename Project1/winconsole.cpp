@@ -399,7 +399,7 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 	fboInfo.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
 	heatmapLayer.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
 
-	pLocationHistory->viewNSWE.target.makeratio((float)pLocationHistory->windowDimensions.height / (float)pLocationHistory->windowDimensions.width);
+	pLocationHistory->viewNSWE.target.makeratio((double)pLocationHistory->windowDimensions.height / (double)pLocationHistory->windowDimensions.width);
 
 	return;
 }

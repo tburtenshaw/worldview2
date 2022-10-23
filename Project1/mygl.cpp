@@ -21,7 +21,8 @@ TimeLookup GLRenderLayer::knownEnd = { 0 };
 
 void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao/vbo for -1,-1, to 1,1 square
 {
-	if (vaoSquare)	return;
+	if (vaoSquare)	return;	//if not already made
+
 	DisplayIfGLError("before   GLRenderLayer::SetupSquareVertices()", false);
 	static const GLfloat g_vertex_buffer_data[] = {
 		-1.0f, -1.0f,
