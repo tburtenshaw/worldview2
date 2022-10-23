@@ -95,6 +95,11 @@ public:
 };
 
 class PathLayer : public GLRenderLayer {
+private:
+	unsigned int uniformNswe;
+	unsigned int uniformResolution;
+	unsigned int uniformDegreeSpan;	//do calculation on CPU
+	unsigned int uniformDegreeMidpoint;
 public:
 	void SetupShaders();
 	void SetupVertices();

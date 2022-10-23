@@ -306,7 +306,9 @@ void LocationHistory::GenerateStatsOnLoad()
 	}
 	
 	for (int i = 0; i < stats.velocityBins; i++) {
-		printf("%i %i (%f%%)\n", i , stats.histoVelocity[i], 100.0f * (float)stats.histoVelocity[i] / (float)stats.numberOfLocations);
+		if (stats.histoVelocity[i]) {
+			printf("%i %i (%f%%)\n", i, stats.histoVelocity[i], 100.0f * (float)stats.histoVelocity[i] / (float)stats.numberOfLocations);
+		}
 	}
 
 

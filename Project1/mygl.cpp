@@ -317,6 +317,12 @@ void PathLayer::SetupShaders()
 	shader.LoadShaderFromFile("mappathsFS.glsl", GL_FRAGMENT_SHADER);
 	shader.LoadShaderFromFile("mappathsGS.glsl", GL_GEOMETRY_SHADER);
 	shader.CreateProgram();
+
+	shader.UseMe();
+	shader.LoadUniformLocation(&uniformNswe, "nswe");
+	shader.LoadUniformLocation(&uniformResolution, "resolution");
+	shader.LoadUniformLocation(&uniformDegreeSpan, "degreespan");
+	shader.LoadUniformLocation(&uniformDegreeMidpoint, "degreemidpoint");
 }
 
 void PathLayer::SetupVertices()
@@ -347,9 +353,16 @@ void PathLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE*
 {
 	//update uniform shader variables
 	shader.UseMe();
-	shader.SetUniformFromNSWE("nswe", nswe);
+
+	shader.SetUniform(uniformNswe, nswe);
+	shader.SetUniform(uniformResolution, width, height);
+	shader.SetUniform(uniformDegreeSpan, nswe->width(), nswe->height());
+	shader.SetUniform(uniformDegreeMidpoint, (nswe->west + nswe->east) / 2.0, (nswe->north + nswe->south) / 2.0);
+	
+	
+	//shader.SetUniformFromNSWE("nswe", nswe);
 	shader.SetUniformFromFloats("seconds", seconds * 20.0f);
-	shader.SetUniformFromFloats("resolution", width, height);
+	//shader.SetUniformFromFloats("resolution", width, height);
 	shader.SetUniformFromFloats("linewidth", linewidth);
 	shader.SetUniformFromFloats("cycle", cycleSeconds);
 
