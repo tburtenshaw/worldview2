@@ -6,7 +6,10 @@ layout (location = 0) in vec2 vp;
 layout (location = 2) in uint timestamp;
 
 uniform vec4 nswe;
-uniform vec2 resolution;
+uniform vec2 degreespan;
+uniform vec2 degreemidpoint;
+
+//uniform vec2 resolution;
 uniform float seconds;
 
 uniform bool showhighlights;
@@ -102,6 +105,7 @@ vec3 rainbow(float t)
 
 void main()
 {
+	/*
 	float width; float height;
 	float midx,midy;
 	
@@ -110,8 +114,6 @@ void main()
 	midx = (nswe.w+nswe.z)/2; 
 	midy = (nswe.x+nswe.y)/2; 
 	
-	ts=timestamp;	//pass on to the geometry shader
-
 	float correctedLongitude=vp.x;
 
 	if ((nswe.z<-180.0)&&(nswe.w<180.0)&&(vp.x>nswe.w))	{
@@ -122,8 +124,24 @@ void main()
 		correctedLongitude+=360.0;
 	}
 
-	gl_Position = vec4(((correctedLongitude-midx)/width*2),(vp.y-midy)/height*2,0.0,1.0);
+	gl_Position = vec4(((correctedLongitude-midx)/width*2.0),(vp.y-midy)/height*2.0,0.0,1.0);
+	*/
+
+	vec2 correctedLongitude=vp;
+
+	if ((nswe.z<-180.0)&&(nswe.w<180.0)&&(vp.x>nswe.w))	{
+		correctedLongitude.x-=360.0;
+	}
+
+	if ((nswe.w>=180.0)&&(nswe.z>-180.0)&&(vp.x<nswe.z))	{
+		correctedLongitude.x+=360.0;
+	}
+
+	gl_Position = vec4(((correctedLongitude-degreemidpoint)/degreespan*2.0),0.0,1.0);
+
 	
+	ts=timestamp;	//pass on to the geometry shader
+
 	//vcolour = pointcolour.rgba; //vec3(0.7,0.9,0.25);
 	
 	

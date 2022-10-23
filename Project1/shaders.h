@@ -25,7 +25,7 @@ public:
 	void SetUniform(GLuint loc, float f1, float f2);
 	void SetUniform(GLuint loc, int i1);
 	void SetUniform(GLuint loc, unsigned long ul1);
-	void SetUniform(GLuint loc, NSWE* nswe);
+	void SetUniform(GLuint loc, const NSWE* nswe);
 	void SetUniform(GLuint loc, GLsizei count, const GLfloat* value);
 
 	//deprecating these, as I wrote them before learning much about C++
@@ -35,7 +35,7 @@ public:
 	void SetUniformFromFloats(const char* uniformname, float f1, float f2, float f3, float f4);
 
 	void SetUniformFromInts(const char* uniformname, int i1);
-	void SetUniformFromNSWE(const char* uniformname, NSWE* nswe);
+	void SetUniformFromNSWE(const char* uniformname, const NSWE* nswe);
 
 private:
 	GLboolean CheckForErrors(GLuint shader, GLuint type);

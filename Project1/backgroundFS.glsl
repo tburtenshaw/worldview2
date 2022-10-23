@@ -6,6 +6,8 @@ uniform sampler2D heatmapTexture;
 
 uniform vec2 resolution;
 uniform vec4 nswe;	//the view
+uniform vec2 degreespan;
+
 uniform vec4 highresnswe;
 uniform vec2 highresscale;
 
@@ -91,11 +93,11 @@ vec4 AlphaOnOpaqueMix(vec3 dest, vec4 source, float strength)	{
 }
 
 void main() {
-	float width = (nswe.w-nswe.z); 
-	float height = (nswe.x-nswe.y);
+	//float width = (nswe.w-nswe.z); //sent in uniform, saves calcs on GPU, more importantly done while still double-precision
+	//float height = (nswe.x-nswe.y);
 
 	vec2 uv=vec2(1,-1)*gl_FragCoord.xy/resolution.xy;
-	uv*=vec2(width,height)/vec2(360.0,180.0); //convert the NSWE locations to between 0 and 1
+	uv*=degreespan/vec2(360.0,180.0); //convert the NSWE locations to between 0 and 1
 	uv+=vec2(nswe.z+180.0, nswe.y-90.0)/vec2(360.0,-180.0); //shift them so aligned right
 
 	vec4 wt=texture(worldTexture, uv);

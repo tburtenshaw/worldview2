@@ -119,7 +119,7 @@ void Shader::SetUniform(GLuint loc, float f1, float f2)
 	glUniform2f(loc, f1, f2);
 }
 
-void Shader::SetUniform(GLuint loc, NSWE* nswe)
+void Shader::SetUniform(GLuint loc, const NSWE* nswe)
 {
 	glUniform4f(loc, nswe->north, nswe->south, nswe->west, nswe->east);
 }
@@ -166,7 +166,7 @@ void Shader::SetUniformFromInts(const char* uniformname, int i1)
 	glUniform1i(uniloc, i1);
 }
 
-void Shader::SetUniformFromNSWE(const char* uniformname, NSWE* nswe)
+void Shader::SetUniformFromNSWE(const char* uniformname, const NSWE* nswe)
 {
 	int uniloc;
 	uniloc = glGetUniformLocation(program, uniformname);

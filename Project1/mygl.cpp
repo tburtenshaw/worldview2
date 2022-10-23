@@ -133,6 +133,9 @@ void PointsLayer::SetupShaders()
 	//load the uniform locations by names into integers
 	shader.LoadUniformLocation(&uniformNswe, "nswe");
 	shader.LoadUniformLocation(&uniformResolution, "resolution");
+	shader.LoadUniformLocation(&uniformDegreeSpan, "degreespan");
+	shader.LoadUniformLocation(&uniformDegreeMidpoint, "degreemidpoint");
+
 	shader.LoadUniformLocation(&uniformPointRadius, "pointradius");
 	shader.LoadUniformLocation(&uniformPointAlpha, "alpha");
 	shader.LoadUniformLocation(&uniformSeconds, "seconds");
@@ -180,6 +183,10 @@ void PointsLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSW
 	shader.UseMe();
 	shader.SetUniform(uniformNswe, nswe);
 	shader.SetUniform(uniformResolution, width, height);
+	shader.SetUniform(uniformDegreeSpan, nswe->width(), nswe->height());
+	shader.SetUniform(uniformDegreeMidpoint, (nswe->west + nswe->east) / 2.0, (nswe->north + nswe->south) / 2.0);
+
+
 	shader.SetUniform(uniformPointRadius, options->pointdiameter / 2.0f);
 	shader.SetUniform(uniformPointAlpha, options->pointalpha);
 	shader.SetUniform(uniformSeconds, options->seconds);
@@ -415,6 +422,16 @@ void BackgroundLayer::SetupShaders()
 	glUniform1i(highresTextureLocation, 1);
 	glUniform1i(heatmapTextureLocation, 2);
 	DisplayIfGLError("after  BackgroundLayer::SetupShaders", false);
+
+
+
+	shader.LoadUniformLocation(&uniformNswe, "nswe");
+	shader.LoadUniformLocation(&uniformResolution, "resolution");
+	shader.LoadUniformLocation(&uniformDegreeSpan, "degreespan");
+	//shader.LoadUniformLocation(&uniformDegreeMidpoint, "degreemidpoint");
+
+
+
 }
 
 void BackgroundLayer::SetupTextures()
@@ -436,8 +453,16 @@ void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const
 
 	shader.UseMe();
 	//shader.SetUniformFromFloats("seconds", seconds);
-	shader.SetUniformFromFloats("resolution", windowsize.width, windowsize.height);
-	shader.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
+	
+	
+	shader.SetUniform(uniformNswe, &viewNSWE);
+	shader.SetUniform(uniformResolution, windowsize.width, windowsize.height);
+	shader.SetUniform(uniformDegreeSpan, viewNSWE.width(), viewNSWE.height());
+	//shader.SetUniform(uniformDegreeMidpoint, (viewNSWE.west + viewNSWE.east) / 2.0, (viewNSWE.north + viewNSWE.south) / 2.0); //not used here.
+
+	
+	//shader.SetUniformFromFloats("resolution", windowsize.width, windowsize.height);
+	//shader.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
 	shader.SetUniformFromNSWE("highresnswe", highresnswe);
 	shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the
 
@@ -632,6 +657,10 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 	
 	shader.SetUniform(uniformNswe, nswe);
 	shader.SetUniform(uniformResolution, width, height);
+	shader.SetUniform(uniformDegreeSpan, nswe->width(), nswe->height());
+	shader.SetUniform(uniformDegreeMidpoint, (nswe->west+nswe->east) / 2.0, (nswe->north+nswe->south) / 2.0);
+
+
 	shader.SetUniform(uniformEarliestTimeToShow, options->earliestTimeToShow);
 	shader.SetUniform(uniformLatestTimeToShow, options->latestTimeToShow);
 	shader.SetUniform(uniformMinimumAccuracy, (unsigned long)options->minimumaccuracy);
@@ -698,6 +727,9 @@ void HeatmapLayer::SetupShaders()
 	shader.LoadUniformLocation(&uniformEarliestTimeToShow, "earliesttimetoshow");
 	shader.LoadUniformLocation(&uniformLatestTimeToShow, "latesttimetoshow");
 	shader.LoadUniformLocation(&uniformMinimumAccuracy, "minimumaccuracy");
+	shader.LoadUniformLocation(&uniformDegreeSpan, "degreespan");
+	shader.LoadUniformLocation(&uniformDegreeMidpoint, "degreemidpoint");
+
 
 	//then the blur shader and its uniforms and texture
 	blurShader.LoadShaderFromFile("blurVS.glsl", GL_VERTEX_SHADER);

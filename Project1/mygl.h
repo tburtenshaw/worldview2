@@ -63,6 +63,13 @@ public:
 	
 	HighResManager highres;
 
+	//Uniforms
+	unsigned int uniformNswe;
+	unsigned int uniformDegreeSpan;
+	//unsigned int uniformDegreeMidpoint;
+	unsigned int uniformResolution;
+
+
 	void Setup();
 	void SetupShaders();
 	void SetupTextures();
@@ -98,6 +105,9 @@ class PointsLayer : public GLRenderLayer {
 private:
 	unsigned int uniformNswe;
 	unsigned int uniformResolution;
+	unsigned int uniformDegreeSpan;	//do calculation on CPU
+	unsigned int uniformDegreeMidpoint;
+
 	unsigned int uniformPointRadius;
 	unsigned int uniformPointAlpha;
 	unsigned int uniformSeconds;
@@ -169,6 +179,9 @@ private:
 
 	//main shader uniforms
 	unsigned int uniformNswe;
+	unsigned int uniformDegreeSpan;
+	unsigned int uniformDegreeMidpoint;
+
 	unsigned int uniformResolution;
 	unsigned int uniformEarliestTimeToShow;
 	unsigned int uniformLatestTimeToShow;
