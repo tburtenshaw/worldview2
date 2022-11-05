@@ -4,10 +4,11 @@
 #include "shaders.h"
 #include "heatmap.h"
 #include "highresmanager.h"
+#include "atlas.h"
 
 //forward decls
 class RGBA;
-//class Shader;
+class MainViewport;
 
 struct TimeLookup {
 	unsigned long t;
@@ -62,6 +63,7 @@ public:
 	unsigned int heatmapTextureLocation;
 	
 	HighResManager highres;
+	Atlas atlas;
 
 	//Uniforms
 	unsigned int uniformNswe;
@@ -73,7 +75,7 @@ public:
 	void Setup();
 	void SetupShaders();
 	void SetupTextures();
-	void Draw(RectDimension window, const NSWE& viewNSWE, const GlobalOptions& options);
+	void Draw(MainViewport *vp, const GlobalOptions& options);
 
 	BackgroundLayer()
 		:worldTexture(0),highresTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
@@ -100,6 +102,8 @@ private:
 	unsigned int uniformResolution;
 	unsigned int uniformDegreeSpan;	//do calculation on CPU
 	unsigned int uniformDegreeMidpoint;
+	unsigned int uniformDPPHoriz;
+
 public:
 	void SetupShaders();
 	void SetupVertices();

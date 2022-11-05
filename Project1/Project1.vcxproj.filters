@@ -78,6 +78,9 @@
     <ClCompile Include="mygl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="atlas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loadjson.h">
@@ -114,6 +117,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="mygl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

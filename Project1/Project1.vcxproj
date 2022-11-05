@@ -175,6 +175,7 @@
     <ClCompile Include="..\..\imgui-master\imgui_draw.cpp" />
     <ClCompile Include="..\..\imgui-master\imgui_tables.cpp" />
     <ClCompile Include="..\..\imgui-master\imgui_widgets.cpp" />
+    <ClCompile Include="atlas.cpp" />
     <ClCompile Include="gui.cpp" />
     <ClCompile Include="header.cpp" />
     <ClCompile Include="input.cpp" />
@@ -190,6 +191,7 @@
     <ClCompile Include="loadjson.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="atlas.h" />
     <ClInclude Include="gui.h" />
     <ClInclude Include="header.h" />
     <ClInclude Include="highresmanager.h" />

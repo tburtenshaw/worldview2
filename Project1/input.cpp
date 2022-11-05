@@ -11,7 +11,7 @@
 #include <backends/imgui_impl_glfw.h>
 
 
-extern LocationHistory* pLocationHistory;
+//extern LocationHistory* pLocationHistory;
 
 NSWE originalNSWE;
 
@@ -27,7 +27,7 @@ WorldCoord MouseActions::dragStartLatLong = { 0,0 };
 XY MouseActions::dragStartXY = { 0,0 };
 
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void Input::HandleKey(GLFWwindow* window, int key, int scancode, int action, int mods, MainViewport* vp)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	if (io.WantCaptureKeyboard) {
@@ -48,7 +48,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	downpressed = glfwGetKey(window, GLFW_KEY_DOWN);
 
 	MovingTarget* viewNSWE;
-	viewNSWE = &pLocationHistory->viewNSWE;
+	viewNSWE = &vp->viewNSWE;
 
 	if (GLFW_PRESS == leftpressed) {
 		viewNSWE->target.nudgehorizontal(-step);
@@ -81,7 +81,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void Input::HandleScroll(GLFWwindow* window, double xoffset, double yoffset, MainViewport *vp)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	if (io.WantCaptureMouse) {
@@ -94,14 +94,14 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 	WorldCoord mapCoord;
 	MovingTarget* viewNSWE;
-	viewNSWE = &pLocationHistory->viewNSWE;
+	viewNSWE = &vp->viewNSWE;
 
-	mapCoord.SetFromWindowXY((float)xpos, (float)ypos, viewNSWE->target, pLocationHistory->windowDimensions);
+	mapCoord.SetFromWindowXY((float)xpos, (float)ypos, viewNSWE->target, vp->windowDimensions);
 
 	if (yoffset > 0.0) { viewNSWE->target.zoom(0.8f, mapCoord); }
 	else if (yoffset < 1.0) { viewNSWE->target.zoom(1.0f / 0.8f, mapCoord); }
 
-	viewNSWE->target.makeratio((float)pLocationHistory->windowDimensions.height/ (float)pLocationHistory->windowDimensions.width);
+	viewNSWE->target.makeratio((double)vp->windowDimensions.height/ (double)vp->windowDimensions.width);
 
 	viewNSWE->starttime = glfwGetTime();
 	viewNSWE->targettime = glfwGetTime() + 0.4;
@@ -111,22 +111,22 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 
 
-void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
+void Input::ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh, MainViewport *vp)
 {
 	MovingTarget* viewNSWE;
-	viewNSWE = &lh->viewNSWE;
+	viewNSWE = &vp->viewNSWE;
 	glfwGetCursorPos(window, &MouseActions::xpos, &MouseActions::ypos);
 	
-	MouseActions::longlatMouse.SetFromWindowXY(MouseActions::xpos, MouseActions::ypos, *viewNSWE, lh->windowDimensions);
+	MouseActions::longlatMouse.SetFromWindowXY(MouseActions::xpos, MouseActions::ypos, *viewNSWE, vp->windowDimensions);
 	MouseActions::lmbState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	MouseActions::rmbState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 
 	switch (MouseActions::mouseMode) {
 	case MouseMode::ScreenNavigation:
-		MouseNavigation(viewNSWE, lh);
+		Input::MouseNavigation(vp);
 		break;
 	case MouseMode::RegionSelect:
-		RegionSelect(viewNSWE, lh);
+		Input::RegionSelect(vp, lh);
 		break;
 	case MouseMode::PointSelect:
 		//PointSelect;
@@ -139,27 +139,27 @@ void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh)
 	return;
 }
 
-void RegionSelect(MovingTarget* viewNSWE, LocationHistory* lh)
+void Input::RegionSelect(MainViewport* vp, LocationHistory* lh)
 {
 	if (MouseActions::rmbState == GLFW_PRESS) {
 		//if right button is down, ugly hack to allow nav
 		MouseActions::lmbState = GLFW_PRESS;
-		MouseNavigation(viewNSWE, lh);
+		Input::MouseNavigation(vp);
 		return;
 	}
 
 	if (MouseActions::lmbState == GLFW_PRESS) {
 		if (!MouseActions::IsDragging()) {	//if we're not dragging yet		
 			MouseActions::SetStartOfDrag();
-			MouseActions::dragStartLatLong.SetFromWindowXY(MouseActions::xpos, MouseActions::ypos, *viewNSWE, lh->windowDimensions);
+			MouseActions::dragStartLatLong.SetFromWindowXY(MouseActions::xpos, MouseActions::ypos, vp->viewNSWE, vp->windowDimensions);
 
-			lh->regions.push_back(new Region());
+			vp->regions.push_back(new Region());
 		}
 		//else {
 			
-			lh->regions.back()->SetNSWE(MouseActions::longlatMouse.latitude,  MouseActions::dragStartLatLong.latitude, MouseActions::longlatMouse.longitude, MouseActions::dragStartLatLong.longitude);
+			vp->regions.back()->SetNSWE(MouseActions::longlatMouse.latitude,  MouseActions::dragStartLatLong.latitude, MouseActions::longlatMouse.longitude, MouseActions::dragStartLatLong.longitude);
 			
-			lh->regions.back()->Populate(lh);
+			vp->regions.back()->Populate(lh);
 		//}
 	}
 	if (MouseActions::lmbState == GLFW_RELEASE) {
@@ -170,14 +170,14 @@ void RegionSelect(MovingTarget* viewNSWE, LocationHistory* lh)
 	}
 }
 
-void MouseNavigation(MovingTarget* viewNSWE, LocationHistory*lh)
+void Input::MouseNavigation(MainViewport *vp)
 {
 	if (MouseActions::lmbState == GLFW_PRESS) {
 		if (!MouseActions::IsDragging()) {	//if we're not dragging yet		
 			MouseActions::SetStartOfDrag();
 
-			originalNSWE = *viewNSWE;
-			viewNSWE->setMoving(true);
+			originalNSWE = vp->viewNSWE;
+			vp->viewNSWE.setMoving(true);
 
 		}
 		else {	//if we're dragging
@@ -188,15 +188,15 @@ void MouseNavigation(MovingTarget* viewNSWE, LocationHistory*lh)
 			delta = MouseActions::GetDragDelta();
 
 			float dppx, dppy;
-			dppx = viewNSWE->width() / lh->windowDimensions.width;
-			dppy = viewNSWE->height() / lh->windowDimensions.height;
+			dppx = vp->viewNSWE.width() / vp->windowDimensions.width;
+			dppy = vp->viewNSWE.height() / vp->windowDimensions.height;
 
-			viewNSWE->target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
-			viewNSWE->setMoving(true);
+			vp->viewNSWE.target.setvalues(originalNSWE.north + dppy * delta.y, originalNSWE.south + dppy * delta.y, originalNSWE.west - dppx * delta.x, originalNSWE.east - dppx * delta.x);
+			vp->viewNSWE.setMoving(true);
 
 			//printf("degrees: %f %f\n", dppx * deltax, dppy * deltay);
 
-			viewNSWE->starttime = glfwGetTime();
+			vp->viewNSWE.starttime = glfwGetTime();
 
 		}
 	}
@@ -204,7 +204,7 @@ void MouseNavigation(MovingTarget* viewNSWE, LocationHistory*lh)
 		if (MouseActions::IsDragging()) {
 			//printf("up");
 			MouseActions::FinishDragging();
-			viewNSWE->setMoving(false);
+			vp->viewNSWE.setMoving(false);
 		}
 	}
 }

@@ -6,10 +6,11 @@ layout(triangle_strip, max_vertices = 4) out;
 uniform vec2 resolution;
 uniform float linewidth;
 uniform vec4 nswe;
+uniform float dpphoriz;
 
 in VS_OUT {
     vec4 color;
-	float dontdraw;
+	float detaillevel;
 	vec2 origcoords;	//these are the map coords
 	float timefrom2010;
 } gs_in[]; 
@@ -21,7 +22,7 @@ out vec2 pointb;
 
 void main()
 {
-    if (gs_in[1].dontdraw!=0.0) {
+    if (gs_in[1].detaillevel<dpphoriz) {	//if the detail level isn't needed to bother showing
 		EndPrimitive();
 		return;
 	}
@@ -86,7 +87,7 @@ void main()
 	fcol=vec4((gs_in[1].timefrom2010 - gs_in[0].timefrom2010)/linelength/3600.0);
 
 	fcol.a=min(1.0/linelength,1.0);	//fades away long lines (i.e. crossing the screen)
-
+	fcol.a=pow(fcol.a,1.5);
 	
 	gl_Position = vec4(start,1.0,1.0) + vec4(-thickness1, 0.0, 0.0) + vec4(extendlength, 0.0, 0.0);
 	EmitVertex();

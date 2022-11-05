@@ -214,6 +214,18 @@ double NSWE::area() const
 		return true;
 	}
 
+	bool NSWE::overlapsWith(NSWE nswe)
+	{
+		//if the west is further than the east in either case, they can't overlap
+		if ((west > nswe.east) || (nswe.west > east))
+			return false;
+		if ((south > nswe.north) || (nswe.south > north))
+			return false;
+
+		//this enables zero area to still overlap, okay for this
+		return true;
+	}
+
 
 
 	void MovingTarget::movetowards(double currenttime) {

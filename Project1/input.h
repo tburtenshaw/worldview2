@@ -6,6 +6,7 @@ struct XY;
 class WorldCoord;
 class LocationHistory;
 class MovingTarget;
+class MainViewport;
 
 enum class MouseMode	//to be fair, not really the mouse mode, more the whole system
 {
@@ -42,8 +43,11 @@ public:
 
 };
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory *lh);
-void MouseNavigation(MovingTarget* viewNSWE, LocationHistory* lh);
-void RegionSelect(MovingTarget* viewNSWE, LocationHistory* lh);
+namespace Input {
+	
+	void ManageMouseMoveClickAndDrag(GLFWwindow* window, LocationHistory* lh, MainViewport *vp);
+	void MouseNavigation(MainViewport* vp);
+	void RegionSelect(MainViewport* vp, LocationHistory* lh);
+	void HandleScroll(GLFWwindow* window, double xoffset, double yoffset, MainViewport* vp);
+	void HandleKey(GLFWwindow* window, int key, int scancode, int action, int mods, MainViewport* vp);
+}

@@ -35,6 +35,8 @@
 
 LocationHistory* pLocationHistory;
 
+MainViewport mainView = { 1200,800 };
+
 FrameBufferObjectInfo fboInfo;	//this is what everything is drawn to first.
 
 //Different things I might draw to the map
@@ -127,8 +129,8 @@ int LocationHistory::OpenAndReadLocationFile()
 	globalOptions.earliestTimeToShow = stats.earliestTimestamp;
 	globalOptions.latestTimeToShow = stats.latestTimestamp;
 
-	viewNSWE.target=FindBestView();
-	viewNSWE.target.makeratio((float)windowDimensions.height / (float)windowDimensions.width);
+	mainView.viewNSWE.target=FindBestView();
+	mainView.viewNSWE.target.makeratio((double)mainView.windowDimensions.height / (double)mainView.windowDimensions.width);
 
 
 	//Plan: to have five levels of detail (5 LoDs) from [0] to [4]. These are used just for plotting.
@@ -185,13 +187,14 @@ int StartGLProgram(LocationHistory* lh)
 		return 1;
 	}
 
-	lh->windowDimensions = { 1200,800 };
+	
+	
 	
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(lh->windowDimensions.width, lh->windowDimensions.height, "World Tracker", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(mainView.windowDimensions.width, mainView.windowDimensions.height, "World Tracker", NULL, NULL);
 	if (!window) {
 		fprintf(stderr, "ERROR: could not open window with GLFW3\n");
 		glfwTerminate();
@@ -228,7 +231,7 @@ int StartGLProgram(LocationHistory* lh)
 
 
 	//Setup GL setings
-	glViewport(0, 0, lh->windowDimensions.width, lh->windowDimensions.height);
+	glViewport(0, 0, mainView.windowDimensions.width, mainView.windowDimensions.height);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetFramebufferSizeCallback(window, size_callback);
@@ -252,35 +255,35 @@ int StartGLProgram(LocationHistory* lh)
 	DisplayIfGLError("after set up and compile the shaders", false);
 
 	//Set up the FBO that we draw onto
-	fboInfo.SetupFrameBufferObject(lh->windowDimensions.width, lh->windowDimensions.height);
+	fboInfo.SetupFrameBufferObject(mainView.windowDimensions.width, mainView.windowDimensions.height);
 
 	//initial values
-	lh->viewNSWE.target.setvalues(-36.83f, -37.11f, 174.677f - 0.0f, 174.961f - 0.0f);
-	lh->viewNSWE.target.makeratio((float)lh->windowDimensions.height / (float)lh->windowDimensions.width);
-	lh->viewNSWE.setvalues(lh->viewNSWE.target);
-	lh->viewNSWE.movetowards(1000000000000.0);
+	mainView.viewNSWE.target.setvalues(-36.83f, -37.11f, 174.677f - 0.0f, 174.961f - 0.0f);
+	mainView.viewNSWE.target.makeratio((double)mainView.windowDimensions.height / (double)mainView.windowDimensions.width);
+	mainView.viewNSWE.setvalues(mainView.viewNSWE.target);
+	mainView.viewNSWE.movetowards(1000000000000.0);
 
 	//make a new region, which is the viewport
-	lh->regions.push_back(new Region());
+	mainView.regions.push_back(new Region());
 
 	regionsLayer.displayRegions.resize(1);
 	regionsLayer.SetupVertices();
 	regionsLayer.SetupShaders();
 
-	heatmapLayer.Setup(lh->windowDimensions.width, lh->windowDimensions.height);
+	heatmapLayer.Setup(mainView.windowDimensions.width, mainView.windowDimensions.height);
 
 
 
 	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
 		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
-			ManageMouseMoveClickAndDrag(window, lh);
+			Input::ManageMouseMoveClickAndDrag(window, lh, &mainView);
 		}
 
 		globalOptions.seconds = (float)glfwGetTime();
 
 		//get the view moving towards the target
-		lh->viewNSWE.movetowards(globalOptions.seconds);
+		mainView.viewNSWE.movetowards(globalOptions.seconds);
 
 		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
 			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, pLocationHistory);
@@ -309,12 +312,12 @@ int StartGLProgram(LocationHistory* lh)
 		
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		int currentLod= lh->lodInfo.LodFromDPP(lh->viewNSWE.width() / lh->windowDimensions.width);
+		int currentLod= lh->lodInfo.LodFromDPP(mainView.viewNSWE.width() / mainView.windowDimensions.width);
 
 
 		//Heatmap rendering to FBO
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			heatmapLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &globalOptions);
+			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, &globalOptions);
 		}
 
 
@@ -325,25 +328,25 @@ int StartGLProgram(LocationHistory* lh)
 		//Background layer has worldmap, heatmap and highres
 		backgroundLayer.heatmapTexture = heatmapLayer.texture;
 		DisplayIfGLError("before backgroundLayer.Draw", false);
-		backgroundLayer.Draw(lh->windowDimensions, lh->viewNSWE, globalOptions);
+		backgroundLayer.Draw(&mainView, globalOptions);
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			if (lh->viewNSWE.isDirty()) {
-				lh->regions[0]->SetNSWE(&lh->viewNSWE.target);
-				lh->regions[0]->Populate(lh);
+			if (mainView.viewNSWE.isDirty()) {
+				mainView.regions[0]->SetNSWE(&mainView.viewNSWE.target);
+				mainView.regions[0]->Populate(lh);
 			}
 
 			if (globalOptions.showPaths) {
-				pathLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);
+				pathLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);
 			}
 
 			if (globalOptions.showPoints) {
-				pointsLayer.Draw(lh->lodInfo, currentLod, lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE, &globalOptions);
+				pointsLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, &globalOptions);
 			}
 
-			regionsLayer.UpdateFromRegionsData(lh->regions);
-			regionsLayer.Draw(lh->windowDimensions.width, lh->windowDimensions.height, &lh->viewNSWE);
+			regionsLayer.UpdateFromRegionsData(mainView.regions);
+			regionsLayer.Draw(mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
 
 		}
 
@@ -356,11 +359,11 @@ int StartGLProgram(LocationHistory* lh)
 		DisplayIfGLError("before fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 		//draw the FBO onto the screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);
+		fboInfo.Draw(mainView.windowDimensions.width, mainView.windowDimensions.height);
 		DisplayIfGLError("after fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 
 		if (lh->isLoadingFile == false) {
-			Gui::MakeGUI(lh, &globalOptions);	//make the ImGui stuff
+			Gui::MakeGUI(lh, &globalOptions, &mainView);	//make the ImGui stuff
 		}
 		else if (lh->isLoadingFile == true) {
 			Gui::ShowLoadingWindow(lh);
@@ -369,7 +372,7 @@ int StartGLProgram(LocationHistory* lh)
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		if (!lh->viewNSWE.isMoving())	glfwWaitEventsTimeout(1.0f / 60.0f);	//this runs constantly, but max of ~60fps
+		if (!mainView.viewNSWE.isMoving())	glfwWaitEventsTimeout(1.0f / 60.0f);	//this runs constantly, but max of ~60fps
 		else {
 			glfwPollEvents();
 		}
@@ -387,19 +390,29 @@ int StartGLProgram(LocationHistory* lh)
 	return 0;
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	Input::HandleKey(window, key, scancode, action, mods, &mainView);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	Input::HandleScroll(window, xoffset, yoffset, &mainView);
+}
+
 
 void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight)
 {
 	//printf("Resize %i %i\t", windowNewWidth, windowNewHeight);
-	pLocationHistory->windowDimensions.height = windowNewHeight;
-	pLocationHistory->windowDimensions.width = windowNewWidth;
+	mainView.windowDimensions.height = windowNewHeight;
+	mainView.windowDimensions.width = windowNewWidth;
 
 	glViewport(0, 0, windowNewWidth, windowNewHeight);
 
-	fboInfo.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
-	heatmapLayer.UpdateSize(pLocationHistory->windowDimensions.width, pLocationHistory->windowDimensions.height);
+	fboInfo.UpdateSize(mainView.windowDimensions.width, mainView.windowDimensions.height);
+	heatmapLayer.UpdateSize(mainView.windowDimensions.width, mainView.windowDimensions.height);
 
-	pLocationHistory->viewNSWE.target.makeratio((double)pLocationHistory->windowDimensions.height / (double)pLocationHistory->windowDimensions.width);
+	mainView.viewNSWE.target.makeratio((double)mainView.windowDimensions.height / (double)mainView.windowDimensions.width);
 
 	return;
 }

@@ -40,11 +40,11 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options)
+void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 {
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
-	sigfigs = Gui::BestSigFigsFormat(&lh->viewNSWE, lh->windowDimensions);
+	sigfigs = Gui::BestSigFigsFormat(vp);
 
 	ImGui::Begin("Map information");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -61,33 +61,33 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options)
 	ImGui::Text("Number of points: %i", lh->locations.size());
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
-	ImGui::Text(sCoords.c_str(), lh->viewNSWE.north, lh->viewNSWE.south, lh->viewNSWE.west, lh->viewNSWE.east);
+	ImGui::Text(sCoords.c_str(), vp->viewNSWE.north, vp->viewNSWE.south, vp->viewNSWE.west, vp->viewNSWE.east);
 
-	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i",1000000.0f*lh->viewNSWE.width()/lh->windowDimensions.width, 
-		lh->windowDimensions.width/ lh->viewNSWE.width(), 
-		lh->lodInfo.LodFromDPP(lh->viewNSWE.width() / lh->windowDimensions.width));
+	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i",1000000.0f*vp->viewNSWE.width()/vp->windowDimensions.width, 
+		vp->windowDimensions.width/ vp->viewNSWE.width(), 
+		lh->lodInfo.LodFromDPP(vp->DegreesPerPixel()));
 
 	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	Gui::ShowRegionInfo(lh->regions[0], options);
+	Gui::ShowRegionInfo(vp->regions[0], options);
 
 	ImGui::End();
 
 	//delete any regions marked to be deleted
-	for (std::size_t i = 1; i < lh->regions.size(); i++) {
-		if (lh->regions[i]->toDelete) {
-			lh->regions.erase(lh->regions.begin() + i);
+	for (std::size_t i = 1; i < vp->regions.size(); i++) {
+		if (vp->regions[i]->toDelete) {
+			vp->regions.erase(vp->regions.begin() + i);
 
-			lh->regions[i - 1]->needsRedraw = true;
+			vp->regions[i - 1]->needsRedraw = true;
 		}
 	}
 
 	//display the info for all regions
-	for (std::size_t i = 1; i < lh->regions.size(); i++) {
-		if (lh->regions[i]->shouldShowWindow) {
-			ImGui::Begin((lh->regions[i]->displayname + "###regionwindow" + std::to_string(lh->regions[i]->id)).c_str());
-			Gui::ShowRegionInfo(lh->regions[i], options);
+	for (std::size_t i = 1; i < vp->regions.size(); i++) {
+		if (vp->regions[i]->shouldShowWindow) {
+			ImGui::Begin((vp->regions[i]->displayname + "###regionwindow" + std::to_string(vp->regions[i]->id)).c_str());
+			Gui::ShowRegionInfo(vp->regions[i], options);
 			ImGui::End();
 		}
 	}
@@ -96,8 +96,8 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options)
 	//ImGui::ShowStyleEditor();
 
 	static float oldBlur = 0;
-	static float oldMinimumaccuracy = 0;
-	static float oldBlurperaccurary = 0;
+	static int oldMinimumaccuracy = 0;
+
 	ImGui::Begin("Heatmap");
 	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
 	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 25.0f, "%.1f");
@@ -486,7 +486,7 @@ void Gui::DayHistogram(Region* r, GlobalOptions* options, float height)
 		window->DrawList->AddRectFilled(topleftofbar, bottomrightofbar, Palette_Handler::PaletteColorImU32(options->indexPaletteWeekday, i));
 
 		int percentint;
-		percentint = fdays[i] * 100.0f / totaldays + 0.5f;
+		percentint = static_cast<int>(fdays[i] * 100.0f / totaldays + 0.5f);
 		std::string percent = std::to_string(percentint) + "%";
 
 		
@@ -518,10 +518,9 @@ void Gui::ListDatesInRegion(Region* r)
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 
-const char* Gui::BestSigFigsFormat(NSWE* nswe, RectDimension rect)
+const char* Gui::BestSigFigsFormat(MainViewport *vp)
 {
-	float dpp;	//degrees per pixel
-	dpp = nswe->width() / rect.width;
+	const double dpp = vp->DegreesPerPixel();
 
 	if (dpp > 1)	return "%.0f";
 	if (dpp > 0.1)	return "%.1f";

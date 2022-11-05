@@ -53,7 +53,7 @@ HighResManager::HighResManager()
 	nswe.push_back(NSWE(-25.0f, -26.0f, -55.0f, -54.0f));
 
 	filename.push_back("n-22s-25w-47e-42.png");
-	nswe.push_back(NSWE(-22.0f, -25.0f, -47.0f, -42.0f));
+	nswe.push_back(NSWE(-22.0, -25.0f, -47.0f, -42.0f));
 
 	filename.push_back("n-33s-35w150e152.png");
 	nswe.push_back(NSWE(-33.0f, -35.0f, 150.0f, 152.0f));
@@ -68,7 +68,7 @@ HighResManager::HighResManager()
 
 void HighResManager::DecideBestTex(RectDimension windowSize, const NSWE & viewportNSWE)
 {
-	float pixelsperdegree;
+	double pixelsperdegree;
 
 	pixelsperdegree = (float)windowSize.width / (float)viewportNSWE.width();
 
@@ -78,16 +78,16 @@ void HighResManager::DecideBestTex(RectDimension windowSize, const NSWE & viewpo
 	}
 	
 	
-	float areaofviewport = viewportNSWE.area();
-	float bestscore;
+	double areaofviewport = viewportNSWE.area();
+	double bestscore;
 
 	bestscore = 0;
 	for (int i=1;i<nswe.size();i++)	{
 		NSWE intersection = viewportNSWE.intersectionWith(nswe[i]);
-		float areatotest = nswe[i].area();
-		float areaofintersection = intersection.area();
+		double areatotest = nswe[i].area();
+		double areaofintersection = intersection.area();
 
-		float score = std::min(areaofintersection / areatotest, areaofintersection / areaofviewport);
+		double score = std::min(areaofintersection / areatotest, areaofintersection / areaofviewport);
 
 		if (score > bestscore) {
 			bestscore = score;

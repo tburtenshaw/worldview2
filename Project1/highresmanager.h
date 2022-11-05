@@ -1,9 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-
-//pre
-class NSWE;
+#include "nswe.h"
 
 class HighResManager {
 public:

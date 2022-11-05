@@ -326,4 +326,7 @@ void LocationHistory::AccuracyHistogram()
 	}
 }
 
-
+double MainViewport::DegreesPerPixel()
+{
+	return viewNSWE.width() / static_cast<double>(windowDimensions.width);
+}

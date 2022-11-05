@@ -12,7 +12,7 @@ uniform vec2 degreemidpoint;
 
 out VS_OUT {
     vec4 color;
-	float dontdraw;		//whether or not we draw the (?next) line
+	float detaillevel;		//whether or not we draw the (?next) line
 	vec2 origcoords;	//these are the map coords
 	float timefrom2010;
 } vs_out;
@@ -35,29 +35,12 @@ vec3 rainbow(float f)
 
 void main() {
 	vs_out.origcoords=vp;
+	vs_out.detaillevel=detail;
 
-	//float width; float height; float midx,midy;
-	//width = (nswe.w-nswe.z); 
-	//height = (nswe.x-nswe.y);
-	//midx = (nswe.w+nswe.z)/2; 
-	//midy = (nswe.x+nswe.y)/2; 
-	
-	//gl_Position = vec4(((vp.x-midx)/width*2.0),(vp.y-midy)/height*2.0,0.0,1.0);
-	gl_Position = vec4(((vp-degreemidpoint)/degreespan*2.0),0.0,1.0);
-
+	gl_Position = vec4((2.0*(vp-degreemidpoint)/degreespan),0.0,1.0);
 
 	//temp
 	vs_out.color=vec4(rainbow(float(ts/uint(60*60))/24.0),0.9);
-
-	//float res;
-	vs_out.dontdraw=1.0;
-	
-	//work out the horizontal resolution, then if the detail is needed, flag this as a line to draw
-	float res = degreespan.x/resolution.x;	//we should probably send as uniform degreesperpixel
-
-	if (detail>res)	{
-		vs_out.dontdraw=0.0;
-	}
 
 	vs_out.timefrom2010 = float(ts-uint(1262304000));
 

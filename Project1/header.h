@@ -166,7 +166,16 @@ public:
 
 	std::vector<PathPlotLocation> pathPlotLocations;	//contains multiple LODs after each other with some info removed, floats vs doubles etc.
 
-	int LodFromDPP(float dpp);
+	int LodFromDPP(double dpp);
+};
+
+class MainViewport {
+public:
+	RectDimension windowDimensions;
+	MovingTarget viewNSWE;
+	std::vector<Region*> regions;
+
+	double DegreesPerPixel(); //in the horizontal direction
 };
 
 class LocationHistory {
@@ -201,12 +210,6 @@ public:
 	bool isInitialised;
 	unsigned long totalbytesread;
 
-//should be in another class re: overall view
-	MovingTarget viewNSWE;
-	RectDimension windowDimensions;
-
-	std::vector<Region*> regions;
-
 
 	class Statistics {	//contains less necessary data calculated either when loading LH, or later
 	public:
@@ -239,6 +242,9 @@ struct WVFormat {
 };
 
 void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
 int StartGLProgram(LocationHistory* lh);
 void DisplayIfGLError(const char* message, bool alwaysshow);
 

@@ -110,7 +110,7 @@ void LocationHistory::GenerateLocationLODs()
 	return;
 }
 
-int LODInfo::LodFromDPP(float dpp)
+int LODInfo::LodFromDPP(double dpp)
 {
 	for (int i = 0; i < numberOfLODs-1; i++) {
 		if (dpp < lodPrecision[i+1]) {

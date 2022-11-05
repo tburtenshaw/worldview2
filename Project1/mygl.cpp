@@ -3,6 +3,7 @@
 #include "nswe.h"
 #include "regions.h"
 #include "palettes.h"
+#include "atlas.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -323,6 +324,7 @@ void PathLayer::SetupShaders()
 	shader.LoadUniformLocation(&uniformResolution, "resolution");
 	shader.LoadUniformLocation(&uniformDegreeSpan, "degreespan");
 	shader.LoadUniformLocation(&uniformDegreeMidpoint, "degreemidpoint");
+	shader.LoadUniformLocation(&uniformDPPHoriz, "dpphoriz");
 }
 
 void PathLayer::SetupVertices()
@@ -358,7 +360,7 @@ void PathLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE*
 	shader.SetUniform(uniformResolution, width, height);
 	shader.SetUniform(uniformDegreeSpan, nswe->width(), nswe->height());
 	shader.SetUniform(uniformDegreeMidpoint, (nswe->west + nswe->east) / 2.0, (nswe->north + nswe->south) / 2.0);
-	
+	shader.SetUniform(uniformDPPHoriz, (float)nswe->width()/width);
 	
 	//shader.SetUniformFromNSWE("nswe", nswe);
 	shader.SetUniformFromFloats("seconds", seconds * 20.0f);
@@ -414,6 +416,8 @@ void BackgroundLayer::Setup()
 	SetupSquareVertices();
 	vao = vaoSquare;
 	vbo = vboSquare;
+
+	atlas.Setup();
 }
 
 void BackgroundLayer::SetupShaders()
@@ -453,13 +457,19 @@ void BackgroundLayer::SetupTextures()
 	MakeHighresImageTexture();
 }
 
-void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const GlobalOptions &options)
+void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 {
 
 	NSWE* highresnswe;
 
-	highres.DecideBestTex(windowsize, viewNSWE);
+	highres.DecideBestTex(vp->windowDimensions, vp->viewNSWE);
 	highresnswe = highres.GetBestNSWE(highresTexture);
+
+	//need to check dpp first
+	if (vp->DegreesPerPixel() < 360.0/4096.0) {
+		atlas.OutputDrawOrderedUVListForUniform(vp->viewNSWE, nullptr, nullptr, 10);
+	}
+
 
 	DisplayIfGLError("before BackgroundLayer::Draw glBindBuffer(GL_ARRAY_BUFFER, vbo);", false);
 	glBindBuffer(GL_ARRAY_BUFFER, vboSquare);
@@ -468,9 +478,9 @@ void BackgroundLayer::Draw(RectDimension windowsize, const NSWE &viewNSWE, const
 	//shader.SetUniformFromFloats("seconds", seconds);
 	
 	
-	shader.SetUniform(uniformNswe, &viewNSWE);
-	shader.SetUniform(uniformResolution, windowsize.width, windowsize.height);
-	shader.SetUniform(uniformDegreeSpan, viewNSWE.width(), viewNSWE.height());
+	shader.SetUniform(uniformNswe, &vp->viewNSWE);
+	shader.SetUniform(uniformResolution, vp->windowDimensions.width, vp->windowDimensions.height);
+	shader.SetUniform(uniformDegreeSpan, vp->viewNSWE.width(), vp->viewNSWE.height());
 	//shader.SetUniform(uniformDegreeMidpoint, (viewNSWE.west + viewNSWE.east) / 2.0, (viewNSWE.north + viewNSWE.south) / 2.0); //not used here.
 
 	

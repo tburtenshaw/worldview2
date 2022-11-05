@@ -41,7 +41,8 @@ public:
 
 	void makeratio(double ratio);
 
-	bool containspoint(double latitude, double longitude) const;
+	bool containspoint(const double latitude, const double longitude) const;
+	bool overlapsWith(NSWE nswe);
 
 	friend std::ostream& operator<<(std::ostream& os, NSWE const& m) {
 		return os << "N: " << m.north << ", S: " << m.south << ", W: " << m.west << ", E: " << m.east;
