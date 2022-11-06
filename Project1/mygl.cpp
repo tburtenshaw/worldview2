@@ -467,7 +467,7 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 
 	//need to check dpp first
 	if (vp->DegreesPerPixel() < 360.0/4096.0) {
-		atlas.OutputDrawOrderedUVListForUniform(vp->viewNSWE, nullptr, nullptr, 10);
+		atlas.OutputDrawOrderedUVListForUniform(vp, nullptr, nullptr, 10);
 	}
 
 
@@ -493,11 +493,14 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 	shader.SetUniformFromFloats("maxheatmapvalue", options.heatmapmaxvalue);// heatmap.maxPixel);
 	shader.SetUniformFromInts("palette", options.palette);
 
+	//std::cout << "wt:" << worldTexture << ", hrt:" << highresTexture << ", atlastex:" << atlas.getTexture() << ", hmT " << heatmapTexture << "\n";
+
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_2D, worldTexture);
 
 	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, highresTexture);
+	glBindTexture(GL_TEXTURE_2D, atlas.getTexture());
+	//glBindTexture(GL_TEXTURE_2D, highresTexture);
 
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, heatmapTexture);

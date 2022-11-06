@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stb_image.h>
 #include <thread>
+#include "header.h"
+
 
 void Atlas::CreateMainPartition(const int width, const int height)
 {
@@ -72,24 +74,53 @@ AtlasRect Atlas::MakeSpaceFor(int width, int height)
 	return returnRect;
 }
 
-void Atlas::OutputDrawOrderedUVListForUniform(const NSWE& viewNSWE, int* numberOfItems, float* array, int maxItems)
+void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* array, int maxItems)
 {
 	//the main function called by the draw call
 	//WE ALSO NEED VIEWPORT SIZE as the textures depend on the dpp
 
+	
+	//Find anything visible, load from file if not already
 	for (auto &image :images)	{
-		if (image.OverlapsWith(viewNSWE)) {
-			//std::cout << "Overlaps:" << image.filename << viewNSWE << image.nswe << std::endl;
-			if (image.NeedsLoadingFromFile()) {
-				image.needsLoading = false;
-				std::thread(&HighResImage::LoadFileToAtlas, image).detach();
-				//image.LoadFileToAtlas();
+		if (image.OverlapsWith(vp->viewNSWE)) {
+			//also need to exclude if only  a few pixels
+			if (image.nswe.width() / vp->DegreesPerPixel() > 1.0) {
+				if (image.NeedsLoadingFromFile()) {
+					image.needsLoading = false;
+					std::thread(&HighResImage::LoadFileToAtlas, std::ref(image)).detach();
+					//image.LoadFileToAtlas();
+				}
+				
+				//work out a transform
+				double targetW = image.nswe.west / vp->viewNSWE.width();
+
+				
+				
+				//std::cout << "Overlaps:" << image.filename <<"view:" << image.nswe << "pixels: " << image.nswe.width() / vp->DegreesPerPixel() << std::endl;
 			}
 		}
 	}
 
-	//the atlas position, and the glsubimage won't be in the loading thread
-	//image.SetAtlasPosition(MakeSpaceFor(image.position.width, image.position.height));
+
+	//If fully loaded, then find a space for it
+	for (auto& image : images) {
+		if (image.dataLoaded) {
+			if (!image.inAtlas) {
+				image.SetAtlasPosition(MakeSpaceFor(image.position.width, image.position.height));
+			}
+		}
+	}
+
+	//Then load part of the subimage
+	for (auto& image : images) {
+		if (image.inAtlas) {
+			//std::cout << "Position: " << image.filename << "\n" <<image.position.x << "," <<image.position.y <<"\n";
+			if (!image.textureLoaded) {
+				image.LoadTexture(texture);
+			}
+		}
+	}
+
 
 }
 
@@ -105,8 +136,11 @@ void Atlas::Setup(int width, int height)
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);//no mipmap
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glGenerateMipmap(GL_TEXTURE_2D);
+	std::cout << "made " << texture << " a " << width << "by" << height << "texture\n";
+	//glGenerateMipmap(GL_TEXTURE_2D);
 
 	//Create the initial partition the size of whole texture
 	CreateMainPartition(width, height);
@@ -120,9 +154,15 @@ GLuint Atlas::getTexture() const
 	return texture;
 }
 
+void HighResImage::SetAtlasPosition(AtlasRect newPos)
+{
+	position = newPos;
+	inAtlas = true;
+}
+
 void HighResImage::LoadFileToAtlas()
 {
-	int nrChannels=0;
+	//int nrChannels=0;
 	rawImageData = stbi_load(filename.c_str(), &position.width, &position.height, &nrChannels, 0);
 
 	if (!rawImageData) {
@@ -132,6 +172,31 @@ void HighResImage::LoadFileToAtlas()
 	std::cout << "Loaded: " << filename << " Size:" << position.width << "x" << position.height << needsLoading << std::endl;
 
 	dataLoaded = true;
+}
+
+void HighResImage::LoadTexture(GLuint texture)
+{
+	int linesToLoad = std::min(position.height - subImageLinesLoaded, 512); //load at most 512 lines
+	glBindTexture(GL_TEXTURE_2D, texture);
+	std::cout <<texture << "pos" << position.x << "," << position.y + subImageLinesLoaded << "size" << position.width << "x"  << linesToLoad << "\n";
+	glTexSubImage2D(GL_TEXTURE_2D, 0, position.x, position.y + subImageLinesLoaded, position.width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + (long)subImageLinesLoaded * position.width * nrChannels);
+	subImageLinesLoaded += linesToLoad;
+
+
+	if (subImageLinesLoaded == position.height) {
+		printf("Loaded Texture. Now free\n");
+		stbi_image_free(rawImageData);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+		
+		textureLoaded = true;
+		//subImageLoaded = dataReady;
+		//dataReady = 0;
+		//subImageLoading = false;
+	}
+
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
 }
 
 bool HighResImage::OverlapsWith(NSWE other)

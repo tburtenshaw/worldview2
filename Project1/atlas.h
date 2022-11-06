@@ -3,6 +3,8 @@
 #include <string>
 #include "nswe.h"
 
+class MainViewport;
+
 struct AtlasRect {
 	int x, y;
 	int width, height;
@@ -13,12 +15,16 @@ private:
 	std::string filename;
 	NSWE nswe;
 
-	bool inAtlas;
 	AtlasRect position;
 
 	unsigned char* rawImageData;
+	int nrChannels;
+
 	bool needsLoading;
 	bool dataLoaded;
+	bool inAtlas;
+	bool textureLoaded;
+
 	int subImageLinesLoaded;
 	friend class Atlas;
 public:
@@ -28,6 +34,8 @@ public:
 	
 	void SetAtlasPosition(AtlasRect position);
 	void LoadFileToAtlas();
+	void LoadTexture(GLuint texture);
+
 	bool OverlapsWith(NSWE nswe);
 	bool NeedsLoadingFromFile();
 };
@@ -57,7 +65,7 @@ private:
 	GLuint texture;
 public:
 
-	void OutputDrawOrderedUVListForUniform(const NSWE& viewNSWE, int* numberOfItems, float* array, int maxItems); //should only include ones that need to be drawn
+	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* array, int maxItems); //should only include ones that need to be drawn
 	void Setup(int width = 16384, int height = 4096);
 	GLuint getTexture() const;
 
