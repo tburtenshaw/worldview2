@@ -499,7 +499,7 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 	shader.SetUniformFromFloats("atlasmult", highresMult[0], highresMult[1]);
 	shader.SetUniformFromFloats("atlasadd", highresAdd[0], highresAdd[1]);
 
-	std::cout << "draw:" << highresNSWEfloat[0]<< highresNSWEfloat[1]<< highresNSWEfloat[2] << highresNSWEfloat[3] << "\n";
+	//std::cout << "draw:" << highresNSWEfloat[0]<< highresNSWEfloat[1]<< highresNSWEfloat[2] << highresNSWEfloat[3] << "\n";
 
 	//shader.SetUniformFromNSWE("highresnswe", highresnswe);
 	//shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the

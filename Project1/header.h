@@ -21,7 +21,7 @@ class PointsLayer;
 class RegionsLayer;
 class Region;
 //class MovingTarget;
-class HighResManager;
+//class HighResManager;
 class RGBA;
 class DisplayRegion;
 

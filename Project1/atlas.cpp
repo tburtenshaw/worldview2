@@ -99,18 +99,18 @@ void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfIte
 				double atlasTargetX = (double)image.position.x / (double)textureWidth;
 				double atlasTargetWidth = (double)image.position.width / (double)textureWidth;
 
-				std::cout << "W:" << targetW << " E:" << targetE;
-				std::cout << "gl * " << atlasTargetWidth / targetWidth << " + " << atlasTargetX - targetW * atlasTargetWidth / targetWidth << "\n";
+				//std::cout << "W:" << targetW << " E:" << targetE;
+				//std::cout << "gl * " << atlasTargetWidth / targetWidth << " + " << atlasTargetX - targetW * atlasTargetWidth / targetWidth << "\n";
 	
 				double targetS=(image.nswe.south - vp->viewNSWE.south) / vp->viewNSWE.height();
 				double targetN= (image.nswe.north - vp->viewNSWE.south) / vp->viewNSWE.height();
 				double targetHeight = targetN - targetS;
-				std::cout << "N:" << targetN << " S:" << targetS;
+				//std::cout << "N:" << targetN << " S:" << targetS;
 				double atlasTargetY = (double)image.position.y / (double)textureHeight;
 				double atlasTargetHeight = (double)image.position.height / (double)textureHeight;
-				std::cout << "gl * " << atlasTargetHeight / targetHeight << " + " << atlasTargetY - targetS * atlasTargetHeight / targetHeight << "\n";
+				//std::cout << "gl * " << atlasTargetHeight / targetHeight << " + " << atlasTargetY - targetS * atlasTargetHeight / targetHeight << "\n";
 				if (arrayNSWE) {
-					arrayNSWE[0] = (float)targetN*vp->windowDimensions.height;
+					arrayNSWE[0] = (float)targetN *vp->windowDimensions.height;
 					arrayNSWE[1] = (float)targetS * vp->windowDimensions.height;
 					arrayNSWE[2] = (float)targetW * vp->windowDimensions.width;
 					arrayNSWE[3] = (float)targetE * vp->windowDimensions.width;
@@ -208,7 +208,7 @@ void HighResImage::LoadTexture(GLuint texture)
 {
 	int linesToLoad = std::min(position.height - subImageLinesLoaded, 512); //load at most 512 lines
 	glBindTexture(GL_TEXTURE_2D, texture);
-	std::cout <<texture << "pos" << position.x << "," << position.y + subImageLinesLoaded << "size" << position.width << "x"  << linesToLoad << "\n";
+	//std::cout <<texture << "pos" << position.x << "," << position.y + subImageLinesLoaded << "size" << position.width << "x"  << linesToLoad << "\n";
 	glTexSubImage2D(GL_TEXTURE_2D, 0, position.x, position.y + subImageLinesLoaded, position.width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + (long)subImageLinesLoaded * position.width * nrChannels);
 	subImageLinesLoaded += linesToLoad;
 
