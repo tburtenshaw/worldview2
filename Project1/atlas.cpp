@@ -117,9 +117,9 @@ void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfIte
 					*numberOfItems = 1;
 				}
 				arrayMult[0] = atlasTargetWidth / targetWidth;
-				arrayMult[1] = atlasTargetHeight / targetHeight;
+				arrayMult[1] = -atlasTargetHeight / targetHeight;
 				arrayAdd[0] = atlasTargetX - targetW * atlasTargetWidth / targetWidth;
-				arrayAdd[1] = atlasTargetY - targetS * atlasTargetHeight / targetHeight;
+				arrayAdd[1] = atlasTargetY + targetN * atlasTargetHeight / targetHeight;
 
 
 				//std::cout << "Overlaps:" << image.filename <<"view:" << image.nswe << "pixels: " << image.nswe.width() / vp->DegreesPerPixel() << std::endl;
