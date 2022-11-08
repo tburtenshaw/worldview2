@@ -61,11 +61,15 @@ private:
 	void PopulateHighResImages();	//loads (e.g. from a directory) all the high res aerial photos
 
 	AtlasRect MakeSpaceFor(int width, int height);
-	void LoadVisibleHighResImages(const NSWE& viewNSWE);
+	//void LoadVisibleHighResImages(const NSWE& viewNSWE);
+	
+	int textureWidth;
+	int textureHeight;
+
 	GLuint texture;
 public:
 
-	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* array, int maxItems); //should only include ones that need to be drawn
+	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* arrayNSWE, float* arrayMult, float* arrayAdd, int maxItems);
 	void Setup(int width = 16384, int height = 4096);
 	GLuint getTexture() const;
 

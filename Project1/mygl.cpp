@@ -7,6 +7,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <array>
 #include <stb_image.h>
 #include <iostream>
 
@@ -460,14 +461,22 @@ void BackgroundLayer::SetupTextures()
 void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 {
 
-	NSWE* highresnswe;
+	//NSWE* highresnswe;
 
-	highres.DecideBestTex(vp->windowDimensions, vp->viewNSWE);
-	highresnswe = highres.GetBestNSWE(highresTexture);
+	//highres.DecideBestTex(vp->windowDimensions, vp->viewNSWE);
+	//highresnswe = highres.GetBestNSWE(highresTexture);
 
 	//need to check dpp first
+	int n=0;
+	float highresNSWEfloat[4] = { 0.0f,0.0f,0.0f,0.0f };
+	float highresMult[2] = { 0.f,0.f };
+	float highresAdd[2] = { 0.f,0.f };
+
 	if (vp->DegreesPerPixel() < 360.0/4096.0) {
-		atlas.OutputDrawOrderedUVListForUniform(vp, nullptr, nullptr, 10);
+
+
+
+		atlas.OutputDrawOrderedUVListForUniform(vp, &n, highresNSWEfloat, highresMult, highresAdd, 1);
 	}
 
 
@@ -486,8 +495,14 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 	
 	//shader.SetUniformFromFloats("resolution", windowsize.width, windowsize.height);
 	//shader.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-	shader.SetUniformFromNSWE("highresnswe", highresnswe);
-	shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the
+	shader.SetUniformFromFloats("atlasnswe", highresNSWEfloat[0], highresNSWEfloat[1], highresNSWEfloat[2], highresNSWEfloat[3]);
+	shader.SetUniformFromFloats("atlasmult", highresMult[0], highresMult[1]);
+	shader.SetUniformFromFloats("atlasadd", highresAdd[0], highresAdd[1]);
+
+	std::cout << "draw:" << highresNSWEfloat[0]<< highresNSWEfloat[1]<< highresNSWEfloat[2] << highresNSWEfloat[3] << "\n";
+
+	//shader.SetUniformFromNSWE("highresnswe", highresnswe);
+	//shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the
 
 
 	shader.SetUniformFromFloats("maxheatmapvalue", options.heatmapmaxvalue);// heatmap.maxPixel);
@@ -718,7 +733,7 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 	GaussianBlur(options->gaussianblur, width, height);
 
 	//now find the brigtest point
-	options->heatmapmaxvalue = FindMaxValueWithReductionShader(width, height, 4);
+	options->heatmapmaxvalue = FindMaxValueWithReductionShader(width, height, 4);	//8 might be slightly faster
 
 	//now back to normal
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

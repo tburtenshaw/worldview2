@@ -74,7 +74,7 @@ AtlasRect Atlas::MakeSpaceFor(int width, int height)
 	return returnRect;
 }
 
-void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* array, int maxItems)
+void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* arrayNSWE, float* arrayMult, float*arrayAdd, int maxItems)
 {
 	//the main function called by the draw call
 	//WE ALSO NEED VIEWPORT SIZE as the textures depend on the dpp
@@ -90,12 +90,38 @@ void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfIte
 					std::thread(&HighResImage::LoadFileToAtlas, std::ref(image)).detach();
 					//image.LoadFileToAtlas();
 				}
-				
 				//work out a transform
-				double targetW = image.nswe.west / vp->viewNSWE.width();
+				double targetW = (image.nswe.west - vp->viewNSWE.west) / vp->viewNSWE.width();
+				double targetE = (image.nswe.east - vp->viewNSWE.west) / vp->viewNSWE.width();
 
-				
-				
+				double targetWidth = targetE - targetW;
+
+				double atlasTargetX = (double)image.position.x / (double)textureWidth;
+				double atlasTargetWidth = (double)image.position.width / (double)textureWidth;
+
+				std::cout << "W:" << targetW << " E:" << targetE;
+				std::cout << "gl * " << atlasTargetWidth / targetWidth << " + " << atlasTargetX - targetW * atlasTargetWidth / targetWidth << "\n";
+	
+				double targetS=(image.nswe.south - vp->viewNSWE.south) / vp->viewNSWE.height();
+				double targetN= (image.nswe.north - vp->viewNSWE.south) / vp->viewNSWE.height();
+				double targetHeight = targetN - targetS;
+				std::cout << "N:" << targetN << " S:" << targetS;
+				double atlasTargetY = (double)image.position.y / (double)textureHeight;
+				double atlasTargetHeight = (double)image.position.height / (double)textureHeight;
+				std::cout << "gl * " << atlasTargetHeight / targetHeight << " + " << atlasTargetY - targetS * atlasTargetHeight / targetHeight << "\n";
+				if (arrayNSWE) {
+					arrayNSWE[0] = (float)targetN*vp->windowDimensions.height;
+					arrayNSWE[1] = (float)targetS * vp->windowDimensions.height;
+					arrayNSWE[2] = (float)targetW * vp->windowDimensions.width;
+					arrayNSWE[3] = (float)targetE * vp->windowDimensions.width;
+					*numberOfItems = 1;
+				}
+				arrayMult[0] = atlasTargetWidth / targetWidth;
+				arrayMult[1] = atlasTargetHeight / targetHeight;
+				arrayAdd[0] = atlasTargetX - targetW * atlasTargetWidth / targetWidth;
+				arrayAdd[1] = atlasTargetY - targetS * atlasTargetHeight / targetHeight;
+
+
 				//std::cout << "Overlaps:" << image.filename <<"view:" << image.nswe << "pixels: " << image.nswe.width() / vp->DegreesPerPixel() << std::endl;
 			}
 		}
@@ -140,6 +166,10 @@ void Atlas::Setup(int width, int height)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);//no mipmap
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	std::cout << "made " << texture << " a " << width << "by" << height << "texture\n";
+	textureWidth = width;
+	textureHeight = height;
+	
+	
 	//glGenerateMipmap(GL_TEXTURE_2D);
 
 	//Create the initial partition the size of whole texture
