@@ -108,8 +108,12 @@ void Shader::SetUniform(GLuint loc, int i1)
 	glUniform1i(loc, i1);
 }
 
+void Shader::SetUniform(GLuint loc, const unsigned int i1)
+{
+	glUniform1i(loc, i1);
+}
 
-void Shader::SetUniform(GLuint loc, unsigned long ul1)
+void Shader::SetUniform(GLuint loc, const unsigned long ul1)
 {
 	glUniform1ui(loc, ul1);
 }

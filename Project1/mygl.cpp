@@ -441,13 +441,16 @@ void BackgroundLayer::SetupShaders()
 	glUniform1i(heatmapTextureLocation, 2);
 	DisplayIfGLError("after  BackgroundLayer::SetupShaders", false);
 
-
-
 	shader.LoadUniformLocation(&uniformNswe, "nswe");
 	shader.LoadUniformLocation(&uniformResolution, "resolution");
 	shader.LoadUniformLocation(&uniformDegreeSpan, "degreespan");
-	//shader.LoadUniformLocation(&uniformDegreeMidpoint, "degreemidpoint");
+	shader.LoadUniformLocation(&uniformMaxHeatmapValue, "maxheatmapvalue");
+	shader.LoadUniformLocation(&uniformPaletteNumber, "palette");
 
+	shader.LoadUniformLocation(&uniformAtlasCount, "atlascount");
+	shader.LoadUniformLocation(&uniformAtlasNSWE, "atlasnswe");
+	shader.LoadUniformLocation(&uniformAtlasMult, "atlasmult");
+	shader.LoadUniformLocation(&uniformAtlasAdd, "atlasadd");
 
 
 }
@@ -461,22 +464,15 @@ void BackgroundLayer::SetupTextures()
 void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 {
 
-	//NSWE* highresnswe;
+	constexpr int maxAtlasDraws = 8;	//check doesn't exceed what is in the backgroundFS shader
 
-	//highres.DecideBestTex(vp->windowDimensions, vp->viewNSWE);
-	//highresnswe = highres.GetBestNSWE(highresTexture);
-
-	//need to check dpp first
-	int n=0;
-	float highresNSWEfloat[4] = { 0.0f,0.0f,0.0f,0.0f };
-	float highresMult[2] = { 0.f,0.f };
-	float highresAdd[2] = { 0.f,0.f };
+	int numberOfAtlasDraws=0;
+	vec2f highresMult[maxAtlasDraws] = { 0.f};
+	vec2f highresAdd[maxAtlasDraws] = { 0.f};
+	vec4f highresNSWE[maxAtlasDraws] = { 0.0f };
 
 	if (vp->DegreesPerPixel() < 360.0/4096.0) {
-
-
-
-		atlas.OutputDrawOrderedUVListForUniform(vp, &n, highresNSWEfloat, highresMult, highresAdd, 1);
+		atlas.OutputDrawOrderedUVListForUniform(vp, &numberOfAtlasDraws, (vec4f*)highresNSWE, (vec2f*)highresMult, (vec2f*)highresAdd, maxAtlasDraws);
 	}
 
 
@@ -490,23 +486,22 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 	shader.SetUniform(uniformNswe, &vp->viewNSWE);
 	shader.SetUniform(uniformResolution, vp->windowDimensions.width, vp->windowDimensions.height);
 	shader.SetUniform(uniformDegreeSpan, vp->viewNSWE.width(), vp->viewNSWE.height());
-	//shader.SetUniform(uniformDegreeMidpoint, (viewNSWE.west + viewNSWE.east) / 2.0, (viewNSWE.north + viewNSWE.south) / 2.0); //not used here.
-
 	
-	//shader.SetUniformFromFloats("resolution", windowsize.width, windowsize.height);
-	//shader.SetUniformFromFloats("nswe", viewNSWE.north, viewNSWE.south, viewNSWE.west, viewNSWE.east);
-	shader.SetUniformFromFloats("atlasnswe", highresNSWEfloat[0], highresNSWEfloat[1], highresNSWEfloat[2], highresNSWEfloat[3]);
-	shader.SetUniformFromFloats("atlasmult", highresMult[0], highresMult[1]);
-	shader.SetUniformFromFloats("atlasadd", highresAdd[0], highresAdd[1]);
+	DisplayIfGLError("before new uniforms", false);
+	shader.SetUniform(uniformAtlasCount, numberOfAtlasDraws);
+	
+	glUniform2fv(uniformAtlasMult, numberOfAtlasDraws, (float*)highresMult);
+	glUniform2fv(uniformAtlasAdd, numberOfAtlasDraws, (float*)highresAdd);
+	glUniform4fv(uniformAtlasNSWE, numberOfAtlasDraws, (float*)highresNSWE);
+	DisplayIfGLError("after new uniforms", false);
+
+
 
 	//std::cout << "draw:" << highresNSWEfloat[0]<< highresNSWEfloat[1]<< highresNSWEfloat[2] << highresNSWEfloat[3] << "\n";
 
-	//shader.SetUniformFromNSWE("highresnswe", highresnswe);
-	//shader.SetUniformFromFloats("highresscale", (float)highres.width / 8192.0f, (float)highres.height / 8192.0f); //as we're just loading the
 
-
-	shader.SetUniformFromFloats("maxheatmapvalue", options.heatmapmaxvalue);// heatmap.maxPixel);
-	shader.SetUniformFromInts("palette", options.palette);
+	shader.SetUniform(uniformMaxHeatmapValue, options.heatmapmaxvalue);
+	shader.SetUniform(uniformPaletteNumber, options.palette);
 
 	//std::cout << "wt:" << worldTexture << ", hrt:" << highresTexture << ", atlastex:" << atlas.getTexture() << ", hmT " << heatmapTexture << "\n";
 
@@ -515,7 +510,6 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, atlas.getTexture());
-	//glBindTexture(GL_TEXTURE_2D, highresTexture);
 
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, heatmapTexture);

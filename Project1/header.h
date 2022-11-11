@@ -25,7 +25,15 @@ class Region;
 class RGBA;
 class DisplayRegion;
 
-//typedef struct sLocation ;
+
+struct vec2f {
+	float x, y;
+};
+
+struct vec4f {
+	float x, y, z, w;
+};
+
 
 struct XY {
 	double x;

@@ -11,9 +11,11 @@ uniform vec2 degreespan;
 uniform vec4 highresnswe;
 uniform vec2 highresscale;
 
-uniform vec4 atlasnswe;
-uniform vec2 atlasmult;
-uniform vec2 atlasadd;
+uniform int atlascount;
+uniform vec4 atlasnswe[8];
+uniform vec2 atlasmult[8];
+uniform vec2 atlasadd[8];
+
 
 
 uniform float maxheatmapvalue;
@@ -133,12 +135,11 @@ void main() {
 	}
 
 
-//	if ((gl_FragCoord.y/resolution.y <atlasnswe.x) && (gl_FragCoord.y/resolution.y >atlasnswe.y) &&  (gl_FragCoord.x/resolution.x > atlasnswe.z) && (gl_FragCoord.x/resolution.x < atlasnswe.w))	{
-		//wt=vec4(1.0);
-	//}
-	if ((gl_FragCoord.y <atlasnswe.x) && (gl_FragCoord.y >atlasnswe.y) &&  (gl_FragCoord.x > atlasnswe.z) && (gl_FragCoord.x < atlasnswe.w))	{
-		wt=vec4(1.0);
-		wt=texture(highresTexture,vec2(gl_FragCoord.xy/resolution)*atlasmult+atlasadd);
+	for (int i=0;i<atlascount;i++)	{
+		if ((gl_FragCoord.y <atlasnswe[i].x) && (gl_FragCoord.y >atlasnswe[i].y) &&  (gl_FragCoord.x > atlasnswe[i].z) && (gl_FragCoord.x < atlasnswe[i].w))	{
+			wt=vec4(1.0);
+			wt=texture(highresTexture,vec2(gl_FragCoord.xy/resolution)*atlasmult[i]+atlasadd[i]);
+		}
 	}
 
 

@@ -3,7 +3,10 @@
 #include <string>
 #include "nswe.h"
 
+//
 class MainViewport;
+class vec2f;
+class vec4f;
 
 struct AtlasRect {
 	int x, y;
@@ -69,7 +72,7 @@ private:
 	GLuint texture;
 public:
 
-	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, float* arrayNSWE, float* arrayMult, float* arrayAdd, int maxItems);
+	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, vec4f* arrayNSWE, vec2f* arrayMult, vec2f* arrayAdd, int maxItems);
 	void Setup(int width = 16384, int height = 4096);
 	GLuint getTexture() const;
 

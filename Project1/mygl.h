@@ -68,9 +68,14 @@ public:
 	//Uniforms
 	unsigned int uniformNswe;
 	unsigned int uniformDegreeSpan;
-	//unsigned int uniformDegreeMidpoint;
 	unsigned int uniformResolution;
+	unsigned int uniformMaxHeatmapValue;
+	unsigned int uniformPaletteNumber;
 
+	unsigned int uniformAtlasCount;	//number of items from the atlas we'll send in array
+	unsigned int uniformAtlasNSWE;
+	unsigned int uniformAtlasMult;
+	unsigned int uniformAtlasAdd;
 
 	void Setup();
 	void SetupShaders();

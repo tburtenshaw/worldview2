@@ -24,7 +24,8 @@ public:
 	void SetUniform(GLuint loc, float f1);
 	void SetUniform(GLuint loc, float f1, float f2);
 	void SetUniform(GLuint loc, int i1);
-	void SetUniform(GLuint loc, unsigned long ul1);
+	void SetUniform(GLuint loc, const unsigned int i1);
+	void SetUniform(GLuint loc, const unsigned long ul1);
 	void SetUniform(GLuint loc, const NSWE* nswe);
 	void SetUniform(GLuint loc, GLsizei count, const GLfloat* value);
 
