@@ -8,9 +8,6 @@ uniform vec2 resolution;
 uniform vec4 nswe;	//the view
 uniform vec2 degreespan;
 
-uniform vec4 highresnswe;
-uniform vec2 highresscale;
-
 uniform int atlascount;
 uniform vec4 atlasnswe[8];
 uniform vec2 atlasmult[8];
@@ -100,45 +97,18 @@ vec4 AlphaOnOpaqueMix(vec3 dest, vec4 source, float strength)	{
 }
 
 void main() {
-	//float width = (nswe.w-nswe.z); //sent in uniform, saves calcs on GPU, more importantly done while still double-precision
-	//float height = (nswe.x-nswe.y);
-
 	vec2 uv=vec2(1,-1)*gl_FragCoord.xy/resolution.xy;
 	uv*=degreespan/vec2(360.0,180.0); //convert the NSWE locations to between 0 and 1
 	uv+=vec2(nswe.z+180.0, nswe.y-90.0)/vec2(360.0,-180.0); //shift them so aligned right
 
 	vec4 wt=texture(worldTexture, uv);
 
-	
-	//high res image
-	vec2 highresuv;
-	float highreswidth, highresheight;
-	highreswidth = (highresnswe.w-highresnswe.z);
-	highresheight = (highresnswe.x-highresnswe.y);
-
-
-	highresuv.y=uv.y/(highresheight/180.0);
-	highresuv.y+=(highresnswe.x-90.0)/highresheight;
-
-	
-	highresuv.x=(gl_FragCoord.x/resolution.x*(nswe.w-nswe.z) + (nswe.z-highresnswe.z))/(highresnswe.w-highresnswe.z);
-
-
-	if ((highresuv.x>0.0)&&(highresuv.y>0.0)&&(highresuv.x<1.0)&&(highresuv.y<1.0))	{
-		//wt=texture(highresTexture, highresuv*highresscale);
-	
-		vec2 uvn=abs(highresuv-0.5)*2.0;
-		float maxDist  = max(abs(uvn.x), abs(uvn.y));
-		float square=1.0-smoothstep(0.9,1.0,maxDist);
-
-		wt = mix(wt, texture(highresTexture, highresuv*highresscale),square);
-	}
-
-
 	for (int i=0;i<atlascount;i++)	{
 		if ((gl_FragCoord.y <atlasnswe[i].x) && (gl_FragCoord.y >atlasnswe[i].y) &&  (gl_FragCoord.x > atlasnswe[i].z) && (gl_FragCoord.x < atlasnswe[i].w))	{
-			wt=vec4(1.0);
-			wt=texture(highresTexture,vec2(gl_FragCoord.xy/resolution)*atlasmult[i]+atlasadd[i]);
+			float squarefade=max(abs((gl_FragCoord.x - atlasnswe[i].z)/(atlasnswe[i].w-atlasnswe[i].z)-0.5) , abs((gl_FragCoord.y - atlasnswe[i].x)/(atlasnswe[i].y-atlasnswe[i].x)-0.5))*2.0;
+			squarefade=1.0-smoothstep(0.8,1.0,squarefade);
+			wt=mix(wt, texture(highresTexture,vec2(gl_FragCoord.xy/resolution)*atlasmult[i]+atlasadd[i]), squarefade);
+
 		}
 	}
 
