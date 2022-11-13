@@ -25,6 +25,7 @@ void Atlas::PopulateHighResImages()
 	images.emplace_back("d:/n39s31w-123e-115.png", NSWE(39.0, 31.0, -123.0, -115.0));
 	images.emplace_back("d:/n51s46w-125e-120.png", NSWE(51.0, 46.0, -125.0, -120.0));
 	images.emplace_back("d:/n55s38w0e17.png", NSWE(55.0, 38.0, 0.0, 17.0));
+	images.emplace_back("d:/goodwood_sat.png", NSWE(-36.9895, -37.0245, 174.8914, 174.9189));
 
 }
 
@@ -74,18 +75,17 @@ AtlasRect Atlas::MakeSpaceFor(int width, int height)
 	return returnRect;
 }
 
-void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, vec4f* arrayNSWE, vec2f* arrayMult, vec2f*arrayAdd, int maxItems)
+void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, vec4f* arrayNSWE, vec2f* arrayMult, vec2f* arrayAdd, const int maxItems)
 {
 	//the main function called by the draw call
-	
+
 	//Find anything visible, load from file if not already
-	for (auto &image :images)	{
+	for (auto& image : images) {
 		if (image.OverlapsWith(vp->viewNSWE)) {
 			//also need to exclude if only  a few pixels
 			if (image.nswe.width() / vp->DegreesPerPixel() > 1.0) {
 				if (image.NeedsLoadingFromFile()) {
-					image.needsLoading = false;
-					std::thread(&HighResImage::LoadFileToAtlas, std::ref(image)).detach();
+					std::thread(&HighResImage::LoadFileData, std::ref(image)).detach();
 				}
 			}
 		}
@@ -94,27 +94,54 @@ void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfIte
 
 	//If fully loaded, then find a space for it
 	for (auto& image : images) {
-		if (image.dataLoaded) {
-			if (!image.inAtlas) {
-				image.SetAtlasPosition(MakeSpaceFor(image.position.width, image.position.height));
-			}
+		if (image.NeedsAtlasPosition()) {
+			image.SetAtlasPosition(MakeSpaceFor(image.position.width, image.position.height));
 		}
 	}
 
 	//Then load part of the subimage
 	for (auto& image : images) {
-		if (image.inAtlas) {
-			//std::cout << "Position: " << image.filename << "\n" <<image.position.x << "," <<image.position.y <<"\n";
-			if (!image.textureLoaded) {
-				image.LoadTexture(texture);
-			}
+		if (image.NeedsSubImageLoading()) {
+			image.LoadTexture(texture);
 		}
 	}
 
+	//Copy the images to a list of only appropriate ones
+	std::vector<HighResImage> outputImages;
+	for (auto& image : images) {
+		if (image.OverlapsWith(vp->viewNSWE) && image.FullyLoaded() && (image.nswe.width() / vp->DegreesPerPixel() > 1.0)) {
+			outputImages.emplace_back(image);
+		}
+	}
+
+	//sort by area
+	std::sort(outputImages.begin(), outputImages.end(),
+		[&vp](const auto& lhs, const auto& rhs)
+		{
+			return lhs.nswe.intersectionWith(vp->viewNSWE).area() > rhs.nswe.intersectionWith(vp->viewNSWE).area();
+			//we might instead want to use the ratio of the area taken up
+		}
+	);
+
+	//delete more than 'maxItems'
+	if (outputImages.size() > maxItems) {
+		outputImages.erase(outputImages.begin() + maxItems, outputImages.end());
+	}
+
+	//now sort so the higher detailed images are last (rendered on top)
+	std::sort(outputImages.begin(), outputImages.end(),
+		[](const auto& lhs, const auto& rhs)
+		{
+			return lhs.PixelsPerDegree() < rhs.PixelsPerDegree();
+		}
+	);
+
+
+
 	//Now make the output array based on visible
 	int n = 0;
-	for (auto& image : images) {
-		if (image.OverlapsWith(vp->viewNSWE) && image.textureLoaded && (image.nswe.width() / vp->DegreesPerPixel() > 1.0) && (n<maxItems)) {
+	for (auto& image : outputImages) {
+		if (n<maxItems) {
 			//work out a transform
 			double targetW = (image.nswe.west - vp->viewNSWE.west) / vp->viewNSWE.width();
 			double targetE = (image.nswe.east - vp->viewNSWE.west) / vp->viewNSWE.width();
@@ -195,26 +222,28 @@ GLuint Atlas::getTexture() const
 void HighResImage::SetAtlasPosition(AtlasRect newPos)
 {
 	position = newPos;
-	inAtlas = true;
+	state = ImageState::hasAtlasPosNeedsSubImageLoading;
 }
 
-void HighResImage::LoadFileToAtlas()
+void HighResImage::LoadFileData()
 {
-	//int nrChannels=0;
+	if (state != ImageState::fileNotLoaded)	return;
+	state = ImageState::fileLoading;
 	rawImageData = stbi_load(filename.c_str(), &position.width, &position.height, &nrChannels, 0);
 
 	if (!rawImageData) {
 		printf("Didn't load.\n");
+		state = ImageState::error;
 		return;
 	}
-	std::cout << "Loaded: " << filename << " Size:" << position.width << "x" << position.height << needsLoading << std::endl;
 
-	dataLoaded = true;
+	state = ImageState::dataLoaded;
 }
 
 void HighResImage::LoadTexture(GLuint texture)
 {
-	int linesToLoad = std::min(position.height - subImageLinesLoaded, 512); //load at most 512 lines
+	constexpr int maxLines = 256;
+	int linesToLoad = std::min(position.height - subImageLinesLoaded, maxLines); //load at most 512 lines
 	glBindTexture(GL_TEXTURE_2D, texture);
 	//std::cout <<texture << "pos" << position.x << "," << position.y + subImageLinesLoaded << "size" << position.width << "x"  << linesToLoad << "\n";
 	glTexSubImage2D(GL_TEXTURE_2D, 0, position.x, position.y + subImageLinesLoaded, position.width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + (long)subImageLinesLoaded * position.width * nrChannels);
@@ -222,14 +251,11 @@ void HighResImage::LoadTexture(GLuint texture)
 
 
 	if (subImageLinesLoaded == position.height) {
-		printf("Loaded Texture. Now free\n");
+		//printf("Loaded Texture. Now free\n");
 		stbi_image_free(rawImageData);
 		//glGenerateMipmap(GL_TEXTURE_2D);
 		
-		textureLoaded = true;
-		//subImageLoaded = dataReady;
-		//dataReady = 0;
-		//subImageLoading = false;
+		state = ImageState::textureLoaded;
 	}
 
 
@@ -244,5 +270,35 @@ bool HighResImage::OverlapsWith(NSWE other)
 
 bool HighResImage::NeedsLoadingFromFile()
 {
-	return needsLoading;
+	if (state == ImageState::fileNotLoaded)
+		return true;
+	return false;
+}
+
+bool HighResImage::NeedsAtlasPosition()
+{
+	if (state == ImageState::dataLoaded)
+		return true;
+
+	return false;
+}
+
+bool HighResImage::NeedsSubImageLoading()
+{
+	if (state == ImageState::hasAtlasPosNeedsSubImageLoading)
+		return true;
+
+	return false;
+}
+
+bool HighResImage::FullyLoaded()
+{
+	if (state == ImageState::textureLoaded)
+		return true;
+	return false;
+}
+
+const double HighResImage::PixelsPerDegree() const
+{
+	return (double)position.width/nswe.width();
 }

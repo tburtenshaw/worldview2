@@ -20,7 +20,7 @@ typedef struct json_reader_state {
 
 	Location location;
 
-	Location oldlocation; //to compare to previous to see if crosses earth the other way around
+	//Location oldlocation; //to compare to previous to see if crosses earth the other way around
 	
 
 } JSON_READER_STATE;

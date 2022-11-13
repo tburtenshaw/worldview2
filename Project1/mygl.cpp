@@ -461,17 +461,17 @@ void BackgroundLayer::SetupTextures()
 	MakeHighresImageTexture();
 }
 
-void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
+void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions& options)
 {
 
 	constexpr int maxAtlasDraws = 8;	//check doesn't exceed what is in the backgroundFS shader
 
-	int numberOfAtlasDraws=0;
-	vec2f highresMult[maxAtlasDraws] = { 0.f};
-	vec2f highresAdd[maxAtlasDraws] = { 0.f};
+	int numberOfAtlasDraws = 0;
+	vec2f highresMult[maxAtlasDraws] = { 0.f };
+	vec2f highresAdd[maxAtlasDraws] = { 0.f };
 	vec4f highresNSWE[maxAtlasDraws] = { 0.0f };
 
-	if (vp->DegreesPerPixel() < 360.0/4096.0) {
+	if (vp->DegreesPerPixel() < 360.0 / 4096.0) {
 		atlas.OutputDrawOrderedUVListForUniform(vp, &numberOfAtlasDraws, (vec4f*)highresNSWE, (vec2f*)highresMult, (vec2f*)highresAdd, maxAtlasDraws);
 	}
 
@@ -481,15 +481,15 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 
 	shader.UseMe();
 	//shader.SetUniformFromFloats("seconds", seconds);
-	
-	
+
+
 	shader.SetUniform(uniformNswe, &vp->viewNSWE);
 	shader.SetUniform(uniformResolution, vp->windowDimensions.width, vp->windowDimensions.height);
 	shader.SetUniform(uniformDegreeSpan, vp->viewNSWE.width(), vp->viewNSWE.height());
-	
+
 	DisplayIfGLError("before new uniforms", false);
 	shader.SetUniform(uniformAtlasCount, numberOfAtlasDraws);
-	
+
 	glUniform2fv(uniformAtlasMult, numberOfAtlasDraws, (float*)highresMult);
 	glUniform2fv(uniformAtlasAdd, numberOfAtlasDraws, (float*)highresAdd);
 	glUniform4fv(uniformAtlasNSWE, numberOfAtlasDraws, (float*)highresNSWE);
@@ -512,7 +512,12 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions &options)
 	glBindTexture(GL_TEXTURE_2D, atlas.getTexture());
 
 	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, heatmapTexture);
+	if (options.showHeatmap) {
+		glBindTexture(GL_TEXTURE_2D, heatmapTexture);
+	}
+	else {
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 
 	DisplayIfGLError("before bva background", false);
 	glBindVertexArray(vaoSquare);

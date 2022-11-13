@@ -13,6 +13,15 @@ struct AtlasRect {
 	int width, height;
 };
 
+enum class ImageState {
+	error,
+	fileNotLoaded,
+	fileLoading,
+	dataLoaded,	//image data loaded from file
+	hasAtlasPosNeedsSubImageLoading,
+	textureLoaded
+};
+
 class HighResImage {
 private:
 	std::string filename;
@@ -23,24 +32,31 @@ private:
 	unsigned char* rawImageData;
 	int nrChannels;
 
-	bool needsLoading;
-	bool dataLoaded;
-	bool inAtlas;
-	bool textureLoaded;
+	ImageState state;
+
+	//bool needsLoading;
+	//bool dataLoaded;
+	//bool inAtlas;
+	//bool textureLoaded;
 
 	int subImageLinesLoaded;
 	friend class Atlas;
 public:
 	HighResImage(std::string filename, NSWE nswe) : filename(filename), nswe(nswe),
-		inAtlas(false), position{ 0,0,0,0 },
-		rawImageData(nullptr),needsLoading(true), dataLoaded(false), subImageLinesLoaded(0) {}
+		position{ 0,0,0,0 },
+		rawImageData(nullptr), nrChannels(0), state(ImageState::fileNotLoaded), subImageLinesLoaded(0) {}
 	
 	void SetAtlasPosition(AtlasRect position);
-	void LoadFileToAtlas();
+	void LoadFileData();
 	void LoadTexture(GLuint texture);
 
 	bool OverlapsWith(NSWE nswe);
 	bool NeedsLoadingFromFile();
+	bool NeedsAtlasPosition();
+	bool NeedsSubImageLoading();
+	bool FullyLoaded();
+	
+	const double PixelsPerDegree() const;
 };
 
 class Partition {
@@ -72,7 +88,7 @@ private:
 	GLuint texture;
 public:
 
-	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, vec4f* arrayNSWE, vec2f* arrayMult, vec2f* arrayAdd, int maxItems);
+	void OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfItems, vec4f* arrayNSWE, vec2f* arrayMult, vec2f* arrayAdd, const int maxItems);
 	void Setup(int width = 16384, int height = 4096);
 	GLuint getTexture() const;
 
