@@ -17,7 +17,7 @@ namespace Gui {
 	void ShowRegionInfo(Region* r, GlobalOptions* options);
 	void DayHistogram(Region* r, GlobalOptions* options, float height);
 	void ListDatesInRegion(Region* r);
-	const char* BestSigFigsFormat(MainViewport* vp);
+	const char* BestSigFigsFormat(const double dpp);
 	bool ChooseFileToOpen(LocationHistory * lh);
 	std::wstring ChooseFileToSave(LocationHistory* lh);
 }

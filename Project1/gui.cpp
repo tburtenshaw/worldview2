@@ -44,7 +44,21 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 {
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
-	sigfigs = Gui::BestSigFigsFormat(vp);
+	sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
+
+	//Debug
+	ImGui::Begin("Debug");
+	sCoords = "Cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
+	ImGui::Text(sCoords.c_str(), MouseActions::longlatMouse.longitude, MouseActions::longlatMouse.latitude);
+
+	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i", 1000000.0f * vp->viewNSWE.width() / vp->windowDimensions.width,
+		vp->windowDimensions.width / vp->viewNSWE.width(),
+		lh->lodInfo.LodFromDPP(vp->DegreesPerPixel()));
+
+	ImGui::GetWindowDrawList()->AddImage(
+		(void*)1, ImVec2(ImGui::GetItemRectMin().x + 10, ImGui::GetItemRectMin().y + 10), ImVec2(ImGui::GetItemRectMin().x + 100, ImGui::GetItemRectMin().y + 100));
+
+	ImGui::End();
 
 	ImGui::Begin("Map information");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -56,21 +70,15 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	ImGui::Text("File name: %s", displayfilename);
 	ImGui::Text("File size: %i", lh->filesize);
 
-	sCoords = "Cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
-	ImGui::Text(sCoords.c_str(), MouseActions::longlatMouse.longitude, MouseActions::longlatMouse.latitude);
 	ImGui::Text("Number of points: %i", lh->locations.size());
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), vp->viewNSWE.north, vp->viewNSWE.south, vp->viewNSWE.west, vp->viewNSWE.east);
 
-	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i",1000000.0f*vp->viewNSWE.width()/vp->windowDimensions.width, 
-		vp->windowDimensions.width/ vp->viewNSWE.width(), 
-		lh->lodInfo.LodFromDPP(vp->DegreesPerPixel()));
-
 	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	Gui::ShowRegionInfo(vp->regions[0], options);
+	//Gui::ShowRegionInfo(vp->regions[0], options);
 
 	ImGui::End();
 
@@ -518,9 +526,9 @@ void Gui::ListDatesInRegion(Region* r)
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);
 }
 
-const char* Gui::BestSigFigsFormat(MainViewport *vp)
+const char* Gui::BestSigFigsFormat(const double dpp)
 {
-	const double dpp = vp->DegreesPerPixel();
+	//const double dpp = vp->DegreesPerPixel();
 
 	if (dpp > 1)	return "%.0f";
 	if (dpp > 0.1)	return "%.1f";

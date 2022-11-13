@@ -52,10 +52,9 @@ public:
 class BackgroundLayer : public GLRenderLayer {
 private:
 	void LoadBackgroundImageToTexture();
-	void MakeHighresImageTexture();
 public:
 	unsigned int worldTexture;	//the background NASA map
-	unsigned int highresTexture; //used for the higher res insert
+	//unsigned int highresTexture; //used for the higher res insert
 	unsigned int heatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
@@ -83,7 +82,7 @@ public:
 	void Draw(MainViewport *vp, const GlobalOptions& options);
 
 	BackgroundLayer()
-		:worldTexture(0),highresTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
+		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
 
 };
 
@@ -169,7 +168,7 @@ public:
 private:
 	void SetupShaders();
 	void GaussianBlur(float blurSigma, float width, float height);
-	size_t FetchGaussianValues(float sigma, float* offsets, float* weights, int maxnumber);
+	size_t FetchGaussianValues(float sigma, float* offsets, float* weights, int maxnumber);	//this in gaussian.cpp
 	float FindMaxValueWithReductionShader(int width, int height, int reductionFactor);
 	float ReadPixelsAndFindMax(int width, int height);
 

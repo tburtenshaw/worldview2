@@ -25,9 +25,6 @@ enum class ImageState {
 class HighResImage {
 private:
 	std::string filename;
-	NSWE nswe;
-
-	AtlasRect position;
 
 	unsigned char* rawImageData;
 	int nrChannels;
@@ -40,8 +37,11 @@ private:
 	//bool textureLoaded;
 
 	int subImageLinesLoaded;
-	friend class Atlas;
+	//friend class Atlas;
 public:
+	NSWE nswe;
+	AtlasRect position;
+
 	HighResImage(std::string filename, NSWE nswe) : filename(filename), nswe(nswe),
 		position{ 0,0,0,0 },
 		rawImageData(nullptr), nrChannels(0), state(ImageState::fileNotLoaded), subImageLinesLoaded(0) {}

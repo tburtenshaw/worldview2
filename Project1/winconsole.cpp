@@ -39,7 +39,7 @@ MainViewport mainView = { 1200,800 };
 
 FrameBufferObjectInfo fboInfo;	//this is what everything is drawn to first.
 
-//Different things I might draw to the map
+//Different things drawn to the map
 BackgroundLayer backgroundLayer;
 PathLayer pathLayer;
 PointsLayer pointsLayer;
@@ -188,8 +188,6 @@ int StartGLProgram(LocationHistory* lh)
 	}
 
 	
-	
-	
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -307,21 +305,18 @@ int StartGLProgram(LocationHistory* lh)
 			lh->isInitialised = true;
 		}
 
-		
-		
-		
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		int currentLod= lh->lodInfo.LodFromDPP(mainView.viewNSWE.width() / mainView.windowDimensions.width);
 
 
 		//Heatmap rendering to FBO
-		if (lh->isInitialised && lh->isFullyLoaded) {
+		if (lh->isInitialised && lh->isFullyLoaded && globalOptions.showHeatmap) {
 			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, &globalOptions);
 		}
 
 
-		//Set an offscreen FBO as the main draw surface
+		//Draw to offscreen FBO as the main draw surface
 		DisplayIfGLError("before fboInfo.BindToDrawTo();", false);
 		fboInfo.BindToDrawTo();
 
@@ -357,6 +352,7 @@ int StartGLProgram(LocationHistory* lh)
 
 
 		DisplayIfGLError("before fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
+
 		//draw the FBO onto the screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		fboInfo.Draw(mainView.windowDimensions.width, mainView.windowDimensions.height);

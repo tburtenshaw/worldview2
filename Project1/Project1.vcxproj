@@ -176,6 +176,7 @@
     <ClCompile Include="..\..\imgui-master\imgui_tables.cpp" />
     <ClCompile Include="..\..\imgui-master\imgui_widgets.cpp" />
     <ClCompile Include="atlas.cpp" />
+    <ClCompile Include="gaussian.cpp" />
     <ClCompile Include="gui.cpp" />
     <ClCompile Include="header.cpp" />
     <ClCompile Include="input.cpp" />
