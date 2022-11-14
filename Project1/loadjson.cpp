@@ -1,30 +1,30 @@
 #include <iostream>
 #include <tchar.h>
 #include <Windows.h>
+#include <chrono>
 
 #include "header.h"
 #include "loadjson.h"
 #include "heatmap.h"
 
-int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location>& loc, LocationHistory * lh) {
+int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location>& loc) {
 
-	unsigned long i;
 	//char c;
 #define c buffer[i]
 
-	for (i = 0; i < buffersize; i++) {
+	for (unsigned long i = 0; i < buffersize; i++) {
 		//c = buffer[i]; //believe it or not, this makes a small bit of difference, so I've made it a define
 
 
 		//String reading
-		if ((c == '\"') && (jsr->readingstring == 0)) {
-			jsr->readingstring = 1;
+		if ((c == '\"') && (!jsr->readingstring)) {
+			jsr->readingstring = true;
 			jsr->distancealongbuffer = 0;
 		}
-		else if ((c == '\"') && (jsr->readingstring == 1) && (jsr->escaped == 0)) {
-			jsr->readingstring = 0;
+		else if ((c == '\"') && (jsr->readingstring) && (!jsr->escaped)) {
+			jsr->readingstring = false;
 			jsr->buffer[jsr->distancealongbuffer] = 0;
-			if (jsr->readingvalue == 0) {
+			if (!jsr->readingvalue) {
 				memcpy(jsr->name, jsr->buffer, 16);
 				jsr->name[16] = 0;
 
@@ -42,31 +42,31 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 			}
 			else {
 				AssignValueToName(jsr);
-				jsr->readingvalue = 0;
+				jsr->readingvalue = false;
 			}
 			jsr->distancealongbuffer = 0;
 
 		}
-		else if ((c == '\\') && jsr->escaped == 0) {
-			jsr->escaped = 1;
+		else if ((c == '\\') && !jsr->escaped) {
+			jsr->escaped = true;
 		}
-		else if (jsr->readingstring == 1) {	//if nothing special, write the character to the buffer
+		else if (jsr->readingstring) {	//if nothing special, write the character to the buffer
 			jsr->buffer[jsr->distancealongbuffer] = c;
 			jsr->distancealongbuffer++;
-			jsr->escaped = 0;
+			jsr->escaped = false;
 		}
 
 		//if we're not reading a string
-		if (jsr->readingstring == 0) {
+		if (!jsr->readingstring) {
 
 			if (c == ':') {
-				jsr->readingvalue = 1;
+				jsr->readingvalue = true;
 			}
 			//else if (c == ',') {
 			//	jsr->readingvalue = 0;
 			//}
 
-			else if (jsr->readingnumber == 0 && jsr->readingvalue == 1)
+			else if (!jsr->readingnumber && jsr->readingvalue)
 			{
 				if (((c >= '0') && (c <= '9')) || (c == '-')) {	//leading zeros aren't strictly allowed in json, but i'll accept them
 					jsr->readingnumber = 1;
@@ -74,18 +74,18 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 				}
 			}
 
-			if (jsr->readingnumber == 1) {
+			if (jsr->readingnumber) {
 				if (((c >= '0') && (c <= '9')) || (c == '-') || (c == 'E') || (c == 'e') || (c == '+') || (c == '.')) {
 					jsr->buffer[jsr->distancealongbuffer] = c;
 					jsr->distancealongbuffer++;
 				}
 				else
 				{
-					jsr->readingnumber = 0;
+					jsr->readingnumber = false;
 					jsr->buffer[jsr->distancealongbuffer] = 0;
 					AssignValueToName(jsr);
 					jsr->distancealongbuffer = 0;
-					jsr->readingvalue = 0;
+					jsr->readingvalue = false;
 				}
 
 			}
@@ -103,7 +103,7 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 			if (c == '{') {
 				jsr->hierarchydepth++;
-				jsr->readingvalue = 0;
+				jsr->readingvalue = false;
 		//		printf("\n%i", jsr->hierarchydepth);
 		//		for (int e = 0; e < jsr->hierarchydepth; e++) {
 			//		printf(" ");
@@ -116,12 +116,8 @@ int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE*
 
 				if (jsr->hierarchydepth == jsr->locationsdepth) {	//if we're closing up a location then write the location
 					
-					//if (jsr->locationnumber%20000 ==0) printf("%i %f %i\n", jsr->locationnumber, jsr->location.latitude, jsr->location.timestamp);
-					jsr->locationnumber++;
-
 					//reset to defaults
 					jsr->location.altitude = -1;
-					//jsr->location.detaillevel = 0;
 					loc.emplace_back(jsr->location);
 					//printf("Loc:%i", jsr->locationnumber);
 				}
@@ -224,7 +220,7 @@ long timestampToLong(char* str)
 	unsigned long hour;
 	unsigned long minute;
 	unsigned long second_floored;
-	unsigned long decimalportionofseconds;
+	//unsigned long decimalportionofseconds;
 
 	hour = (str[11] - '0') * 10 + (str[12] - '0');
 	minute = (str[14] - '0') * 10 + (str[15] - '0');
@@ -320,37 +316,39 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 	return 0; //return 0 if we didn't use anything
 }
 
+
 int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 {
 	JSON_READER_STATE jrs;
 	memset(&jrs, 0, sizeof(jrs));
-	char* buffer;
 
-	buffer = new char[READ_BUFFER_SIZE];
-	unsigned long readbytes;
-	BOOL rf;
-	int result;	//zero if no problems.
+	constexpr int readBufferSize = 8192;	//seems most efficient buffer size (diminshing returns increasing this, plus can have on stack this size)
+	char buffer[readBufferSize] = { 0 };
+
+	auto start = std::chrono::high_resolution_clock::now();
+
 	lh->totalbytesread = 0;
 	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
 
 
-
-	readbytes = 1;
+	unsigned long readbytes = 1;
 	while (readbytes) {
-		rf = ReadFile(jsonfile, buffer, READ_BUFFER_SIZE - 1, &readbytes, NULL);
+		bool rf = ReadFile(jsonfile, buffer, readBufferSize - 1, &readbytes, NULL);
 		if (rf == false) {
 			printf("Failed reading the file.\n");
 			return 1;
 		}
-		result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations, lh);
+		int result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations);
 		lh->totalbytesread += readbytes;
 		if (result) {
 			readbytes = 0;	//trick the loading loop into ending
 		}
 	}
-	printf("Finished loading\n");
 
-	delete[] buffer;
+	auto stop = std::chrono::high_resolution_clock::now();
+		
+	auto duration = duration_cast<std::chrono::microseconds>(stop - start);
+	std::cout <<"Time to load: " << duration.count() << "us.\n";
 }
 
 
@@ -365,7 +363,7 @@ int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
 
 	LARGE_INTEGER filesize;
 	GetFileSizeEx(WVFfile, &filesize);
-	lh->filesize = filesize.QuadPart;
+	lh->filesize = (unsigned long)filesize.QuadPart;
 
 	bool fileRead = ReadFile(WVFfile, &magic, 4, &bytesRead, NULL);
 	printf("Magic: %i\n", magic);
@@ -396,7 +394,7 @@ int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
 		unsigned int entriesRead = bytesRead / sizeof(WVFormat);
 		//printf("Read bytes: %i\n", bytesRead);
 		if (fileRead) {
-			for (int i = 0; i < entriesRead; i++) {
+			for (unsigned int i = 0; i < entriesRead; i++) {
 				newLocation.timestamp = entry[i].timestamp;
 				newLocation.longitude = entry[i].lon;
 				newLocation.latitude = entry[i].lat;

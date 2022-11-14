@@ -2,21 +2,21 @@
 #include <vector>
 using namespace std;
 
+constexpr int maxJsonString = 1024;
+
 typedef struct json_reader_state {
 	int hierarchydepth;	//counts the level of { }s
-	int escaped;
-	int readingvalue; //i.e. we're not reading a name
-	int readingstring;
-	int readingnumber;
+	bool escaped;
+	bool readingvalue; //i.e. we're not reading a name
+	bool readingstring;
+	bool readingnumber;
 	int distancealongbuffer;
-	char buffer[MAX_JSON_STRING];	//what both numbers and strings are read into
+	char buffer[maxJsonString];	//what both numbers and strings are read into
 	int arraydepth;	//counts the [ ]s
 
-	char name[MAX_JSON_STRING];
+	char name[maxJsonString];
 	//char value[MAX_JSON_STRING]; //this can just stay as the buffer
-
 	int locationsdepth;
-	long locationnumber;
 
 	Location location;
 
@@ -25,7 +25,7 @@ typedef struct json_reader_state {
 
 } JSON_READER_STATE;
 
-int ProcessJsonBuffer(char* buffer, unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location> &loc, LocationHistory* lh);
+int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location> &loc);
 int AssignValueToName(JSON_READER_STATE* jsr);
 
 int LoadJsonFile(LocationHistory* lh, HANDLE jsonfile);

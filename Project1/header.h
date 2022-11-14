@@ -7,8 +7,8 @@
 #include <imgui.h>
 #include "input.h"
 
-#define READ_BUFFER_SIZE 1024*256
-#define MAX_JSON_STRING 1024
+//#define READ_BUFFER_SIZE 1024*256
+//#define MAX_JSON_STRING 1024
 
 //forward declarations
 //class NSWE;

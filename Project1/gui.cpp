@@ -55,8 +55,9 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 		vp->windowDimensions.width / vp->viewNSWE.width(),
 		lh->lodInfo.LodFromDPP(vp->DegreesPerPixel()));
 
-	ImGui::GetWindowDrawList()->AddImage(
-		(void*)1, ImVec2(ImGui::GetItemRectMin().x + 10, ImGui::GetItemRectMin().y + 10), ImVec2(ImGui::GetItemRectMin().x + 100, ImGui::GetItemRectMin().y + 100));
+	ImGui::Image((void*)1,ImVec2(ImGui::GetWindowContentRegionMax().x, ImGui::GetWindowContentRegionMax().x/4));
+	//ImGui::GetWindowDrawList()->AddImage(
+//		(void*)1, ImVec2(ImGui::GetItemRectMin().x + 10, ImGui::GetItemRectMin().y + 10), ImVec2(ImGui::GetItemRectMin().x + 100, ImGui::GetItemRectMin().y + 100));
 
 	ImGui::End();
 
