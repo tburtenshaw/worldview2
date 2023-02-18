@@ -345,3 +345,6 @@ healthchecksdb
 
 #from tristan
 *.ini
+/Project1/imgui.ini
+/Project1/Project1.vcxproj
+/Project1/Project1.vcxproj.filters
