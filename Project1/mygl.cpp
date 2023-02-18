@@ -853,7 +853,7 @@ float HeatmapLayer::ReadPixelsAndFindMax(int width, int height)
 
 float HeatmapLayer::FindMaxValueWithReductionShader(int width, int height, int reductionFactor)	//this method currently loses some of the edge due to rounding
 {
-	float returnMaxVal=500.0;
+	float returnMaxVal=500.0; //gets overridden
 	
 	maxvalShader.UseMe();
 	maxvalShader.SetUniform(maxvalUniformSquareSize, reductionFactor);
@@ -869,8 +869,8 @@ float HeatmapLayer::FindMaxValueWithReductionShader(int width, int height, int r
 	int passno = 0;
 	while (smallerWidth > 16 && smallerHeight > 16 && passno<3) {
 		passno++;
-		smallerWidth = smallerWidth / reductionFactor;
-		smallerHeight = smallerHeight / reductionFactor;
+		smallerWidth = (smallerWidth+reductionFactor-1) / reductionFactor;
+		smallerHeight = (smallerHeight + reductionFactor - 1) / reductionFactor;
 
 		//printf("%i: %i x %i. Buffer %i. ", passno, smallerWidth, smallerHeight, writeBufferNumber);
 		glBindTexture(GL_TEXTURE_2D, maxvalTexture[writeBufferNumber]);	//resize.
@@ -888,8 +888,8 @@ float HeatmapLayer::FindMaxValueWithReductionShader(int width, int height, int r
 		readTexture = maxvalTexture[writeBufferNumber];	//update the next texture to "read"
 		writeBufferNumber = 1 - writeBufferNumber; //alt from 0 to 1;
 
-		returnMaxVal = ReadPixelsAndFindMax(smallerWidth, smallerHeight);
-		//printf("Max val from pass %i: %f.\n", passno, returnMaxVal);
+		//returnMaxVal = ReadPixelsAndFindMax(smallerWidth, smallerHeight);
+		//printf("Max val from pass %i, w:%i h:%i. %f.\n", passno, smallerWidth, smallerHeight, returnMaxVal);
 
 	}
 	returnMaxVal = ReadPixelsAndFindMax(smallerWidth, smallerHeight);

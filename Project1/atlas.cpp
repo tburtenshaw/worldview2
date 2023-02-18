@@ -107,9 +107,10 @@ void Atlas::OutputDrawOrderedUVListForUniform(MainViewport* vp, int* numberOfIte
 	}
 
 	//Copy the images to a list of only appropriate ones
+	constexpr float minInsertWidthPixels = 16.0;
 	std::vector<HighResImage> outputImages;
 	for (auto& image : images) {
-		if (image.OverlapsWith(vp->viewNSWE) && image.FullyLoaded() && (image.nswe.width() / vp->DegreesPerPixel() > 1.0)) {
+		if (image.OverlapsWith(vp->viewNSWE) && image.FullyLoaded() && (image.nswe.width() / vp->DegreesPerPixel() > minInsertWidthPixels)) {
 			outputImages.emplace_back(image);
 		}
 	}
@@ -196,10 +197,11 @@ void Atlas::Setup(int width, int height)
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);//no mipmap
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);	
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);//no mipmap
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	std::cout << "made " << texture << " a " << width << "by" << height << "texture\n";
 	textureWidth = width;
 	textureHeight = height;
@@ -248,7 +250,7 @@ void HighResImage::LoadTexture(GLuint texture)
 	//std::cout <<texture << "pos" << position.x << "," << position.y + subImageLinesLoaded << "size" << position.width << "x"  << linesToLoad << "\n";
 	glTexSubImage2D(GL_TEXTURE_2D, 0, position.x, position.y + subImageLinesLoaded, position.width, linesToLoad, GL_RGB, GL_UNSIGNED_BYTE, rawImageData + (long)subImageLinesLoaded * position.width * nrChannels);
 	subImageLinesLoaded += linesToLoad;
-
+	
 
 	if (subImageLinesLoaded == position.height) {
 		//printf("Loaded Texture. Now free\n");
@@ -256,6 +258,7 @@ void HighResImage::LoadTexture(GLuint texture)
 		//glGenerateMipmap(GL_TEXTURE_2D);
 		
 		state = ImageState::textureLoaded;
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
 

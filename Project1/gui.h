@@ -8,6 +8,10 @@ struct RectDimension;
 class MainViewport;
 
 #include <string>
+#include "header.h"
+#include <map>
+
+
 
 
 namespace Gui {

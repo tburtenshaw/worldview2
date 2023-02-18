@@ -19,6 +19,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
 
+
+
 void Gui::ShowLoadingWindow(LocationHistory* lh)
 {
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
@@ -48,22 +50,28 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 
 	//Debug
 	ImGui::Begin("Debug");
-	sCoords = "Cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	
+	sCoords = "Mouse cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
 	ImGui::Text(sCoords.c_str(), MouseActions::longlatMouse.longitude, MouseActions::longlatMouse.latitude);
-
 	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i", 1000000.0f * vp->viewNSWE.width() / vp->windowDimensions.width,
 		vp->windowDimensions.width / vp->viewNSWE.width(),
 		lh->lodInfo.LodFromDPP(vp->DegreesPerPixel()));
 
-	ImGui::Image((void*)1,ImVec2(ImGui::GetWindowContentRegionMax().x, ImGui::GetWindowContentRegionMax().x/4));
-	//ImGui::GetWindowDrawList()->AddImage(
-//		(void*)1, ImVec2(ImGui::GetItemRectMin().x + 10, ImGui::GetItemRectMin().y + 10), ImVec2(ImGui::GetItemRectMin().x + 100, ImGui::GetItemRectMin().y + 100));
+
+	static int textureToView = 0;
+	ImGui::InputInt("Texture", &textureToView);
+
+	int w, h;
+	glBindTexture(GL_TEXTURE_2D, (GLuint)textureToView);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+
+	ImGui::Image((void*)textureToView,ImVec2(ImGui::GetWindowContentRegionMax().x, ImGui::GetWindowContentRegionMax().x*h/w));
 
 	ImGui::End();
 
 	ImGui::Begin("Map information");
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
 	char displayfilename[260];
 	size_t i;
 	wcstombs_s(&i, displayfilename, 260, lh->filename.c_str(), 259);
@@ -101,7 +109,7 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 		}
 	}
 
-	//ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
 
 	static float oldBlur = 0;

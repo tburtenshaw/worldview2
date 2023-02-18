@@ -22,8 +22,5 @@ void main()
         }
     }
 
-    //accumulatedcolor=texture(texturetoreduce,gl_FragCoord.xy/vec2(1200.0,800.0),0);
-    
-    //accumulatedcolor=vec4(0.0);
-    FragColor=accumulatedcolor+float(pointtosample*0);
+    FragColor=accumulatedcolor;
 }

@@ -3,7 +3,6 @@
 #include <string>
 #include "nswe.h"
 
-//
 class MainViewport;
 class vec2f;
 class vec4f;
