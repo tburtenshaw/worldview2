@@ -32,6 +32,7 @@
 #include <filesystem>
 #include <string>
 #include "mytimezone.h"
+#include "guiatlas.h"
 
 LocationHistory* pLocationHistory;
 
@@ -45,6 +46,9 @@ PathLayer pathLayer;
 PointsLayer pointsLayer;
 RegionsLayer regionsLayer;
 HeatmapLayer heatmapLayer;
+
+//GUI stuff
+GuiAtlas guiAtlas = { 512,512 };
 
 //Options
 GlobalOptions globalOptions;
@@ -270,6 +274,9 @@ int StartGLProgram(LocationHistory* lh)
 
 	heatmapLayer.Setup(mainView.windowDimensions.width, mainView.windowDimensions.height);
 
+
+	//GUI setup
+	guiAtlas.Initialise();
 
 
 	//MAIN LOOP

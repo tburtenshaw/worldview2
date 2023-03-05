@@ -341,7 +341,7 @@ int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 		int result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations);
 		lh->totalbytesread += readbytes;
 		if (result) {
-			readbytes = 0;	//trick the loading loop into ending
+			break;
 		}
 	}
 
@@ -349,6 +349,8 @@ int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 		
 	auto duration = duration_cast<std::chrono::microseconds>(stop - start);
 	std::cout <<"Time to load: " << duration.count() << "us.\n";
+	
+	return 0;
 }
 
 

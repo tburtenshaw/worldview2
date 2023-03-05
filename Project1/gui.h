@@ -8,8 +8,9 @@ struct RectDimension;
 class MainViewport;
 
 #include <string>
-#include "header.h"
 #include <map>
+#include "header.h"
+#include "guiatlas.h"
 
 
 
@@ -18,6 +19,9 @@ namespace Gui {
 	void ShowLoadingWindow(LocationHistory* lh);
 	
 	void MakeGUI(LocationHistory* lh, GlobalOptions* options, MainViewport * vp);
+	void ToolbarButton(GuiAtlas atlas, enum class Icon icon);
+	
+	
 	void ShowRegionInfo(Region* r, GlobalOptions* options);
 	void DayHistogram(Region* r, GlobalOptions* options, float height);
 	void ListDatesInRegion(Region* r);

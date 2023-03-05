@@ -18,6 +18,7 @@
 #undef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
+#include "guiatlas.h"
 
 
 
@@ -372,9 +373,23 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 		MouseActions::mouseMode = MouseMode::RegionSelect;
 	}
 
+	ToolbarButton(guiAtlas, Icon::open);
+	ToolbarButton(guiAtlas, Icon::save);
+			
 	ImGui::End();
 
 	return;
+}
+
+void Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
+	
+	const AtlasEntry& entry = atlas.GetEntry(icon);
+	ImGui::ImageButton((void*)atlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		ImGui::SetTooltip(entry.GetName().c_str());
+	}
+
 }
 
 void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)

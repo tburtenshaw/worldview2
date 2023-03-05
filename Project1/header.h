@@ -28,6 +28,8 @@ class DisplayRegion;
 
 struct vec2f {
 	float x, y;
+
+	operator ImVec2() const { return ImVec2(x, y); }
 };
 
 struct vec4f {
@@ -56,6 +58,8 @@ struct XY {
 struct RectDimension {
 	int width;
 	int height;
+
+	operator ImVec2() const { return ImVec2((float)width, (float)height); }	//converts to float for ImGui
 };
 
 class WorldCoord {
