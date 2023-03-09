@@ -43,17 +43,14 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
-{
-	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
-	std::string sCoords;
-	sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
-
+void Gui::DebugWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp)	{
 	//Debug
 	ImGui::Begin("Debug");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	
-	sCoords = "Mouse cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
+
+	std::string sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
+	std::string sCoords = "Mouse cursor: Long: " + sigfigs + ", Lat: " + sigfigs;
+
 	ImGui::Text(sCoords.c_str(), MouseActions::longlatMouse.longitude, MouseActions::longlatMouse.latitude);
 	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i", 1000000.0f * vp->viewNSWE.width() / vp->windowDimensions.width,
 		vp->windowDimensions.width / vp->viewNSWE.width(),
@@ -68,9 +65,78 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
 
-	ImGui::Image((void*)textureToView,ImVec2(ImGui::GetWindowContentRegionMax().x, ImGui::GetWindowContentRegionMax().x*h/w));
+	ImGui::Image((void*)textureToView, ImVec2(ImGui::GetWindowContentRegionMax().x, ImGui::GetWindowContentRegionMax().x * h / w));
 
 	ImGui::End();
+}
+
+void Gui::ToolbarWindow(LocationHistory* lh, GlobalOptions* options)
+{
+	ImGui::Begin("Toolbar");
+	if (ImGui::Button("Open")) {
+		if (ChooseFileToOpen(lh)) {
+			lh->isFileChosen = true;
+			lh->isFullyLoaded = false;
+			lh->isInitialised = false;
+			lh->isLoadingFile = false;
+		}
+		//lh->heatmap->MakeDirty();
+	}
+
+	bool disabled = false;
+	if (lh->isLoadingFile == true || lh->isInitialised == false) {
+		disabled = true;
+	}
+
+	if (disabled)
+		ImGui::BeginDisabled();
+
+	if (ImGui::Button("Close")) {
+		lh->CloseLocationFile();
+		lh->filename = L"";
+	}
+	if (disabled)
+		ImGui::EndDisabled();
+
+	if (ImGui::Button("Save")) {
+		if (lh->isFullyLoaded == true) {
+			std::wstring filename = ChooseFileToSave(lh);
+			if (filename.size() > 0) {
+				SaveWVFormat(lh, filename);
+			}
+		}
+	}
+	if (ImGui::Button("Nav")) {
+		MouseActions::mouseMode = MouseMode::ScreenNavigation;
+	}
+	if (ImGui::Button("Select")) {
+		MouseActions::mouseMode = MouseMode::PointSelect;
+	}
+	if (ImGui::Button("Regions")) {
+		MouseActions::mouseMode = MouseMode::RegionSelect;
+	}
+
+	ToolbarButton(guiAtlas, Icon::open);
+	ToolbarButton(guiAtlas, Icon::save);
+	ToolbarButton(guiAtlas, Icon::close);
+	if (ToolbarButton(guiAtlas, Icon::heatmap)) {
+		options->ShowHeatmap();
+	}
+	if (ToolbarButton(guiAtlas, Icon::points)) {
+		options->ShowPoints();
+	}
+
+
+	ImGui::End();
+}
+
+void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
+{
+	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
+	std::string sCoords;
+	sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
+
+	Gui::DebugWindow(lh,options,vp);
 
 	ImGui::Begin("Map information");
 	char displayfilename[260];
@@ -113,116 +179,16 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
 
-	static float oldBlur = 0;
-	static int oldMinimumaccuracy = 0;
+
 
 	ImGui::Begin("Heatmap");
-	ImGui::Checkbox("Show heatmap", &options->showHeatmap);
-	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 25.0f, "%.1f");
-	ImGui::SliderFloat("Max value", &options->heatmapmaxvalue, 0.0f, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
-	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
-	ImGui::SliderFloat("Debug", &options->debug, 0.0f, 1.0f, "%.1f");
-
-	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
-	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
-
-
-	if (options->gaussianblur != oldBlur) {
-		oldBlur = options->gaussianblur;
-		//lh->heatmap->MakeDirty();
-	}
-	if (options->minimumaccuracy != oldMinimumaccuracy) {
-		oldMinimumaccuracy = options->minimumaccuracy;
-		//lh->heatmap->MakeDirty();
-	}
+	Gui::HeatmapOptions(options);
 
 	ImGui::End();
 
 	ImGui::Begin("Location display");
-	ImGui::Checkbox("Show points", &options->showPoints);
-
-	time_t t;
-	struct std::tm correctedTime;
-
-	static int earliestDayOfMonth = 0;
-	static int earliestMonth = 0;
-	static int earliestYear = 0;
-
-	static int latestDayOfMonth = 0;
-	static int latestMonth = 0;
-	static int latestYear = 0;
-
-	//convert from the unixtime time_t to a tm struct
-	t = options->earliestTimeToShow;
-	localtime_s(&correctedTime, &t);
-	earliestDayOfMonth = correctedTime.tm_mday;
-	earliestMonth = correctedTime.tm_mon + 1;
-	earliestYear = correctedTime.tm_year + 1900;
-
-	if (ImGui::DragInt("Day", &earliestDayOfMonth, 0.4f)) {
-		correctedTime.tm_mday = earliestDayOfMonth;
-		options->earliestTimeToShow = mktime(&correctedTime);
-	}
-
-	if (ImGui::DragInt("Month", &earliestMonth, 0.1f)) {
-		correctedTime.tm_mon = earliestMonth - 1;
-		//correctedTime.tm_mday = earliestDayOfMonth;
-		correctedTime.tm_isdst = -1;
-		options->earliestTimeToShow = mktime(&correctedTime);
-
-		if (correctedTime.tm_mday != earliestDayOfMonth) {
-			printf("different day ctm:%i em:%i ed:%i ctd:%i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
-
-			//changing the month will often change the day, only allow if mday>28
-			if (correctedTime.tm_mday <= 128) {
-				correctedTime.tm_mon = earliestMonth - 1;
-				correctedTime.tm_mday = earliestDayOfMonth;
-				options->earliestTimeToShow = mktime(&correctedTime);
-			}
-
-			printf("After: ctm: % i em : % i ed : % i ctd : % i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
-		}
-	}
-
-	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
-		correctedTime.tm_year = earliestYear - 1900;
-		options->earliestTimeToShow = mktime(&correctedTime);
-	}
-
-	if (options->earliestTimeToShow > lh->stats.latestTimestamp) {
-		options->earliestTimeToShow = lh->stats.latestTimestamp;
-	}
-
-	if (options->earliestTimeToShow < lh->stats.earliestTimestamp) {
-		options->earliestTimeToShow = lh->stats.earliestTimestamp;
-	}
-
-	//ensure the earliest time is always H=0, min=0,sec=0
-	//also update the static date display variables
-	t = options->earliestTimeToShow;
-	localtime_s(&correctedTime, &t);
-
-	earliestDayOfMonth = correctedTime.tm_mday;
-	earliestMonth = correctedTime.tm_mon + 1;
-	earliestYear = correctedTime.tm_year + 1900;
-
-	correctedTime.tm_hour = 0;
-	correctedTime.tm_min = 0;
-	correctedTime.tm_sec = 0;
-
-	options->earliestTimeToShow = mktime(&correctedTime);
-
-	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
-	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
-
-	t = options->latestTimeToShow;
-	gmtime_s(&correctedTime, &t);
-	latestDayOfMonth = correctedTime.tm_mday;
-	latestMonth = correctedTime.tm_mon + 1;
-	latestYear = correctedTime.tm_year + 1900;
-
-	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
-	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
+	//ImGui::Checkbox("Show points", &options->showPoints);
+	Gui::DateSelect(lh, options);
 
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
@@ -329,66 +295,132 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 
 	ImGui::End();
 
-	ImGui::Begin("Toolbar");
-	if (ImGui::Button("Open")) {
-		if (ChooseFileToOpen(lh)) {
-			lh->isFileChosen = true;
-			lh->isFullyLoaded = false;
-			lh->isInitialised = false;
-			lh->isLoadingFile = false;
-		}
-		//lh->heatmap->MakeDirty();
-	}
-
-	bool disabled = false;
-	if (lh->isLoadingFile == true || lh->isInitialised == false) {
-		disabled = true;
-	}
-
-	if (disabled)
-		ImGui::BeginDisabled();
-
-	if (ImGui::Button("Close")) {
-		lh->CloseLocationFile();
-		lh->filename = L"";
-	}
-	if (disabled)
-		ImGui::EndDisabled();
-
-	if (ImGui::Button("Save")) {
-		if (lh->isFullyLoaded == true) {
-			std::wstring filename = ChooseFileToSave(lh);
-			if (filename.size() > 0) {
-				SaveWVFormat(lh, filename);
-			}
-		}
-	}
-	if (ImGui::Button("Nav")) {
-		MouseActions::mouseMode = MouseMode::ScreenNavigation;
-	}
-	if (ImGui::Button("Select")) {
-		MouseActions::mouseMode = MouseMode::PointSelect;
-	}
-	if (ImGui::Button("Regions")) {
-		MouseActions::mouseMode = MouseMode::RegionSelect;
-	}
-
-	ToolbarButton(guiAtlas, Icon::open);
-	ToolbarButton(guiAtlas, Icon::save);
-			
-	ImGui::End();
+	Gui::ToolbarWindow(lh,options);
 
 	return;
 }
 
-void Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
+bool Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
 	
 	const AtlasEntry& entry = atlas.GetEntry(icon);
-	ImGui::ImageButton((void*)atlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
+	bool b = ImGui::ImageButton(entry.GetName().c_str(), (void*)atlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 	{
 		ImGui::SetTooltip(entry.GetName().c_str());
 	}
+
+	return b;
+}
+
+void Gui::HeatmapOptions(GlobalOptions* options)
+{
+	static float oldBlur = 0;
+	static int oldMinimumaccuracy = 0;
+
+	//ImGui::Checkbox("Show heatmap", &options->showHeatmap);
+	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 25.0f, "%.1f");
+	ImGui::SliderFloat("Max value", &options->heatmapmaxvalue, 0.0f, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
+	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
+	ImGui::SliderFloat("Debug", &options->debug, 0.0f, 1.0f, "%.1f");
+
+	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
+	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
+
+
+	if (options->gaussianblur != oldBlur) {
+		oldBlur = options->gaussianblur;
+		//lh->heatmap->MakeDirty();
+	}
+	if (options->minimumaccuracy != oldMinimumaccuracy) {
+		oldMinimumaccuracy = options->minimumaccuracy;
+		//lh->heatmap->MakeDirty();
+	}
+}
+
+void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
+{
+	time_t t;
+	struct std::tm correctedTime;
+
+	static int earliestDayOfMonth = 0;
+	static int earliestMonth = 0;
+	static int earliestYear = 0;
+
+	static int latestDayOfMonth = 0;
+	static int latestMonth = 0;
+	static int latestYear = 0;
+
+	//convert from the unixtime time_t to a tm struct
+	t = options->earliestTimeToShow;
+	localtime_s(&correctedTime, &t);
+	earliestDayOfMonth = correctedTime.tm_mday;
+	earliestMonth = correctedTime.tm_mon + 1;
+	earliestYear = correctedTime.tm_year + 1900;
+
+	if (ImGui::DragInt("Day", &earliestDayOfMonth, 0.4f)) {
+		correctedTime.tm_mday = earliestDayOfMonth;
+		options->earliestTimeToShow = mktime(&correctedTime);
+	}
+
+	if (ImGui::DragInt("Month", &earliestMonth, 0.1f)) {
+		correctedTime.tm_mon = earliestMonth - 1;
+		//correctedTime.tm_mday = earliestDayOfMonth;
+		correctedTime.tm_isdst = -1;
+		options->earliestTimeToShow = mktime(&correctedTime);
+
+		if (correctedTime.tm_mday != earliestDayOfMonth) {
+			printf("different day ctm:%i em:%i ed:%i ctd:%i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
+
+			//changing the month will often change the day, only allow if mday>28
+			if (correctedTime.tm_mday <= 128) {
+				correctedTime.tm_mon = earliestMonth - 1;
+				correctedTime.tm_mday = earliestDayOfMonth;
+				options->earliestTimeToShow = mktime(&correctedTime);
+			}
+
+			printf("After: ctm: % i em : % i ed : % i ctd : % i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
+		}
+	}
+
+	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
+		correctedTime.tm_year = earliestYear - 1900;
+		options->earliestTimeToShow = mktime(&correctedTime);
+	}
+
+	if (options->earliestTimeToShow > lh->stats.latestTimestamp) {
+		options->earliestTimeToShow = lh->stats.latestTimestamp;
+	}
+
+	if (options->earliestTimeToShow < lh->stats.earliestTimestamp) {
+		options->earliestTimeToShow = lh->stats.earliestTimestamp;
+	}
+
+	//ensure the earliest time is always H=0, min=0,sec=0
+	//also update the static date display variables
+	t = options->earliestTimeToShow;
+	localtime_s(&correctedTime, &t);
+
+	earliestDayOfMonth = correctedTime.tm_mday;
+	earliestMonth = correctedTime.tm_mon + 1;
+	earliestYear = correctedTime.tm_year + 1900;
+
+	correctedTime.tm_hour = 0;
+	correctedTime.tm_min = 0;
+	correctedTime.tm_sec = 0;
+
+	options->earliestTimeToShow = mktime(&correctedTime);
+
+	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
+
+	t = options->latestTimeToShow;
+	gmtime_s(&correctedTime, &t);
+	latestDayOfMonth = correctedTime.tm_mday;
+	latestMonth = correctedTime.tm_mon + 1;
+	latestYear = correctedTime.tm_year + 1900;
+
+	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
 
 }
 

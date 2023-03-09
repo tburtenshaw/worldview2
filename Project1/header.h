@@ -130,8 +130,14 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 };
 
 class GlobalOptions {
+private:
+
 public:
 	GlobalOptions();
+	
+	void ShowHeatmap(bool hideOthers = true);
+	void ShowPoints(bool hideOthers = true);
+
 	bool showPaths;
 	bool showPoints;
 	bool showHeatmap;

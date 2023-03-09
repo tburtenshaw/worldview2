@@ -90,6 +90,24 @@ GlobalOptions::GlobalOptions()
 
 }
 
+void GlobalOptions::ShowHeatmap(bool hideOthers)
+{
+	this->showHeatmap = true;
+	if (hideOthers) {
+		this->showPaths = false;
+		this->showPoints = false;
+	}
+}
+
+void GlobalOptions::ShowPoints(bool hideOthers)
+{
+	this->showPoints = true;
+	if (hideOthers) {
+		this->showPaths = false;
+		this->showHeatmap = false;
+	}
+}
+
 //should be moved to a better cpp file
 
 NSWE LocationHistory::FindBestView() {

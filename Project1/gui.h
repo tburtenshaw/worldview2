@@ -19,8 +19,14 @@ namespace Gui {
 	void ShowLoadingWindow(LocationHistory* lh);
 	
 	void MakeGUI(LocationHistory* lh, GlobalOptions* options, MainViewport * vp);
-	void ToolbarButton(GuiAtlas atlas, enum class Icon icon);
+	bool ToolbarButton(GuiAtlas atlas, enum class Icon icon);
 	
+	void DebugWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp);
+	//void OptionsWindow
+	void ToolbarWindow(LocationHistory* lh, GlobalOptions* options);
+
+	void HeatmapOptions(GlobalOptions* options);
+	void DateSelect(LocationHistory* lh, GlobalOptions* options);
 	
 	void ShowRegionInfo(Region* r, GlobalOptions* options);
 	void DayHistogram(Region* r, GlobalOptions* options, float height);

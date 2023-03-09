@@ -4,6 +4,7 @@
 #include "header.h"
 
 enum class Icon {
+	def,
 	open,
 	close,
 	save,
@@ -47,19 +48,7 @@ public:
 	void Initialise();
 	GLuint GetTextureId() const;
 
-	const AtlasEntry& GetEntry(Icon icon) const {
-		auto it = entry.find(icon);
-		if (it != entry.end()) {
-			return it->second;
-		}
-		else {
-			// Handle the case where the specified icon is not found
-			// For example, you could throw an exception or return a default value
-			// In this example, we'll throw a std::out_of_range exception
-			throw std::out_of_range("Icon not found in atlas");
-		}
-	}
-
+	const AtlasEntry& GetEntry(Icon icon) const;
 
 };
 
