@@ -21,10 +21,10 @@ namespace Gui {
 	void MakeGUI(LocationHistory* lh, GlobalOptions* options, MainViewport * vp);
 	bool ToolbarButton(GuiAtlas atlas, enum class Icon icon);
 	
-	void DebugWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp);
+	void DebugWindow(LocationHistory* lh, MainViewport* vp);
 	//void OptionsWindow
-	void ToolbarWindow(LocationHistory* lh, GlobalOptions* options);
-	void InfoWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp);
+	void ToolbarWindow(LocationHistory* lh);
+	void InfoWindow(LocationHistory* lh, MainViewport* vp);
 
 	void PointsOptions(LocationHistory* lh, GlobalOptions* options);
 	void HeatmapOptions(GlobalOptions* options);

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "header.h"
+#include "options.h"
 #include "shaders.h"
 #include "heatmap.h"
 #include "highresmanager.h"
@@ -79,7 +80,7 @@ public:
 	void Setup();
 	void SetupShaders();
 	void SetupTextures();
-	void Draw(MainViewport *vp, const GlobalOptions& options);
+	void Draw(MainViewport *vp);
 
 	BackgroundLayer()
 		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
@@ -136,7 +137,7 @@ public:
 	float palette[24][4];
 	void SetupShaders();
 	void SetupVertices();
-	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, GlobalOptions* options);
+	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe);
 	
 };
 
@@ -161,7 +162,7 @@ class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
 	void SetupVertices();
-	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, GlobalOptions* options);
+	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe);
 	void UpdateSize(int width, int height);
 
 	unsigned int texture;	//main texture for heatmap

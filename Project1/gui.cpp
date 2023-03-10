@@ -1,6 +1,7 @@
 #include <imgui.h>
 #include "gui.h"
 #include "header.h"
+#include "options.h"	//globalOptions
 #include "nswe.h"
 #include "regions.h"
 #include "mytimezone.h"
@@ -43,7 +44,7 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::DebugWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp)	{
+void Gui::DebugWindow(LocationHistory* lh,  MainViewport* vp)	{
 	//Debug
 	ImGui::Begin("Debug");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -70,7 +71,7 @@ void Gui::DebugWindow(LocationHistory* lh, GlobalOptions* options, MainViewport*
 	ImGui::End();
 }
 
-void Gui::ToolbarWindow(LocationHistory* lh, GlobalOptions* options)
+void Gui::ToolbarWindow(LocationHistory* lh)
 {
 	ImGui::Begin("Toolbar");
 	if (ImGui::Button("Open")) {
@@ -120,17 +121,17 @@ void Gui::ToolbarWindow(LocationHistory* lh, GlobalOptions* options)
 	ToolbarButton(guiAtlas, Icon::save);
 	ToolbarButton(guiAtlas, Icon::close);
 	if (ToolbarButton(guiAtlas, Icon::heatmap)) {
-		options->ShowHeatmap();
+		globalOptions.ShowHeatmap();
 	}
 	if (ToolbarButton(guiAtlas, Icon::points)) {
-		options->ShowPoints();
+		globalOptions.ShowPoints();
 	}
 
 
 	ImGui::End();
 }
 
-void Gui::InfoWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp)
+void Gui::InfoWindow(LocationHistory* lh, MainViewport* vp)
 {
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
@@ -152,7 +153,7 @@ void Gui::InfoWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* 
 	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
 	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
 
-	//Gui::ShowRegionInfo(vp->regions[0], options);
+	//Gui::ShowRegionInfo(vp->regions[0], globalOptions);
 
 	ImGui::End();
 
@@ -160,8 +161,8 @@ void Gui::InfoWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* 
 
 void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 {
-	Gui::DebugWindow(lh, options, vp);
-	Gui::InfoWindow(lh, options, vp);
+	Gui::DebugWindow(lh, vp);
+	Gui::InfoWindow(lh, vp);
 
 	//delete any regions marked to be deleted
 	for (std::size_t i = 1; i < vp->regions.size(); i++) {
@@ -199,7 +200,7 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 
 	ImGui::End();
 
-	Gui::ToolbarWindow(lh,options);
+	Gui::ToolbarWindow(lh);
 
 	return;
 }

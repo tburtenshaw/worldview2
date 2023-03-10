@@ -1,5 +1,6 @@
 #include "header.h"
 #include "mygl.h"
+#include "options.h"
 #include "nswe.h"
 #include "regions.h"
 #include "palettes.h"
@@ -179,7 +180,7 @@ void PointsLayer::SetupVertices()
 	glEnableVertexAttribArray(2);
 }
 
-void PointsLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, GlobalOptions* options)
+void PointsLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe)
 {
 	//update uniform shader variables
 	shader.UseMe();
@@ -189,31 +190,31 @@ void PointsLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSW
 	shader.SetUniform(uniformDegreeMidpoint, (nswe->west + nswe->east) / 2.0, (nswe->north + nswe->south) / 2.0);
 
 
-	shader.SetUniform(uniformPointRadius, options->pointdiameter / 2.0f);
-	shader.SetUniform(uniformPointAlpha, options->pointalpha);
-	shader.SetUniform(uniformSeconds, options->seconds);
-	shader.SetUniform(uniformCycleSeconds, options->cycleSeconds);
+	shader.SetUniform(uniformPointRadius, globalOptions.pointdiameter / 2.0f);
+	shader.SetUniform(uniformPointAlpha, globalOptions.pointalpha);
+	shader.SetUniform(uniformSeconds, globalOptions.seconds);
+	shader.SetUniform(uniformCycleSeconds, globalOptions.cycleSeconds);
 
-	shader.SetUniform(uniformEarliestTimeToShow, options->earliestTimeToShow);
-	shader.SetUniform(uniformLatestTimeToShow, options->latestTimeToShow);
+	shader.SetUniform(uniformEarliestTimeToShow, globalOptions.earliestTimeToShow);
+	shader.SetUniform(uniformLatestTimeToShow, globalOptions.latestTimeToShow);
 
-	shader.SetUniform(uniformShowHighlights, options->showHighlights);
-	shader.SetUniform(uniformSecondsBetweenHighlights, options->secondsbetweenhighlights);
-	shader.SetUniform(uniformTravelTimeBetweenHighlights, options->minutestravelbetweenhighlights * 60.0f);
+	shader.SetUniform(uniformShowHighlights, globalOptions.showHighlights);
+	shader.SetUniform(uniformSecondsBetweenHighlights, globalOptions.secondsbetweenhighlights);
+	shader.SetUniform(uniformTravelTimeBetweenHighlights, globalOptions.minutestravelbetweenhighlights * 60.0f);
 
-	shader.SetUniform(uniformColourBy, options->colourby);
+	shader.SetUniform(uniformColourBy, globalOptions.colourby);
 
-	switch (options->colourby) {
+	switch (globalOptions.colourby) {
 	case 1:
-		Palette_Handler::FillShaderPalette(palette, 24, options->indexPaletteHour);
+		Palette_Handler::FillShaderPalette(palette, 24, globalOptions.indexPaletteHour);
 		shader.SetUniform(uniformPalette, 24, &palette[0][0]);
 		break;
 	case 4:
-		Palette_Handler::FillShaderPalette(palette, 24, options->indexPaletteYear);
+		Palette_Handler::FillShaderPalette(palette, 24, globalOptions.indexPaletteYear);
 		shader.SetUniform(uniformPalette, 24, &palette[0][0]);
 		break;
 	default:
-		Palette_Handler::FillShaderPalette(palette, 24, options->indexPaletteWeekday);
+		Palette_Handler::FillShaderPalette(palette, 24, globalOptions.indexPaletteWeekday);
 		shader.SetUniform(uniformPalette, 24, &palette[0][0]);
 		break;
 	}
@@ -447,7 +448,7 @@ void BackgroundLayer::SetupTextures()
 	LoadBackgroundImageToTexture();
 }
 
-void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions& options)
+void BackgroundLayer::Draw(MainViewport* vp)
 {
 
 	constexpr int maxAtlasDraws = 8;	//check doesn't exceed what is in the backgroundFS shader
@@ -486,8 +487,8 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions& options)
 	//std::cout << "draw:" << highresNSWEfloat[0]<< highresNSWEfloat[1]<< highresNSWEfloat[2] << highresNSWEfloat[3] << "\n";
 
 
-	shader.SetUniform(uniformMaxHeatmapValue, options.heatmapmaxvalue);
-	shader.SetUniform(uniformPaletteNumber, options.palette);
+	shader.SetUniform(uniformMaxHeatmapValue, globalOptions.heatmapmaxvalue);
+	shader.SetUniform(uniformPaletteNumber, globalOptions.palette);
 
 	//std::cout << "wt:" << worldTexture << ", hrt:" << highresTexture << ", atlastex:" << atlas.getTexture() << ", hmT " << heatmapTexture << "\n";
 
@@ -498,7 +499,7 @@ void BackgroundLayer::Draw(MainViewport* vp, const GlobalOptions& options)
 	glBindTexture(GL_TEXTURE_2D, atlas.getTexture());
 
 	glActiveTexture(GL_TEXTURE0 + 2);
-	if (options.showHeatmap) {
+	if (globalOptions.showHeatmap) {
 		glBindTexture(GL_TEXTURE_2D, heatmapTexture);
 	}
 	else {
@@ -677,7 +678,7 @@ void HeatmapLayer::SetupVertices()
 
 }
 
-void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe, GlobalOptions* options)
+void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe)
 {
 	shader.UseMe();
 	
@@ -687,9 +688,9 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 	shader.SetUniform(uniformDegreeMidpoint, (nswe->west+nswe->east) / 2.0, (nswe->north+nswe->south) / 2.0);
 
 
-	shader.SetUniform(uniformEarliestTimeToShow, options->earliestTimeToShow);
-	shader.SetUniform(uniformLatestTimeToShow, options->latestTimeToShow);
-	shader.SetUniform(uniformMinimumAccuracy, (unsigned long)options->minimumaccuracy);
+	shader.SetUniform(uniformEarliestTimeToShow, globalOptions.earliestTimeToShow);
+	shader.SetUniform(uniformLatestTimeToShow, globalOptions.latestTimeToShow);
+	shader.SetUniform(uniformMinimumAccuracy, (unsigned long)globalOptions.minimumaccuracy);
 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboToDrawHeatmap);
@@ -715,10 +716,10 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 	DisplayIfGLError("after dahm", false);
 
 	//then the blur pass.
-	GaussianBlur(options->gaussianblur, width, height);
+	GaussianBlur(globalOptions.gaussianblur, width, height);
 
 	//now find the brigtest point
-	options->heatmapmaxvalue = FindMaxValueWithReductionShader(width, height, 4);	//8 might be slightly faster
+	globalOptions.heatmapmaxvalue = FindMaxValueWithReductionShader(width, height, 4);	//8 might be slightly faster
 
 	//now back to normal
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

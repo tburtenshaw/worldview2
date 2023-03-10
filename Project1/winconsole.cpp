@@ -14,6 +14,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+#include "options.h"
 #include "shaders.h"
 #include "header.h"
 #include "nswe.h"
@@ -50,7 +51,7 @@ HeatmapLayer heatmapLayer;
 //GUI stuff
 GuiAtlas guiAtlas = { 512,512 };
 
-//Options
+//Global instance of Options which is accessible to everything including "options.h"
 GlobalOptions globalOptions;
 
 int LocationHistory::CloseLocationFile()	//closes the file, empties the arrays, resets names/counts
@@ -319,7 +320,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		//Heatmap rendering to FBO
 		if (lh->isInitialised && lh->isFullyLoaded && globalOptions.showHeatmap) {
-			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, &globalOptions);
+			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
 		}
 
 
@@ -330,7 +331,7 @@ int StartGLProgram(LocationHistory* lh)
 		//Background layer has worldmap, heatmap and highres
 		backgroundLayer.heatmapTexture = heatmapLayer.texture;
 		DisplayIfGLError("before backgroundLayer.Draw", false);
-		backgroundLayer.Draw(&mainView, globalOptions);
+		backgroundLayer.Draw(&mainView);
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
@@ -344,7 +345,7 @@ int StartGLProgram(LocationHistory* lh)
 			}
 
 			if (globalOptions.showPoints) {
-				pointsLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, &globalOptions);
+				pointsLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
 			}
 
 			regionsLayer.UpdateFromRegionsData(mainView.regions);
