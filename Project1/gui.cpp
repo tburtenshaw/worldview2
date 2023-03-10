@@ -130,13 +130,11 @@ void Gui::ToolbarWindow(LocationHistory* lh, GlobalOptions* options)
 	ImGui::End();
 }
 
-void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
+void Gui::InfoWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp)
 {
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
 	sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
-
-	Gui::DebugWindow(lh,options,vp);
 
 	ImGui::Begin("Map information");
 	char displayfilename[260];
@@ -157,6 +155,13 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	//Gui::ShowRegionInfo(vp->regions[0], options);
 
 	ImGui::End();
+
+}
+
+void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
+{
+	Gui::DebugWindow(lh, options, vp);
+	Gui::InfoWindow(lh, options, vp);
 
 	//delete any regions marked to be deleted
 	for (std::size_t i = 1; i < vp->regions.size(); i++) {
@@ -189,7 +194,30 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	ImGui::Begin("Location display");
 	//ImGui::Checkbox("Show points", &options->showPoints);
 	Gui::DateSelect(lh, options);
+	Gui::PointsOptions(lh, options);
+	
 
+	ImGui::End();
+
+	Gui::ToolbarWindow(lh,options);
+
+	return;
+}
+
+bool Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
+	
+	const AtlasEntry& entry = atlas.GetEntry(icon);
+	bool b = ImGui::ImageButton(entry.GetName().c_str(), (void*)atlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		ImGui::SetTooltip(entry.GetName().c_str());
+	}
+
+	return b;
+}
+
+void Gui::PointsOptions(LocationHistory* lh, GlobalOptions* options)
+{
 	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
 	ImGui::Checkbox("Connect points", &options->showPaths);
@@ -292,24 +320,6 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 			}
 		}
 	}
-
-	ImGui::End();
-
-	Gui::ToolbarWindow(lh,options);
-
-	return;
-}
-
-bool Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
-	
-	const AtlasEntry& entry = atlas.GetEntry(icon);
-	bool b = ImGui::ImageButton(entry.GetName().c_str(), (void*)atlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-	{
-		ImGui::SetTooltip(entry.GetName().c_str());
-	}
-
-	return b;
 }
 
 void Gui::HeatmapOptions(GlobalOptions* options)

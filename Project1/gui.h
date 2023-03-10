@@ -24,7 +24,9 @@ namespace Gui {
 	void DebugWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp);
 	//void OptionsWindow
 	void ToolbarWindow(LocationHistory* lh, GlobalOptions* options);
+	void InfoWindow(LocationHistory* lh, GlobalOptions* options, MainViewport* vp);
 
+	void PointsOptions(LocationHistory* lh, GlobalOptions* options);
 	void HeatmapOptions(GlobalOptions* options);
 	void DateSelect(LocationHistory* lh, GlobalOptions* options);
 	
