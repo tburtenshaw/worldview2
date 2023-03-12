@@ -9,15 +9,12 @@
 
 int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location>& loc) {
 
-	//char c;
-#define c buffer[i]
-
 	for (unsigned long i = 0; i < buffersize; i++) {
-		//c = buffer[i]; //believe it or not, this makes a small bit of difference, so I've made it a define
+		char c = buffer[i];
 
 
 		//String reading
-		if ((c == '\"') && (!jsr->readingstring)) {
+		if ((c == '\"') && (!jsr->readingstring)) {	//faster with the c comparitor first
 			jsr->readingstring = true;
 			jsr->distancealongbuffer = 0;
 		}
@@ -116,9 +113,11 @@ int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_R
 
 				if (jsr->hierarchydepth == jsr->locationsdepth) {	//if we're closing up a location then write the location
 					
+					loc.emplace_back(jsr->location);
+
 					//reset to defaults
 					jsr->location.altitude = -1;
-					loc.emplace_back(jsr->location);
+
 					//printf("Loc:%i", jsr->locationnumber);
 				}
 				jsr->hierarchydepth--;
@@ -244,7 +243,7 @@ long timestampToLong(char* str)
 
 int AssignValueToName(JSON_READER_STATE* jsr)
 {
-	//printf("%s=%s ", jsr->name, jsr->buffer);
+//	printf("%s=%s\t", jsr->name, jsr->buffer);
 	
 
 	//use the long of the first four characters to speed things up
@@ -311,13 +310,51 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 		}
 		break;
 	case 0x74726576:
-		if (!strcmp(jsr->name, "verticalaccuracy")) {
+		if (!strcmp(jsr->name, "verticalAccuracy")) {
 			jsr->location.verticalaccuracy = fast_strtol(jsr->buffer);
+
 			return 1;
 		}
 		break;
+	case 0x72756f73:
+		//source
+	case 0x69766564:
+		//deviceTag
+	case 0x65707974:
+		//type
+	case 0x666e6f63:
+		//confidence
+	case 0x56746e69:
+		//intVal
+	case 0x65727473:
+		//strength
+	case 0x0063616d:
+		//mac
+	case 0x6d726f66:
+		//formFactor
+	case 0x656d616e:
+		//name
+	case 0x74616c70:
+		//platformType
+	case 0x74746162:
+		//batteryCharging
+	case 0x76726573:
+		//serverTimestamp
+	case 0x6f437369:
+		//isConnected
+	case 0x654c736f:
+		//osLevel
+	case 0x63616c70:
+		//placeId
+	case 0x71657266:
+		//frequencyMhz
+		//printf("%x %s=%s\n", firstlong[0], jsr->name, jsr->buffer);
+		return 1;
+		break;
+	break;
 	}
-	
+
+	//printf("%i %x %s=%s\n", jsr->hierarchydepth, firstlong[0], jsr->name, jsr->buffer);
 
 	return 0; //return 0 if we didn't use anything
 }
