@@ -6,6 +6,7 @@
 #include <vector>
 #include <imgui.h>
 #include "input.h"
+#include "processlocations.h"
 
 //#define READ_BUFFER_SIZE 1024*256
 //#define MAX_JSON_STRING 1024
@@ -91,7 +92,7 @@ public:
 		a = (unsigned char)(other.w * 255.0f);
 	}
 
-	ImVec4 AsImVec4(){
+	ImVec4 AsImVec4() const {
 		return { (float)r / 255.0f, (float)g / 255.0f ,(float)b / 255.0f ,(float)a / 255.0f };
 	}
 
@@ -131,17 +132,7 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 
 
 
-class LODInfo {
-public:
-	static constexpr int numberOfLODs = 4;
-	unsigned long lodStart[numberOfLODs];
-	unsigned long lodLength[numberOfLODs];
-	float lodPrecision[numberOfLODs];
 
-	std::vector<PathPlotLocation> pathPlotLocations;	//contains multiple LODs after each other with some info removed, floats vs doubles etc.
-
-	int LodFromDPP(double dpp);
-};
 
 class MainViewport {
 public:
@@ -171,6 +162,8 @@ public:
 	int CloseLocationFile();
 	void GenerateLocationLODs();
 	void OptimiseForPaths();
+	
+	
 
 	LocationHistory();
 	~LocationHistory();

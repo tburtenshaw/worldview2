@@ -12,14 +12,16 @@
 #include <stb_image.h>
 #include <iostream>
 
+
+// Defined in winconsole.cpp
+extern GlobalOptions globalOptions;
+
 //Static members need setting
 unsigned int GLRenderLayer::vboLocations = 0;
 unsigned int GLRenderLayer::vaoSquare = 0;
 unsigned int GLRenderLayer::vboSquare = 0;
 
-TimeLookup GLRenderLayer::timeLookup[] = { 0 };
-TimeLookup GLRenderLayer::knownStart = { 0 };
-TimeLookup GLRenderLayer::knownEnd = { 0 };
+
 
 
 void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao/vbo for -1,-1, to 1,1 square
@@ -48,70 +50,11 @@ void GLRenderLayer::SetupSquareVertices()	//this creates triangle mesh, gens vao
 	DisplayIfGLError("after   GLRenderLayer::SetupSquareVertices()", false);
 }
 
-void GLRenderLayer::CreateTimeLookupTable(LODInfo& lodInfo, int lod)
-{
-	//Lookup table for start/end times
-	//we divide the list into 33 (pieces+1) sections, (start and end are known), so can start DrawArray at that point
-	size_t interval = lodInfo.lodLength[lod] / (lookupPieces+1);
-	size_t c = lodInfo.lodStart[lod];
-	
-	for (int i = 0; i < lookupPieces; i++) {
-		c += interval;
-		timeLookup[i].index = c;
-		timeLookup[i].t = lodInfo.pathPlotLocations[c].timestamp;
-
-		//printf("Lookup %i. Count: %i, ts:%i\n", i, c, locs[c].timestamp);
-	}
-}
-
 void GLRenderLayer::UseLocationVBO()
 {
 	vbo = vboLocations;
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	DisplayIfGLError("after UseLocationVBO()", false);
-}
-
-void GLRenderLayer::LookupFirstAndCount(unsigned long starttime, unsigned long endtime, int lod, GLint* first, GLsizei* count)
-{
-	if (lod > 0) {
-		return;
-	}
-	
-	//Check if we've already calculated it
-	if ((starttime == knownStart.t) && (endtime == knownEnd.t)) {
-		*first = knownStart.index;
-		*count = knownEnd.index- knownStart.index;
-		//printf("k");
-		return;
-	}
-	
-	
-	*first = 0;
-	int i = 0;
-	for (; (i < 32) && (timeLookup[i].t < starttime); i++) {	//don't run if we've exceeded start time
-		*first = timeLookup[i].index;	//will only be changed if
-	}
-	knownStart.t = starttime;
-	knownStart.index = *first;
-
-	//after this, 'i' will be at the next lookup index
-	//printf("start time:%i. i %i, s: %i. \n", starttime, i, *first);
-	for (int e = i; e < 32; e++) {
-		//printf("endtime %i. e:%i, t:%i.\n", endtime, e, timeLookup[e].t);
-		if (timeLookup[e].t >= endtime) {
-			*count = timeLookup[e].index-1 - *first;
-			knownEnd.t = endtime;
-			knownEnd.index = timeLookup[e].index-1;
-			//printf("E:%i\n", e);
-			return;
-		}
-	}
-	
-	//*count = locationsCount - *first;
-	knownEnd.t = endtime;
-	//knownEnd.index = locationsCount-1;
-
-
 }
 
 void GLRenderLayer::CreateLocationVBO(LODInfo& lodInfo)
@@ -694,8 +637,8 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboToDrawHeatmap);
+	
 	//change the blending options
-
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
 	glClearColor(0.0, 0.0, 0.0, 0.0);

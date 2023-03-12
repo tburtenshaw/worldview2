@@ -42,12 +42,12 @@ LocationHistory::~LocationHistory()
 
 
 PathPlotLocation::PathPlotLocation()
-	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f) 
+	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f),accuracy(0)
 {
 
 }
 
-PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f)
+PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f), accuracy(0)
 {
 
 }

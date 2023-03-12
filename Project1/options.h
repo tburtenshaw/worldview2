@@ -5,8 +5,12 @@ private:
 public:
 	GlobalOptions();
 
-	void ShowHeatmap(bool hideOthers = true);
+	//setters
+	void ShowHeatmap(bool hideOthers = true);	//if false, it won't affect the other displays
 	void ShowPoints(bool hideOthers = true);
+
+	bool IsHeatmapVisible() const;	//is showHeatmap true
+	bool IsPointsVisible() const;	//is showPoints true
 
 	bool showPaths;
 	bool showPoints;
@@ -43,6 +47,3 @@ public:
 	float debug;
 
 };
-
-// Declare the global variable as extern, defined in winconsole.cpp
-extern GlobalOptions globalOptions;

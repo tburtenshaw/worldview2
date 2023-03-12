@@ -267,13 +267,14 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 			//printf("TS %i \n", jsr->location.timestamp);
 			return 1;
 		}
-
+		break;
 	case 0x6974616c:
 		if (!strcmp(jsr->name, "latitudeE7")) {
 			//	jsr->location.latitude = strtod(jsr->buffer, NULL) / 10000000.0;
 			jsr->location.latitude = fast_strtolatlongdouble(jsr->buffer);
 			return 1;
 		}
+		break;
 	case 0x676e6f6c: //gnol
 		if (!strcmp(jsr->name, "longitudeE7")) {
 			jsr->location.longitude = fast_strtolatlongdouble(jsr->buffer);
@@ -284,35 +285,40 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 			*/
 			return 1;
 		}
+		break;
 	case 0x75636361:	//ucca (accu, backwards)
 		if (!strcmp(jsr->name, "accuracy")) {
 			jsr->location.accuracy = fast_strtol(jsr->buffer);
 			return 1;
 		}
+		break;
 	case 0x69746c61:	//itla
 		if (!strcmp(jsr->name, "altitude")) {
 			jsr->location.altitude = fast_strtol(jsr->buffer);
 			return 1;
 		}
-
+		break;
 	case 0x6f6c6576:	//olev
 		if (!strcmp(jsr->name, "velocity")) {
 			jsr->location.velocity = fast_strtol(jsr->buffer);
 			return 1;
 		}
-
+		break;
 	case 0x64616568:
 		if (!strcmp(jsr->name, "heading")) {
 			jsr->location.heading = fast_strtol(jsr->buffer);
 			return 1;
 		}
-
+		break;
 	case 0x74726576:
 		if (!strcmp(jsr->name, "verticalaccuracy")) {
 			jsr->location.verticalaccuracy = fast_strtol(jsr->buffer);
 			return 1;
 		}
+		break;
 	}
+	
+
 	return 0; //return 0 if we didn't use anything
 }
 

@@ -18,7 +18,7 @@ class MainViewport;
 namespace Gui {
 	void ShowLoadingWindow(LocationHistory* lh);
 	
-	void MakeGUI(LocationHistory* lh, GlobalOptions* options, MainViewport * vp);
+	void MakeGUI(LocationHistory* lh, MainViewport * vp);
 	bool ToolbarButton(GuiAtlas atlas, enum class Icon icon);
 	
 	void DebugWindow(LocationHistory* lh, MainViewport* vp);
@@ -26,12 +26,12 @@ namespace Gui {
 	void ToolbarWindow(LocationHistory* lh);
 	void InfoWindow(LocationHistory* lh, MainViewport* vp);
 
-	void PointsOptions(LocationHistory* lh, GlobalOptions* options);
-	void HeatmapOptions(GlobalOptions* options);
-	void DateSelect(LocationHistory* lh, GlobalOptions* options);
+	void PointsOptions(LocationHistory* lh);
+	void HeatmapOptions();
+	void DateSelect(LocationHistory* lh);
 	
-	void ShowRegionInfo(Region* r, GlobalOptions* options);
-	void DayHistogram(Region* r, GlobalOptions* options, float height);
+	void ShowRegionInfo(Region* r);
+	void DayHistogram(Region* r, float height);
 	void ListDatesInRegion(Region* r);
 	const char* BestSigFigsFormat(const double dpp);
 	bool ChooseFileToOpen(LocationHistory * lh);

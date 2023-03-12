@@ -367,7 +367,7 @@ int StartGLProgram(LocationHistory* lh)
 		DisplayIfGLError("after fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 
 		if (lh->isLoadingFile == false) {
-			Gui::MakeGUI(lh, &globalOptions, &mainView);	//make the ImGui stuff
+			Gui::MakeGUI(lh, &mainView);	//make the ImGui stuff
 		}
 		else if (lh->isLoadingFile == true) {
 			Gui::ShowLoadingWindow(lh);

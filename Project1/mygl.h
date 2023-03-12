@@ -11,19 +11,9 @@
 class RGBA;
 class MainViewport;
 
-struct TimeLookup {
-	unsigned long t;
-	size_t index;
-};
-
 class GLRenderLayer {
 private:
 	static unsigned int vboLocations;	//VBO that is the location data, so we don't use it multiple times
-	static constexpr int lookupPieces = 32;
-	static TimeLookup timeLookup[lookupPieces];	//cut up into 32 pieces, so can reduce draw data sent if not using whole time
-	static void CreateTimeLookupTable(LODInfo& lodInfo, int lod);
-	static TimeLookup knownStart;	//store these, so only does loop if it's different
-	static TimeLookup knownEnd;
 
 protected:
 	unsigned int vao;	//Vertex array object

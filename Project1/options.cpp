@@ -52,3 +52,13 @@ void GlobalOptions::ShowPoints(bool hideOthers)
 		this->showHeatmap = false;
 	}
 }
+
+bool GlobalOptions::IsHeatmapVisible() const
+{
+	return showHeatmap;
+}
+
+bool GlobalOptions::IsPointsVisible() const
+{
+	return showPoints;
+}

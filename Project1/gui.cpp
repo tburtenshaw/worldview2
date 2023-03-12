@@ -22,6 +22,8 @@
 #include "guiatlas.h"
 
 
+// Defined in winconsole.cpp
+extern GlobalOptions globalOptions;
 
 void Gui::ShowLoadingWindow(LocationHistory* lh)
 {
@@ -159,7 +161,7 @@ void Gui::InfoWindow(LocationHistory* lh, MainViewport* vp)
 
 }
 
-void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
+void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
 {
 	Gui::DebugWindow(lh, vp);
 	Gui::InfoWindow(lh, vp);
@@ -177,7 +179,7 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	for (std::size_t i = 1; i < vp->regions.size(); i++) {
 		if (vp->regions[i]->shouldShowWindow) {
 			ImGui::Begin((vp->regions[i]->displayname + "###regionwindow" + std::to_string(vp->regions[i]->id)).c_str());
-			Gui::ShowRegionInfo(vp->regions[i], options);
+			Gui::ShowRegionInfo(vp->regions[i]);
 			ImGui::End();
 		}
 	}
@@ -185,20 +187,19 @@ void Gui::MakeGUI(LocationHistory* lh, GlobalOptions *options, MainViewport *vp)
 	ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
 
-
-
-	ImGui::Begin("Heatmap");
-	Gui::HeatmapOptions(options);
-
-	ImGui::End();
-
 	ImGui::Begin("Location display");
-	//ImGui::Checkbox("Show points", &options->showPoints);
-	Gui::DateSelect(lh, options);
-	Gui::PointsOptions(lh, options);
-	
-
+	Gui::DateSelect(lh);
 	ImGui::End();
+
+	ImGui::Begin("Options");
+	if (globalOptions.IsHeatmapVisible()) {
+		Gui::HeatmapOptions();
+	}
+	if (globalOptions.IsPointsVisible()) {
+		Gui::PointsOptions(lh);
+	}
+	ImGui::End();
+
 
 	Gui::ToolbarWindow(lh);
 
@@ -217,105 +218,105 @@ bool Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
 	return b;
 }
 
-void Gui::PointsOptions(LocationHistory* lh, GlobalOptions* options)
+void Gui::PointsOptions(LocationHistory* lh)
 {
-	ImGui::SliderFloat("Point size", &options->pointdiameter, 0.0f, 10.0f, "%.1f pixels");
-	ImGui::SliderFloat("Opacity", &options->pointalpha, 0.0f, 1.0f, "%.2f");
-	ImGui::Checkbox("Connect points", &options->showPaths);
-	if (options->showPaths) {
-		ImGui::SliderFloat("Line thickness", &options->linewidth, 1.0f, 8.0f, "%.1f");
+	ImGui::SliderFloat("Point size", &globalOptions.pointdiameter, 0.0f, 10.0f, "%.1f pixels");
+	ImGui::SliderFloat("Opacity", &globalOptions.pointalpha, 0.0f, 1.0f, "%.2f");
+	ImGui::Checkbox("Connect points", &globalOptions.showPaths);
+	if (globalOptions.showPaths) {
+		ImGui::SliderFloat("Line thickness", &globalOptions.linewidth, 1.0f, 8.0f, "%.1f");
 	}
-	ImGui::Checkbox("Travel highlight", &options->showHighlights);
-	if (options->showHighlights) {
-		ImGui::SliderFloat("Highlight distance", &options->minutestravelbetweenhighlights, 5.0f, 24.0f * 60.0f, "%.1f minutes");
-		ImGui::SliderFloat("Cycle frequency", &options->secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
+	ImGui::Checkbox("Travel highlight", &globalOptions.showHighlights);
+	if (globalOptions.showHighlights) {
+		ImGui::SliderFloat("Highlight distance", &globalOptions.minutestravelbetweenhighlights, 5.0f, 24.0f * 60.0f, "%.1f minutes");
+		ImGui::SliderFloat("Cycle frequency", &globalOptions.secondsbetweenhighlights, 1.0f, 60.0f, "%.1f seconds");
 		float motionSpeedX;
-		motionSpeedX = options->minutestravelbetweenhighlights * 60.0f / options->secondsbetweenhighlights;
+		motionSpeedX = globalOptions.minutestravelbetweenhighlights * 60.0f / globalOptions.secondsbetweenhighlights;
 		bool b;
 		b = ImGui::SliderFloat("Motion speed", &motionSpeedX, 1.0, 3600.0, "%.0fX");
-		if (b) { options->secondsbetweenhighlights = options->minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
+		if (b) { globalOptions.secondsbetweenhighlights = globalOptions.minutestravelbetweenhighlights * 60.0f / motionSpeedX; }
 	}
 
 	const char* colourbynames[] = { "Time", "Hour of day", "Day of week", "Month of year", "Year" };
-	ImGui::Combo("Colour by", &options->colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
+	ImGui::Combo("Colour by", &globalOptions.colourby, colourbynames, IM_ARRAYSIZE(colourbynames));
 
 	static ImVec4 color[24] = {};
 
-	if (options->colourby == 4) {
-		options->indexPaletteYear = Palette_Handler::MatchingPalette(options->indexPaletteYear, Palette::YEAR);
+	if (globalOptions.colourby == 4) {
+		globalOptions.indexPaletteYear = Palette_Handler::MatchingPalette(globalOptions.indexPaletteYear, Palette::YEAR);
 		int n = 0;
 		for (int year = MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->stats.latestTimestamp) + 1) && (n < 24); year++) {
-			color[n] = Palette_Handler::PaletteColorImVec4(options->indexPaletteYear, year);
+			color[n] = Palette_Handler::PaletteColorImVec4(globalOptions.indexPaletteYear, year);
 
 			std::string text = "Year ";
 			text += std::to_string(year);
 
 			if (ImGui::ColorEdit4(text.c_str(), (float*)&color[n], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-				Palette_Handler::SetColourImVec4(options->indexPaletteYear, year, color[n]);
+				Palette_Handler::SetColourImVec4(globalOptions.indexPaletteYear, year, color[n]);
 			}
 			if ((n + 1) % 6) { ImGui::SameLine(); }
 			n++;
 		}
-		if (ImGui::Button(Palette_Handler::PaletteName(options->indexPaletteYear).c_str())) {
-			options->indexPaletteYear = Palette_Handler::NextMatchingPalette(options->indexPaletteYear, Palette::YEAR);
+		if (ImGui::Button(Palette_Handler::PaletteName(globalOptions.indexPaletteYear).c_str())) {
+			globalOptions.indexPaletteYear = Palette_Handler::NextMatchingPalette(globalOptions.indexPaletteYear, Palette::YEAR);
 		}
 		if (ImGui::Button("left")) {
-			Palette_Handler::RotatePaletteLeft(options->indexPaletteYear);
+			Palette_Handler::RotatePaletteLeft(globalOptions.indexPaletteYear);
 		}
 		if (ImGui::Button("right")) {
-			Palette_Handler::RotatePaletteRight(options->indexPaletteYear);
+			Palette_Handler::RotatePaletteRight(globalOptions.indexPaletteYear);
 		}
 	}
 
-	if (options->colourby == 2) {
+	if (globalOptions.colourby == 2) {
 		for (int i = 0; i < 7; i++) {
-			options->indexPaletteWeekday = Palette_Handler::MatchingPalette(options->indexPaletteWeekday, Palette::WEEKDAY);
-			color[i] = Palette_Handler::PaletteColorImVec4(options->indexPaletteWeekday, i);
+			globalOptions.indexPaletteWeekday = Palette_Handler::MatchingPalette(globalOptions.indexPaletteWeekday, Palette::WEEKDAY);
+			color[i] = Palette_Handler::PaletteColorImVec4(globalOptions.indexPaletteWeekday, i);
 			if (ImGui::ColorEdit4(MyTimeZone::daynames[i].c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-				Palette_Handler::SetColourImVec4(options->indexPaletteWeekday, i, color[i]);
+				Palette_Handler::SetColourImVec4(globalOptions.indexPaletteWeekday, i, color[i]);
 			}
 			ImGui::SameLine();
 		}
-		if (ImGui::Button(Palette_Handler::PaletteName(options->indexPaletteWeekday).c_str())) {
-			options->indexPaletteWeekday = Palette_Handler::NextMatchingPalette(options->indexPaletteWeekday, Palette::WEEKDAY);
+		if (ImGui::Button(Palette_Handler::PaletteName(globalOptions.indexPaletteWeekday).c_str())) {
+			globalOptions.indexPaletteWeekday = Palette_Handler::NextMatchingPalette(globalOptions.indexPaletteWeekday, Palette::WEEKDAY);
 		}
 		ImGui::PushButtonRepeat(true);
 		if (ImGui::ArrowButton("##rotpalleft", ImGuiDir_Left)) {
-			Palette_Handler::RotatePaletteLeft(options->indexPaletteWeekday);
+			Palette_Handler::RotatePaletteLeft(globalOptions.indexPaletteWeekday);
 		}
 		if (ImGui::ArrowButton("##rotpalright", ImGuiDir_Right)) {
-			Palette_Handler::RotatePaletteRight(options->indexPaletteWeekday);
+			Palette_Handler::RotatePaletteRight(globalOptions.indexPaletteWeekday);
 		}
 		ImGui::PopButtonRepeat();
 	}
 
-	if (options->colourby == 1) {
-		options->indexPaletteHour = Palette_Handler::MatchingPalette(options->indexPaletteHour, Palette::HOUR);
+	if (globalOptions.colourby == 1) {
+		globalOptions.indexPaletteHour = Palette_Handler::MatchingPalette(globalOptions.indexPaletteHour, Palette::HOUR);
 		for (int i = 0; i < 24; i++) {
-			color[i] = Palette_Handler::PaletteColorImVec4(options->indexPaletteHour, i);
+			color[i] = Palette_Handler::PaletteColorImVec4(globalOptions.indexPaletteHour, i);
 			std::string text = "Hour ";
 			text += std::to_string(i);
 
 			if (ImGui::ColorEdit4(text.c_str(), (float*)&color[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_AlphaBar)) {
-				Palette_Handler::SetColourImVec4(options->indexPaletteHour, i, color[i]);
+				Palette_Handler::SetColourImVec4(globalOptions.indexPaletteHour, i, color[i]);
 			}
 			if ((i + 1) % 6) { ImGui::SameLine(); }
 		}
 	}
-	if (options->colourby == 0) {
+	if (globalOptions.colourby == 0) {
 		const char* cyclenames[] = { "One minute", "One hour", "One day", "One week", "One month", "One year", "Five years", "Other" };
 		const float cycleresults[] = { 60.0f,3600.0f,3600.0f * 24.0f,3600.0f * 24.0f * 7.0f,3600.0f * 24.0f * 365.25f / 12.0f,3600.0f * 24.0f * 365.25f ,3600.0f * 24.0f * 365.25f * 5.0f,0.0f };
 
 		static int uiCycleSelect = 0;
 		if (ImGui::Combo("Cycle over", &uiCycleSelect, cyclenames, IM_ARRAYSIZE(cyclenames))) {
 			if (uiCycleSelect < IM_ARRAYSIZE(cyclenames) - 1) {
-				options->cycleSeconds = cycleresults[uiCycleSelect];
+				globalOptions.cycleSeconds = cycleresults[uiCycleSelect];
 			}
 		}
-		if (ImGui::SliderFloat("Cycle", &options->cycleSeconds, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f seconds", 6.0f)) {
+		if (ImGui::SliderFloat("Cycle", &globalOptions.cycleSeconds, 60.0f, 3600.0f * 24.0f * 365.0f * 5.0f, "%.0f seconds", 6.0f)) {
 			uiCycleSelect = 7;
 			for (int i = 0; i < IM_ARRAYSIZE(cyclenames) - 1; i++) {
-				if (options->cycleSeconds == cycleresults[i]) {
+				if (globalOptions.cycleSeconds == cycleresults[i]) {
 					uiCycleSelect = i;
 				}
 			}
@@ -323,32 +324,32 @@ void Gui::PointsOptions(LocationHistory* lh, GlobalOptions* options)
 	}
 }
 
-void Gui::HeatmapOptions(GlobalOptions* options)
+void Gui::HeatmapOptions()
 {
 	static float oldBlur = 0;
 	static int oldMinimumaccuracy = 0;
 
-	//ImGui::Checkbox("Show heatmap", &options->showHeatmap);
-	ImGui::SliderFloat("Gaussian blur", &options->gaussianblur, 0.0f, 25.0f, "%.1f");
-	ImGui::SliderFloat("Max value", &options->heatmapmaxvalue, 0.0f, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
-	ImGui::SliderInt("Minimum accuracy", &options->minimumaccuracy, 0, 200, "%d");
-	ImGui::SliderFloat("Debug", &options->debug, 0.0f, 1.0f, "%.1f");
+	//ImGui::Checkbox("Show heatmap", &globalOptions.showHeatmap);
+	ImGui::SliderFloat("Gaussian blur", &globalOptions.gaussianblur, 0.0f, 25.0f, "%.1f");
+	ImGui::SliderFloat("Max value", &globalOptions.heatmapmaxvalue, 0.0f, 1000000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
+	ImGui::SliderInt("Minimum accuracy", &globalOptions.minimumaccuracy, 0, 200, "%d");
+	ImGui::SliderFloat("Debug", &globalOptions.debug, 0.0f, 1.0f, "%.1f");
 
 	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
-	ImGui::Combo("Palette", &options->palette, palettenames, IM_ARRAYSIZE(palettenames));
+	ImGui::Combo("Palette", &globalOptions.palette, palettenames, IM_ARRAYSIZE(palettenames));
 
 
-	if (options->gaussianblur != oldBlur) {
-		oldBlur = options->gaussianblur;
+	if (globalOptions.gaussianblur != oldBlur) {
+		oldBlur = globalOptions.gaussianblur;
 		//lh->heatmap->MakeDirty();
 	}
-	if (options->minimumaccuracy != oldMinimumaccuracy) {
-		oldMinimumaccuracy = options->minimumaccuracy;
+	if (globalOptions.minimumaccuracy != oldMinimumaccuracy) {
+		oldMinimumaccuracy = globalOptions.minimumaccuracy;
 		//lh->heatmap->MakeDirty();
 	}
 }
 
-void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
+void Gui::DateSelect(LocationHistory* lh)
 {
 	time_t t;
 	struct std::tm correctedTime;
@@ -362,7 +363,7 @@ void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
 	static int latestYear = 0;
 
 	//convert from the unixtime time_t to a tm struct
-	t = options->earliestTimeToShow;
+	t = globalOptions.earliestTimeToShow;
 	localtime_s(&correctedTime, &t);
 	earliestDayOfMonth = correctedTime.tm_mday;
 	earliestMonth = correctedTime.tm_mon + 1;
@@ -370,14 +371,14 @@ void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
 
 	if (ImGui::DragInt("Day", &earliestDayOfMonth, 0.4f)) {
 		correctedTime.tm_mday = earliestDayOfMonth;
-		options->earliestTimeToShow = mktime(&correctedTime);
+		globalOptions.earliestTimeToShow = mktime(&correctedTime);
 	}
 
 	if (ImGui::DragInt("Month", &earliestMonth, 0.1f)) {
 		correctedTime.tm_mon = earliestMonth - 1;
 		//correctedTime.tm_mday = earliestDayOfMonth;
 		correctedTime.tm_isdst = -1;
-		options->earliestTimeToShow = mktime(&correctedTime);
+		globalOptions.earliestTimeToShow = mktime(&correctedTime);
 
 		if (correctedTime.tm_mday != earliestDayOfMonth) {
 			printf("different day ctm:%i em:%i ed:%i ctd:%i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
@@ -386,7 +387,7 @@ void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
 			if (correctedTime.tm_mday <= 128) {
 				correctedTime.tm_mon = earliestMonth - 1;
 				correctedTime.tm_mday = earliestDayOfMonth;
-				options->earliestTimeToShow = mktime(&correctedTime);
+				globalOptions.earliestTimeToShow = mktime(&correctedTime);
 			}
 
 			printf("After: ctm: % i em : % i ed : % i ctd : % i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
@@ -395,20 +396,20 @@ void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
 
 	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
 		correctedTime.tm_year = earliestYear - 1900;
-		options->earliestTimeToShow = mktime(&correctedTime);
+		globalOptions.earliestTimeToShow = mktime(&correctedTime);
 	}
 
-	if (options->earliestTimeToShow > lh->stats.latestTimestamp) {
-		options->earliestTimeToShow = lh->stats.latestTimestamp;
+	if (globalOptions.earliestTimeToShow > lh->stats.latestTimestamp) {
+		globalOptions.earliestTimeToShow = lh->stats.latestTimestamp;
 	}
 
-	if (options->earliestTimeToShow < lh->stats.earliestTimestamp) {
-		options->earliestTimeToShow = lh->stats.earliestTimestamp;
+	if (globalOptions.earliestTimeToShow < lh->stats.earliestTimestamp) {
+		globalOptions.earliestTimeToShow = lh->stats.earliestTimestamp;
 	}
 
 	//ensure the earliest time is always H=0, min=0,sec=0
 	//also update the static date display variables
-	t = options->earliestTimeToShow;
+	t = globalOptions.earliestTimeToShow;
 	localtime_s(&correctedTime, &t);
 
 	earliestDayOfMonth = correctedTime.tm_mday;
@@ -419,23 +420,23 @@ void Gui::DateSelect(LocationHistory* lh, GlobalOptions* options)
 	correctedTime.tm_min = 0;
 	correctedTime.tm_sec = 0;
 
-	options->earliestTimeToShow = mktime(&correctedTime);
+	globalOptions.earliestTimeToShow = mktime(&correctedTime);
 
 	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
-	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &options->earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &globalOptions.earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
 
-	t = options->latestTimeToShow;
+	t = globalOptions.latestTimeToShow;
 	gmtime_s(&correctedTime, &t);
 	latestDayOfMonth = correctedTime.tm_mday;
 	latestMonth = correctedTime.tm_mon + 1;
 	latestYear = correctedTime.tm_year + 1900;
 
 	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
-	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &options->latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &globalOptions.latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
 
 }
 
-void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
+void Gui::ShowRegionInfo(Region* r)
 {
 	static char str1[128];
 	strcpy_s(str1, r->displayname.c_str());
@@ -477,7 +478,7 @@ void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
 			}
 		}
 		ImGui::PlotHistogram("", fdays, 7, 0, "Time spent per weekday", 0, maxday, ImVec2(0, 80), sizeof(float));
-		DayHistogram(r, options, 80.f);
+		DayHistogram(r, 80.f);
 	}
 
 	ImGui::Text("Time (hours): %.1f", r->GetHoursInRegion());
@@ -491,7 +492,7 @@ void Gui::ShowRegionInfo(Region* r, GlobalOptions* options)
 	}
 }
 
-void Gui::DayHistogram(Region* r, GlobalOptions* options, float height)
+void Gui::DayHistogram(Region* r, float height)
 {
 	ImVec2 frame_size;
 	const char* label = "Time per weekday";
@@ -558,7 +559,7 @@ void Gui::DayHistogram(Region* r, GlobalOptions* options, float height)
 	for (int i = 0; i < 7; i++) {
 		bottomrightofbar.x = topleftofbar.x + thickness;
 		topleftofbar.y = inner_bb.Max.y - label_size.y - (fdays[i] / maxday * (inner_bb.GetHeight()-label_size.y));
-		window->DrawList->AddRectFilled(topleftofbar, bottomrightofbar, Palette_Handler::PaletteColorImU32(options->indexPaletteWeekday, i));
+		window->DrawList->AddRectFilled(topleftofbar, bottomrightofbar, Palette_Handler::PaletteColorImU32(globalOptions.indexPaletteWeekday, i));
 
 		int percentint;
 		percentint = static_cast<int>(fdays[i] * 100.0f / totaldays + 0.5f);

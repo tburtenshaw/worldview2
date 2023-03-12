@@ -4,6 +4,8 @@
 #include "mytimezone.h"
 #include <algorithm>
 
+
+
 bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {
 	if (abs(p1->latitude - p2->latitude) > d)	return true;
 	if (abs(p1->longitude - p2->longitude) > d)	return true;
@@ -63,6 +65,7 @@ void LocationHistory::OptimiseForPaths() {
 	return;
 }
 
+
 void LocationHistory::GenerateLocationLODs()
 {
 	//Creates and fills a new array for GL, with floats instead of doubles and local time fixed.
@@ -103,11 +106,72 @@ void LocationHistory::GenerateLocationLODs()
 	//printf("Total: %i. Size of struct: %i. Total MB: %f\n", totalnumber, sizeof(PathPlotLocation), (float)(totalnumber * sizeof(PathPlotLocation)) / (2 << 20));
 	
 
-	//TODO: uncomment
 	OptimiseForPaths();
-	//CreateTimeLookupTable(locs);
+	lodInfo.CreateTimeLookupTables();
 
-	return;
+}
+
+void LODInfo::CreateTimeLookupTables()
+{
+	knownStart = { 0 };
+	knownEnd = { 0 };
+
+	
+	//Lookup table for start/end times
+	//we divide the list into 33 (pieces+1) sections, (start and end are known), so can start DrawArray at that point
+	for (size_t lod=0;lod<numberOfLODs;lod++)	{
+		size_t interval = lodLength[lod] / (lookupPieces + 1);
+		size_t c = lodStart[lod];
+
+		for (int i = 0; i < lookupPieces; i++) {
+			c += interval;
+			timeLookup[i].index = c;
+			timeLookup[i].t = pathPlotLocations[c].timestamp;
+
+			printf("LOD %i. Lookup %i. Count: %i, ts:%i\n", lod, i, c, pathPlotLocations[c].timestamp);
+		}
+	}
+}
+
+void LODInfo::LookupFirstAndCount(unsigned long starttime, unsigned long endtime, int lod, GLint* first, GLsizei* count)
+{
+//need to make work with LODs
+
+	//Check if we've already calculated it
+	if ((starttime == knownStart.t) && (endtime == knownEnd.t)) {
+		*first = knownStart.index;
+		*count = knownEnd.index - knownStart.index;
+		//printf("k");
+		return;
+	}
+
+
+	*first = 0;	//not this for higher LODs.
+	int i = 0;
+	for (; (i < lookupPieces) && (timeLookup[i].t < starttime); i++) {	//don't run if we've exceeded start time
+		*first = timeLookup[i].index;	//will only be changed if
+	}
+	knownStart.t = starttime;
+	knownStart.index = *first;
+
+	//after this, 'i' will be at the next lookup index
+	//printf("start time:%i. i %i, s: %i. \n", starttime, i, *first);
+	for (int e = i; e < 32; e++) {
+		//printf("endtime %i. e:%i, t:%i.\n", endtime, e, timeLookup[e].t);
+		if (timeLookup[e].t >= endtime) {
+			*count = timeLookup[e].index - 1 - *first;
+			knownEnd.t = endtime;
+			knownEnd.index = timeLookup[e].index - 1;
+			//printf("E:%i\n", e);
+			return;
+		}
+	}
+
+	//*count = locationsCount - *first;
+	knownEnd.t = endtime;
+	//knownEnd.index = locationsCount-1;
+
+
 }
 
 int LODInfo::LodFromDPP(double dpp)
