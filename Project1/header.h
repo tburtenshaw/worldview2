@@ -152,6 +152,7 @@ public:
 
 	std::wstring filename;
 	unsigned long filesize;
+	float secondsToLoad;
 
 	std::vector<Location> locations;	//this holds the raw data from the json file, double precision
 

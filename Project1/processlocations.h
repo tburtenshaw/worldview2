@@ -9,13 +9,15 @@ struct TimeLookup {
 
 class LODInfo {
 private:
+	static constexpr int numberOfLODs = 4;
 	static constexpr int lookupPieces = 32;
-	TimeLookup timeLookup[lookupPieces];	//cut up into 32 pieces, so can reduce draw data sent if not using whole time
-	TimeLookup knownStart;	//store these, so only does loop if it's different
-	TimeLookup knownEnd;
+	TimeLookup timeLookup[numberOfLODs][lookupPieces];	//cut up into 32 pieces, so can reduce draw data sent if not using whole time
+	TimeLookup knownStart[numberOfLODs];	//store these, so only checks through loop if it's different
+	TimeLookup knownEnd[numberOfLODs];
 
 public:
-	static constexpr int numberOfLODs = 4;
+	constexpr int GetNumberOfLODs();
+	
 	unsigned long lodStart[numberOfLODs];
 	unsigned long lodLength[numberOfLODs];
 	float lodPrecision[numberOfLODs];
@@ -23,7 +25,7 @@ public:
 	std::vector<PathPlotLocation> pathPlotLocations;	//contains multiple LODs after each other with some info removed, floats vs doubles etc.
 
 	void CreateTimeLookupTables();
-	void LookupFirstAndCount(unsigned long starttime, unsigned long endtime, int lod, GLint* first, GLsizei* count);
+	void LookupFirstAndCount(const unsigned long starttime, const unsigned long endtime, const int lod, GLint* first, GLsizei* count);
 	int LodFromDPP(double dpp);
 };
 

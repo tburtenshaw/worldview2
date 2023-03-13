@@ -647,14 +647,15 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 	glBindVertexArray(vao);
 
 	//Use lookup table to skip some
-	//GLint first = 0;
-	//GLsizei count = locationsCount;
+	GLint first = 0;
+	GLsizei count = 0;
 
-	//LookupFirstAndCount(options->earliestTimeToShow, options->latestTimeToShow, lod, &first, &count);
+	lodInfo.LookupFirstAndCount(globalOptions.earliestTimeToShow, globalOptions.latestTimeToShow, lod, &first, &count);
 	//printf("first: %i, count: %i.\n", first, count);
 	DisplayIfGLError("before dahm", false);
-	glDrawArrays(GL_LINE_STRIP, lodInfo.lodStart[lod], lodInfo.lodLength[lod]);
-	
+	//glDrawArrays(GL_LINE_STRIP, lodInfo.lodStart[lod], lodInfo.lodLength[lod]);
+	glDrawArrays(GL_LINE_STRIP, first, count);
+
 	//glDrawArrays(GL_POINTS, 0, locationsCount );
 	DisplayIfGLError("after dahm", false);
 

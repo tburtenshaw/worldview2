@@ -50,6 +50,8 @@ void Gui::DebugWindow(LocationHistory* lh,  MainViewport* vp)	{
 	//Debug
 	ImGui::Begin("Debug");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Time to load: %.3f seconds. (%.1f MB/sec)", lh->secondsToLoad, (float)(lh->filesize/1024/1024)/lh->secondsToLoad);
+
 
 	std::string sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
 	std::string sCoords = "Mouse cursor: Long: " + sigfigs + ", Lat: " + sigfigs;

@@ -390,9 +390,10 @@ int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 
 	auto stop = std::chrono::high_resolution_clock::now();
 		
-	auto duration = duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout <<"Time to load: " << duration.count() << "us.\n";
-	
+	auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
+	std::cout <<"Time to load: " << duration.count() << "ms.\n";
+	lh->secondsToLoad = static_cast<float>(duration.count())/1000.f;
+
 	return 0;
 }
 
