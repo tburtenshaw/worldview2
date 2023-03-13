@@ -165,7 +165,15 @@ void PointsLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSW
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindVertexArray(vao);
 	DisplayIfGLError("before dapts", false);
-	glDrawArrays(GL_POINTS, lodInfo.lodStart[lod], lodInfo.lodLength[lod]);
+
+
+	//Use lookup table to skip some
+	GLint first = 0;
+	GLsizei count = 0;
+
+	lodInfo.LookupFirstAndCount(globalOptions.earliestTimeToShow, globalOptions.latestTimeToShow, lod, &first, &count);
+	//printf("first: %i, count: %i.\n", first, count);
+	glDrawArrays(GL_POINTS, first, count);
 }
 
 
