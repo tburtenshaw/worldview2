@@ -152,7 +152,7 @@ class HeatmapLayer : public GLRenderLayer {
 public:
 	void Setup(int width, int height);
 	void SetupVertices();
-	void Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe);
+	void Draw(const LODInfo& lodInfo, int lod, const RectDimension windowSize, const NSWE &nswe);
 	void UpdateSize(int width, int height);
 
 	unsigned int texture;	//main texture for heatmap
@@ -162,6 +162,14 @@ private:
 	size_t FetchGaussianValues(float sigma, float* offsets, float* weights, int maxnumber);	//this in gaussian.cpp
 	float FindMaxValueWithReductionShader(int width, int height, int reductionFactor);
 	float ReadPixelsAndFindMax(int width, int height);
+
+	//For determining if needs to be drawn.
+	bool NeedsRedraw(const NSWE &currentNSWE, const RectDimension &windowDim);	//has anything in the Options changed that would require a redraw
+	void UpdateSettingsWhenDrawn(const NSWE& currentNSWE, const RectDimension& windowDim);
+	GlobalOptions optionsWhenDrawn;
+	RectDimension dimensionsWhenDrawn;
+	NSWE nsweWhenDrawn;
+
 
 	//FBOs
 	unsigned int fboToDrawHeatmap;

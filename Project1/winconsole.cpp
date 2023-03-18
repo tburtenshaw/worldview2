@@ -192,7 +192,7 @@ int StartGLProgram(LocationHistory* lh)
 		return 1;
 	}
 
-	
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -230,7 +230,7 @@ int StartGLProgram(LocationHistory* lh)
 
 	//	ImFont* pFont1 = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 16);
 	ImFont* pFont4 = io.Fonts->AddFontFromFileTTF("C:\\Users\\GGPC\\AppData\\Local\\Microsoft\\Windows\\Fonts\\OpenSans-Regular.ttf", 16);
-	
+
 
 
 	//Setup GL setings
@@ -244,7 +244,7 @@ int StartGLProgram(LocationHistory* lh)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
-	
+
 
 	//set up the background
 	backgroundLayer.Setup();
@@ -261,10 +261,10 @@ int StartGLProgram(LocationHistory* lh)
 	fboInfo.SetupFrameBufferObject(mainView.windowDimensions.width, mainView.windowDimensions.height);
 
 	//initial values
-	mainView.viewNSWE.target.setvalues(-36.83f, -37.11f, 174.677f - 0.0f, 174.961f - 0.0f);
+	mainView.viewNSWE.setTarget({ -36.83f, -37.11f, 174.677f, 174.961f });
 	mainView.viewNSWE.target.makeratio((double)mainView.windowDimensions.height / (double)mainView.windowDimensions.width);
-	mainView.viewNSWE.setvalues(mainView.viewNSWE.target);
-	mainView.viewNSWE.movetowards(1000000000000.0);
+	mainView.viewNSWE.setViewAtTarget();
+	mainView.viewNSWE.moveTowards(1000000000000.0);
 
 	//make a new region, which is the viewport
 	mainView.regions.push_back(new Region());
@@ -289,7 +289,7 @@ int StartGLProgram(LocationHistory* lh)
 		globalOptions.seconds = (float)glfwGetTime();
 
 		//get the view moving towards the target
-		mainView.viewNSWE.movetowards(globalOptions.seconds);
+		mainView.viewNSWE.moveTowards(globalOptions.seconds);
 
 		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
 			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, pLocationHistory);
@@ -320,7 +320,7 @@ int StartGLProgram(LocationHistory* lh)
 
 		//Heatmap rendering to FBO
 		if (lh->isInitialised && lh->isFullyLoaded && globalOptions.showHeatmap) {
-			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
+			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions, mainView.viewNSWE);
 		}
 
 
@@ -335,10 +335,10 @@ int StartGLProgram(LocationHistory* lh)
 
 		//We only draw the points if everything is loaded and initialised.
 		if (lh->isInitialised && lh->isFullyLoaded) {
-			if (mainView.viewNSWE.isDirty()) {
-				mainView.regions[0]->SetNSWE(&mainView.viewNSWE.target);
-				mainView.regions[0]->Populate(lh);
-			}
+			//if (mainView.viewNSWE.isDirty()) {
+//				mainView.regions[0]->SetNSWE(&mainView.viewNSWE.target);
+				//mainView.regions[0]->Populate(lh);
+			//}
 
 			if (globalOptions.showPaths) {
 				pathLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);

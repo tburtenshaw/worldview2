@@ -25,11 +25,8 @@ GlobalOptions::GlobalOptions()
 
 	minimumaccuracy = 24;
 	palette = 1;
-
 	gaussianblur = 0.0f;
-
-	predictpath = false;
-	heatmapmaxvalue = 500;
+	heatmapmaxvalue = 500.f;
 
 	debug = 0.0f;
 
@@ -61,4 +58,17 @@ bool GlobalOptions::IsHeatmapVisible() const
 bool GlobalOptions::IsPointsVisible() const
 {
 	return showPoints;
+}
+
+void GlobalOptions::SetHeatmapMaxValue(float maxVal, float delaySeconds)
+{
+	heatmapMaxTarget = maxVal;
+
+	heatmapmaxvalue = heatmapMaxTarget;
+	
+}
+
+float GlobalOptions::GetHeatmapMaxValue() const
+{
+	return heatmapmaxvalue;
 }

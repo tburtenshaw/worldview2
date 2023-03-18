@@ -42,6 +42,6 @@ void main() {
 	//temp
 	vs_out.color=vec4(rainbow(float(ts/uint(60*60))/24.0),0.9);
 
-	vs_out.timefrom2010 = float(ts-uint(1262304000));
-
+	//vs_out.timefrom2010 = float(ts-uint(1262304000));
+	vs_out.timefrom2010 = float(ts-uint(1500000000));
 }

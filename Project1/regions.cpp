@@ -8,15 +8,7 @@
 
 const int secondsperday = 60 * 60 * 24;
 int Region::numberOfNextRegion = 0;
-/*
-Region::Region()
-{
-	SetNSWE(-10, 10, -10, 10);
-	earliestday = 0;
-	latestday = 0;
-	
-}
-*/
+
 
 Region::Region(float n, float s, float w, float e)
 {
@@ -98,7 +90,7 @@ void Region::Populate(LocationHistory* lh)
 
 	for (std::vector<Location>::iterator iter = lh->locations.begin(); iter != lh->locations.end(); ++iter) {
 
-		if (nswe.containspoint(iter->latitude, iter->longitude)) {
+		if (nswe.containsPoint(iter->latitude, iter->longitude)) {
 			if (instay == false) {
 				startofstay = iter->timestamp;
 				instay = true;

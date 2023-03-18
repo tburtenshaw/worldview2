@@ -323,7 +323,14 @@ void PathLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE*
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindVertexArray(vao);
-	glDrawArrays(GL_LINE_STRIP, lodInfo.lodStart[lod], lodInfo.lodLength[lod]);
+	
+	//Use lookup table to skip some
+	GLint first = 0;
+	GLsizei count = 0;
+
+	lodInfo.LookupFirstAndCount(globalOptions.earliestTimeToShow, globalOptions.latestTimeToShow, lod, &first, &count);
+	
+	glDrawArrays(GL_LINE_STRIP, first, count);
 
 }
 
@@ -629,14 +636,19 @@ void HeatmapLayer::SetupVertices()
 
 }
 
-void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE* nswe)
+void HeatmapLayer::Draw(const LODInfo& lodInfo, int lod, const RectDimension windowSize, const NSWE& nswe)
 {
+	if (NeedsRedraw(nswe, windowSize) == false) return;
+	
 	shader.UseMe();
 	
-	shader.SetUniform(uniformNswe, nswe);
+	float width = static_cast<float>(windowSize.width);
+	float height = static_cast<float>(windowSize.height);
+
+	shader.SetUniform(uniformNswe, &nswe);
 	shader.SetUniform(uniformResolution, width, height);
-	shader.SetUniform(uniformDegreeSpan, nswe->width(), nswe->height());
-	shader.SetUniform(uniformDegreeMidpoint, (nswe->west+nswe->east) / 2.0, (nswe->north+nswe->south) / 2.0);
+	shader.SetUniform(uniformDegreeSpan, nswe.width(), nswe.height());
+	shader.SetUniform(uniformDegreeMidpoint, (nswe.west+nswe.east) / 2.0, (nswe.north+nswe.south) / 2.0);
 
 
 	shader.SetUniform(uniformEarliestTimeToShow, globalOptions.earliestTimeToShow);
@@ -677,8 +689,11 @@ void HeatmapLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NS
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glBlendEquation(GL_FUNC_ADD);
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	
+
+	UpdateSettingsWhenDrawn(nswe,windowSize);
 
 }
 
@@ -792,16 +807,43 @@ void HeatmapLayer::GaussianBlur(float blurSigma, float width, float height)
 float HeatmapLayer::ReadPixelsAndFindMax(int width, int height)
 {
 	float* data = (float*)malloc(sizeof(float) * width * height);
+	if (!data) return 1.0f;
+
 	glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, data);
 
-	float maxVal = 0.0;
-	for (int i = 0; i < width * height; i++)
+	float maxVal = data[0];
+	for (int i = 1; i < width * height; i++)
 	{
 		if (data[i] > maxVal) maxVal = data[i];
 	}
 	free(data);
 	return maxVal;
 
+}
+
+bool HeatmapLayer::NeedsRedraw(const NSWE& currentNSWE, const RectDimension& windowDims)
+{
+	if ((optionsWhenDrawn.heatmapmaxvalue != globalOptions.heatmapmaxvalue) ||
+		(optionsWhenDrawn.earliestTimeToShow != globalOptions.earliestTimeToShow) ||
+		(optionsWhenDrawn.latestTimeToShow != globalOptions.latestTimeToShow) ||
+		(optionsWhenDrawn.gaussianblur != globalOptions.gaussianblur) ||
+		(optionsWhenDrawn.minimumaccuracy != globalOptions.minimumaccuracy)||
+		(optionsWhenDrawn.palette != globalOptions.palette) ||
+		(optionsWhenDrawn.debug != globalOptions.debug)
+		)
+		return true;
+
+	if (nsweWhenDrawn != currentNSWE)	return true;
+	if (dimensionsWhenDrawn != windowDims) return true;
+	
+	return false;
+}
+
+void HeatmapLayer::UpdateSettingsWhenDrawn(const NSWE& currentNSWE, const RectDimension& windowDim)
+{
+	optionsWhenDrawn = globalOptions;
+	nsweWhenDrawn = currentNSWE;
+	dimensionsWhenDrawn = windowDim;
 }
 
 float HeatmapLayer::FindMaxValueWithReductionShader(int width, int height, int reductionFactor)	//this method currently loses some of the edge due to rounding

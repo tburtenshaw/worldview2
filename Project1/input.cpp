@@ -76,8 +76,7 @@ void Input::HandleKey(GLFWwindow* window, int key, int scancode, int action, int
 		viewNSWE->target.zoom(1.0f / 0.9f, viewNSWE->target.centre());
 	}
 
-	viewNSWE->starttime = glfwGetTime();
-	viewNSWE->targettime = glfwGetTime() + 0.4;
+	viewNSWE->setTimer(0.4);
 }
 
 
@@ -103,9 +102,7 @@ void Input::HandleScroll(GLFWwindow* window, double xoffset, double yoffset, Mai
 
 	viewNSWE->target.makeratio((double)vp->windowDimensions.height/ (double)vp->windowDimensions.width);
 
-	viewNSWE->starttime = glfwGetTime();
-	viewNSWE->targettime = glfwGetTime() + 0.4;
-
+	viewNSWE->setTimer(0.4);
 	return;
 }
 
@@ -196,7 +193,7 @@ void Input::MouseNavigation(MainViewport *vp)
 
 			//printf("degrees: %f %f\n", dppx * deltax, dppy * deltay);
 
-			vp->viewNSWE.starttime = glfwGetTime();
+			vp->viewNSWE.setTimer(-1.0);
 
 		}
 	}

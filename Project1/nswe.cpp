@@ -9,13 +9,14 @@ NSWE::NSWE()
 
 NSWE::NSWE(double n, double s, double w, double e)
 {
-	setvalues((double)n, (double)s, (double)w, (double)e);
+	setvalues(n, s, w, e);
 }
 
 NSWE::NSWE(int n, int s, int w, int e)
 {
 	setvalues((double)n, (double)s, (double)w, (double)e);
 }
+
 
 void NSWE::operator=(const NSWE sourceNSWE)
 {
@@ -33,7 +34,20 @@ void NSWE::operator=(const MovingTarget sourceMT)
 	east = sourceMT.east;
 }
 
-void NSWE::constrainvalues() {
+bool NSWE::operator==(const NSWE& other) const
+{
+	return (north == other.north) && (south == other.south) &&
+		(west == other.west) && (east == other.east);
+}
+
+bool NSWE::operator!=(const NSWE& other) const
+{
+	return !(*this == other);
+}
+
+
+
+void NSWE::constrainValues() {
 	if (west > 180) { west -= 360; east -= 360; }
 	if (east < -180) { east += 360; west += 360; }
 
@@ -41,20 +55,14 @@ void NSWE::constrainvalues() {
 
 void NSWE::setvalues(double n, double s, double w, double e) {
 	north = n; south = s; west = w; east = e;
-	constrainvalues();
+	constrainValues();
 }
 
-void NSWE::setvalues(NSWE setToThis) {
+void NSWE::setvalues(const NSWE &setToThis) {
 	north = setToThis.north; south = setToThis.south; west = setToThis.west; east = setToThis.east;
-	constrainvalues();
+	constrainValues();
 }
 
-void NSWE::setto(NSWE *setthis) {
-	north = setthis->north;
-	south = setthis->south;
-	west = setthis->west;
-	east = setthis->east;
-}
 
 double NSWE::width() const
 	{
@@ -77,7 +85,7 @@ double NSWE::area() const
 		east += w * p;
 		west += w * p;
 
-		constrainvalues();
+		constrainValues();
 	}
 
 	void NSWE::nudgevertical(double p) {	//the amount moved as a ratio (i.e. 0.1 = 10%)
@@ -118,7 +126,7 @@ double NSWE::area() const
 		return outputNSWE;
 	}
 
-	NSWE NSWE::intersectionWith(NSWE otherNSWE) const
+	NSWE NSWE::intersectionWith(const NSWE otherNSWE) const
 	{
 		NSWE outputNSWE;
 
@@ -146,7 +154,7 @@ double NSWE::area() const
 
 
 
-	void NSWE::zoom(double z, WorldCoord c) {
+	void NSWE::zoom(double z, const WorldCoord c) {
 
 		//printf("Zoom into %f %f, by %f.\n", c.latitude, c.longitude, z);
 		//printf("Before: N%f,S%f,W%f,E%f\n", north, south, west, east);
@@ -200,7 +208,7 @@ double NSWE::area() const
 		
 	}
 
-	bool NSWE::containspoint(double latitude, double longitude) const
+	bool NSWE::containsPoint(double latitude, double longitude) const
 	{
 		if (latitude>north)
 			return false;
@@ -214,7 +222,7 @@ double NSWE::area() const
 		return true;
 	}
 
-	bool NSWE::overlapsWith(NSWE nswe)
+	bool NSWE::overlapsWith(const NSWE &nswe) const
 	{
 		//if the west is further than the east in either case, they can't overlap
 		if ((west > nswe.east) || (nswe.west > east))
@@ -228,7 +236,7 @@ double NSWE::area() const
 
 
 
-	void MovingTarget::movetowards(double currenttime) {
+	void MovingTarget::moveTowards(double currenttime) {
 
 		if (currenttime >= targettime) {
 			north = target.north;
@@ -310,7 +318,7 @@ double NSWE::area() const
 		return;
 	}
 
-	void MovingTarget::settarget(NSWE nsweTarget, double stime, double ttime) {
+	void MovingTarget::setTarget(const NSWE &nsweTarget, double stime, double ttime) {
 		target.north = nsweTarget.north;
 		target.south = nsweTarget.south;
 		target.west = nsweTarget.west;
@@ -331,14 +339,29 @@ double NSWE::area() const
 		moving = torf;
 	}
 
-	bool MovingTarget::isDirty()
+	bool MovingTarget::isDirty() const
 	{
-		if (dirty) return true;
-		return false;
+		return dirty;
 	}
 
-	bool MovingTarget::isMoving()
+	bool MovingTarget::isMoving() const
 	{
-		if (moving)	return true;
-		return false;
+		return moving;
+	}
+
+	void MovingTarget::setTimer(double t)
+	{
+		starttime = glfwGetTime();
+		targettime = starttime + t;
+	}
+
+	void MovingTarget::setTarget(const NSWE &nsweTargetLocation)
+	{
+		target = nsweTargetLocation;
+		target.constrainValues();
+	}
+
+	void MovingTarget::setViewAtTarget()
+	{
+		this->setvalues(target);
 	}

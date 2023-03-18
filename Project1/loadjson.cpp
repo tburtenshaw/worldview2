@@ -244,7 +244,6 @@ long timestampToLong(char* str)
 int AssignValueToName(JSON_READER_STATE* jsr)
 {
 //	printf("%s=%s\t", jsr->name, jsr->buffer);
-	
 
 	//use the long of the first four characters to speed things up
 	long * firstlong = (long *)jsr->name;

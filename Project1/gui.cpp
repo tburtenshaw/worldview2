@@ -225,8 +225,10 @@ void Gui::PointsOptions(LocationHistory* lh)
 	ImGui::SliderFloat("Point size", &globalOptions.pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &globalOptions.pointalpha, 0.0f, 1.0f, "%.2f");
 	ImGui::Checkbox("Connect points", &globalOptions.showPaths);
+
 	if (globalOptions.showPaths) {
 		ImGui::SliderFloat("Line thickness", &globalOptions.linewidth, 1.0f, 8.0f, "%.1f");
+		globalOptions.showPoints = false;
 	}
 	ImGui::Checkbox("Travel highlight", &globalOptions.showHighlights);
 	if (globalOptions.showHighlights) {
@@ -590,7 +592,7 @@ void Gui::ListDatesInRegion(Region* r)
 		cstrings.push_back(string.c_str());
 
 	int i;
-	//ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
+	ImGui::SliderFloat("Minimum hours", &hours, 0, 24, "%.1f", 1.0);
 	r->minimumsecondstobeincludedinday = hours * 60 * 60;
 	ImGui::Text("Days %i", r->numberofdays);
 	ImGui::ListBox("Dates in region", &i, cstrings.data(), cstrings.size(), 4);

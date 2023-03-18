@@ -3,14 +3,11 @@
 #include "processlocations.h"
 #include "mytimezone.h"
 #include <algorithm>
+#include <chrono>
+#include <iostream>
 
-
-
-bool FurtherThan(PathPlotLocation* p1, PathPlotLocation* p2, float d) {
-	if (abs(p1->latitude - p2->latitude) > d)	return true;
-	if (abs(p1->longitude - p2->longitude) > d)	return true;
-
-	return false;
+bool FurtherThan(const PathPlotLocation& p1, const PathPlotLocation& p2, const float d) {
+	return (p1.latitude-p2.latitude)* (p1.latitude - p2.latitude) + (p1.longitude - p2.longitude)* (p1.longitude - p2.longitude)>d*d;
 }
 
 void LocationHistory::OptimiseForPaths() {
@@ -38,7 +35,7 @@ void LocationHistory::OptimiseForPaths() {
 
 			for (int detailLevel = 0; ((detailLevel < numberOfDetailLevels) && (!found)); detailLevel++) {	//go through all detail levels
 				//printf("Testing %i %f.", i,distanceToTest);
-				if (FurtherThan(&detail[detailLevel], &lodInfo.pathPlotLocations[p], distanceToTest)) {
+				if (FurtherThan(detail[detailLevel], lodInfo.pathPlotLocations[p], distanceToTest)) {
 					//printf(" %f.", distanceToTest);
 
 					for (int propagateDown = detailLevel; propagateDown < numberOfDetailLevels; propagateDown++) {	//once we've found a point, this is propagated along all the other high detail levels
@@ -120,7 +117,7 @@ void LODInfo::CreateTimeLookupTables()
 	//Lookup table for start/end times
 	//we divide the list into 33 (pieces+1) sections, (start and end are known), so can start DrawArray at that point
 	for (size_t lod=0;lod<numberOfLODs;lod++)	{
-		printf("LodStart[lod]=%i\n", lodStart[lod]);
+		printf("LodStart[lod]=%i, length %i\n", lodStart[lod], lodLength[lod]);
 		size_t interval = lodLength[lod] / (lookupPieces + 1);
 		size_t c = lodStart[lod];
 
@@ -129,14 +126,14 @@ void LODInfo::CreateTimeLookupTables()
 			timeLookup[lod][i].index = c;
 			timeLookup[lod][i].t = pathPlotLocations[c].timestamp;
 
-			printf("LOD [%i]. Lookup [%i]. Count: %i, ts:%i\n", lod, i, c, pathPlotLocations[c].timestamp);
+			//printf("LOD [%i]. Lookup [%i]. Count: %i, ts:%i\n", lod, i, c, pathPlotLocations[c].timestamp);
 		}
 	}
 
 
 }
 
-void LODInfo::LookupFirstAndCount(const unsigned long starttime, const unsigned long endtime, const int lod, GLint* first, GLsizei* count)
+void LODInfo::LookupFirstAndCount(const unsigned long starttime, const unsigned long endtime, const int lod, GLint* first, GLsizei* count) const
 {
 //need to make work with LODs
 
@@ -179,7 +176,7 @@ void LODInfo::LookupFirstAndCount(const unsigned long starttime, const unsigned 
 
 }
 
-int LODInfo::LodFromDPP(double dpp)
+int LODInfo::LodFromDPP(const double dpp)
 {
 	for (int i = 0; i < numberOfLODs-1; i++) {
 		if (dpp < lodPrecision[i+1]) {

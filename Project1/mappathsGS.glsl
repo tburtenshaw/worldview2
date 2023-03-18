@@ -84,7 +84,7 @@ void main()
 
 
 	//fcol = gs_in[0].color;
-	fcol=vec4((gs_in[1].timefrom2010 - gs_in[0].timefrom2010)/linelength/3600.0);
+	fcol=vec4(linelength/(gs_in[1].timefrom2010 - gs_in[0].timefrom2010)*360.0);
 
 	fcol.a=min(1.0/linelength,1.0);	//fades away long lines (i.e. crossing the screen)
 	fcol.a=pow(fcol.a,1.5);

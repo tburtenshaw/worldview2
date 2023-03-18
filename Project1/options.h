@@ -41,9 +41,12 @@ public:
 	//heatmap
 	int palette; //viridis = 1, inferno = 2
 	int minimumaccuracy;
-	bool predictpath;
 	float gaussianblur;
 	float heatmapmaxvalue;
+	float heatmapMaxTarget;
 	float debug;
+
+	void SetHeatmapMaxValue(float maxVal, float delaySeconds = 0.0f);
+	float GetHeatmapMaxValue() const;
 
 };

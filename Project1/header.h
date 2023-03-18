@@ -60,7 +60,16 @@ struct RectDimension {
 	int width;
 	int height;
 
+	bool operator==(const RectDimension& other) const {
+		return (width == other.width && height == other.height);
+	}
+
+	bool operator!=(const RectDimension& other) const {
+		return !(*this == other);
+	}
+	
 	operator ImVec2() const { return ImVec2((float)width, (float)height); }	//converts to float for ImGui
+
 };
 
 class WorldCoord {
@@ -163,7 +172,6 @@ public:
 	int CloseLocationFile();
 	void GenerateLocationLODs();
 	void OptimiseForPaths();
-	
 	
 
 	LocationHistory();
