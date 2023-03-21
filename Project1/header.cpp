@@ -8,6 +8,7 @@
 #include <iostream>
 #include <numeric>
 #include <unordered_map>
+#include <filesystem>
 
 void WorldCoord::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension window)
 {
@@ -317,6 +318,22 @@ void LocationHistory::GenerateStatsOnLoad()
 		std::cout << pair.first << ": " << pair.second << std::endl;
 	}
 
+
+	std::unordered_map<unsigned long long, int> freqMac;
+	for (auto& loc : locations) {
+		freqMac[loc.mac]++;
+	}
+	for (const auto& pair : freqMac) {
+
+		for (int i = 0; i < 6; i++) {
+			std::cout << std::setfill('0') << std::setw(2) << std::hex << ((pair.first >> (i * 8)) & 0xff);
+			if (i < 5) {
+				std::cout << ':';
+			}
+		}
+		
+		std::cout << ": " << std::dec << pair.second << std::endl;
+	}
 
 
 	stats.fastestVelocity = 0;

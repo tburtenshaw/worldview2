@@ -126,7 +126,7 @@ struct Location {	//all the detail we can get. We process this to a leaner versi
 	std::string platformType;
 	std::string type;
 	int frequencyMhz;
-	long long mac;
+	unsigned long long mac;
 
 	unsigned long correctedTimestamp;
 

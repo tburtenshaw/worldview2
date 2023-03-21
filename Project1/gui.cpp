@@ -154,8 +154,8 @@ void Gui::InfoWindow(LocationHistory* lh, MainViewport* vp)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), vp->viewNSWE.north, vp->viewNSWE.south, vp->viewNSWE.west, vp->viewNSWE.east);
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), globalOptions.GetDateCustomFormat()).c_str());
-	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::MONTH_SHORT| globalOptions.GetDateCustomFormat()).c_str());
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME |globalOptions.dateFormat.GetDateCustomFormat()).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | globalOptions.dateFormat.GetDateCustomFormat()).c_str());
 
 	//Gui::ShowRegionInfo(vp->regions[0], globalOptions);
 
@@ -171,14 +171,14 @@ void Gui::SettingsWindow()
 	constexpr long demoTime = 1618285680;	//13th, so not ambiguous
 
 	static int e = 0;
-	std::string dmy = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY) | MyTimeZone::FormatFlags::DMY);
-	std::string mdy = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY) | MyTimeZone::FormatFlags::MDY);
-	std::string ymd = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY));
+	std::string dmy = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.dateFormat.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY) | MyTimeZone::FormatFlags::DMY);
+	std::string mdy = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.dateFormat.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY) | MyTimeZone::FormatFlags::MDY);
+	std::string ymd = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.dateFormat.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY));
 
-	if (globalOptions.GetDateCustomFormat() & MyTimeZone::FormatFlags::DMY) {
+	if (globalOptions.dateFormat.GetDateCustomFormat() & MyTimeZone::FormatFlags::DMY) {
 		e = MyTimeZone::FormatFlags::DMY;
 	}
-	else if (globalOptions.GetDateCustomFormat() & MyTimeZone::FormatFlags::MDY) {
+	else if (globalOptions.dateFormat.GetDateCustomFormat() & MyTimeZone::FormatFlags::MDY) {
 		e = MyTimeZone::FormatFlags::MDY;
 	}
 	else
@@ -187,14 +187,14 @@ void Gui::SettingsWindow()
 	ImGui::RadioButton(dmy.c_str(), &e, MyTimeZone::FormatFlags::DMY);
 	ImGui::RadioButton(mdy.c_str(), &e, MyTimeZone::FormatFlags::MDY);
 	ImGui::RadioButton(ymd.c_str(), &e, MyTimeZone::FormatFlags::YMD);
-	globalOptions.SetDateOrder(e);
+	globalOptions.dateFormat.SetDateOrder(e);
 
 	ImGui::Text("Month");
-	std::string month_num = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::MONTH_SHORT ));
-	std::string month_short = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::MONTH_SHORT) | MyTimeZone::FormatFlags::MONTH_SHORT);
+	std::string month_num = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.dateFormat.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::MONTH_SHORT ));
+	std::string month_short = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.dateFormat.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::MONTH_SHORT) | MyTimeZone::FormatFlags::MONTH_SHORT);
 //	std::string month_long = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY));
 
-	if (globalOptions.GetDateCustomFormat() & MyTimeZone::FormatFlags::MONTH_SHORT) {
+	if (globalOptions.dateFormat.GetDateCustomFormat() & MyTimeZone::FormatFlags::MONTH_SHORT) {
 		e = MyTimeZone::FormatFlags::MONTH_SHORT;
 	}
 	else {
@@ -204,7 +204,7 @@ void Gui::SettingsWindow()
 	ImGui::RadioButton(month_num.c_str(), &e, MyTimeZone::FormatFlags::MONTH_NUM);
 	ImGui::RadioButton(month_short.c_str(), &e, MyTimeZone::FormatFlags::MONTH_SHORT);
 //	ImGui::RadioButton(ymd.c_str(), &e, MyTimeZone::FormatFlags::YMD);
-	//globalOptions.SetDateOrder(e);
+	globalOptions.dateFormat.SetMonthFormat(e);
 
 
 

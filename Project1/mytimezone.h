@@ -20,10 +20,20 @@ namespace MyTimeZone {
 		const int	MONTH_NUM = DEFAULT;
 	};
 
-
 	const std::string daynames[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 	const std::string daynameslong[] = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 	const std::string monthnames[] = { "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
+
+	class DateFormatOptions {
+	private:
+		int combinedFlags;
+	public:
+		int GetDateCustomFormat();	//this includes all formatting types (order, and day length etc), I have custom in there as there's a windows function with the same name
+		int GetDateOrder();
+		void SetDateOrder(int dOrder);
+		void SetMonthFormat(int mf);
+
+	};
 
 	unsigned long FixToLocalTime(unsigned long unixtime);
 	long tz_offset_second(time_t t);

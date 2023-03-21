@@ -125,3 +125,23 @@ std::string MyTimeZone::DisplayBestTimeUnits(unsigned long seconds)
 
     return std::to_string(seconds) + " seconds";
 }
+
+int MyTimeZone::DateFormatOptions::GetDateCustomFormat()
+{
+    return combinedFlags;
+}
+
+int MyTimeZone::DateFormatOptions::GetDateOrder()
+{
+    return combinedFlags;
+}
+
+void MyTimeZone::DateFormatOptions::SetDateOrder(int dOrder)
+{
+    combinedFlags = (combinedFlags &~FormatFlags::DMY & ~FormatFlags::MDY & ~FormatFlags::YMD) |dOrder;
+}
+
+void MyTimeZone::DateFormatOptions::SetMonthFormat(int mf)
+{
+    combinedFlags = (combinedFlags & ~FormatFlags::MONTH_SHORT & ~FormatFlags::MONTH_LONG & ~FormatFlags::MONTH_NUM) | mf;
+}

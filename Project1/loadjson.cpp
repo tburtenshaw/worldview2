@@ -202,6 +202,18 @@ long fast_strtol(char* str)
 	return val;
 }
 
+long fast_strto64(char* str)
+{
+	unsigned long long val = 0;
+
+	while (*str) {
+		val = val * 10 + (*str++ - '0');
+	}
+	return val;
+}
+
+
+
 long timestampToLong(char* str)
 {
 	//Takes form:
@@ -349,8 +361,9 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 		//strength
 		break;
 	case 0x0063616d:
-		//mac
-		printf("%x %x %i %s=%s\n", firstlong[0], firstlong[1], jsr->hierarchydepth, jsr->name, jsr->buffer);
+		//mac // this is the decimal of the 12-digit hex number
+		jsr->location.mac = fast_strto64(jsr->buffer);
+		//printf("%x %x %i %s=%s\n", firstlong[0], firstlong[1], jsr->hierarchydepth, jsr->name, jsr->buffer);
 	case 0x6d726f66:
 		//formFactor
 		break;
