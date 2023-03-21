@@ -55,6 +55,7 @@ PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : 
 PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_, int accuracy_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f),accuracy(accuracy_)
 {
 
+	return (this->latitude-other.latitude)* (this->latitude - other.latitude) + (this->longitude - other.latitude)
 }
 
 
