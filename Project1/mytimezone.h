@@ -14,7 +14,10 @@ namespace MyTimeZone {
 		const int	TWELVE_HOUR_CLOCK = (1 << 3);
 		const int	MDY = (1 << 4);
 		const int	DMY = (1 << 5);
-		const int	TEXT_MONTH = (1 << 6);
+		const int	YMD = DEFAULT;
+		const int	MONTH_SHORT = (1 << 6);
+		const int	MONTH_LONG = (1 << 7);//not used yet
+		const int	MONTH_NUM = DEFAULT;
 	};
 
 

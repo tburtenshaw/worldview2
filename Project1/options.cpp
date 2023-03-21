@@ -1,4 +1,5 @@
 #include "options.h"
+#include "mytimezone.h"
 
 GlobalOptions::GlobalOptions()
 {
@@ -13,6 +14,9 @@ GlobalOptions::GlobalOptions()
 
 	earliestTimeToShow = 0;
 	latestTimeToShow = 2147400000;
+
+	dateOrder = MyTimeZone::FormatFlags::DMY;
+
 
 	pointdiameter = 5.0f;
 	pointalpha = 0.5f;
@@ -58,6 +62,21 @@ bool GlobalOptions::IsHeatmapVisible() const
 bool GlobalOptions::IsPointsVisible() const
 {
 	return showPoints;
+}
+
+int GlobalOptions::GetDateCustomFormat()
+{
+	return dateOrder;//will || with others when done
+}
+
+int GlobalOptions::GetDateOrder()
+{
+	return dateOrder;
+}
+
+void GlobalOptions::SetDateOrder(int dOrder)
+{
+	dateOrder = dOrder;
 }
 
 void GlobalOptions::SetHeatmapMaxValue(float maxVal, float delaySeconds)

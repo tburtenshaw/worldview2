@@ -107,7 +107,7 @@ public:
 
 };
 
-struct Location {
+struct Location {	//all the detail we can get. We process this to a leaner version called "PathPlotLocation"
 	unsigned long timestamp; //we'll use a long instead of the high precision of google (seconds rather than ms)
 	double longitude;	//tried using a float rather than a double means an imprecision of less than 2metres, but keeping doubles
 	double latitude;		//longitude first as it's x
@@ -117,6 +117,16 @@ struct Location {
 	int heading;
 	int velocity;
 	int verticalaccuracy;
+
+	int hierarchy;	//what level of the JSON it was found in
+
+	
+	std::string source;
+	std::string deviceTag;
+	std::string platformType;
+	std::string type;
+	int frequencyMhz;
+	long long mac;
 
 	unsigned long correctedTimestamp;
 
@@ -137,6 +147,9 @@ struct PathPlotLocation {	//this is the structure (a vector of them) sent to the
 	PathPlotLocation();
 	PathPlotLocation(float lat, float lon, unsigned long ts);
 	PathPlotLocation(float lat, float lon, unsigned long ts, int accuracy);
+
+	float DistanceSquaredFrom(const PathPlotLocation& other);
+	float DistanceSquaredFrom(const Location& other);
 };
 
 

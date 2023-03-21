@@ -25,6 +25,7 @@ namespace Gui {
 	//void OptionsWindow
 	void ToolbarWindow(LocationHistory* lh);
 	void InfoWindow(LocationHistory* lh, MainViewport* vp);
+	void SettingsWindow();
 
 	void PointsOptions(LocationHistory* lh);
 	void HeatmapOptions();

@@ -70,15 +70,34 @@ void LocationHistory::GenerateLocationLODs()
 	while (lod<lodInfo.GetNumberOfLODs()) {
 		int number = 0;
 		for (auto& loc : locations) {
-			if ((fabsf(comparisonLoc.longitude - loc.longitude) > precisiontarget) || (fabsf(comparisonLoc.latitude - loc.latitude) > precisiontarget) ||
+
+			//If the timestamp is the same as the previous one, we need to decide what to keep.
+			if (loc.timestamp == comparisonLoc.timestamp) {
+				
+				//if (comparisonLoc.DistanceSquaredFrom(loc) > 0.0f) {
+//					printf("TS:%i. H:%i Accuracy: %i,%i. Distance:%f\n", comparisonLoc.timestamp, loc.hierarchy, comparisonLoc.accuracy, loc.accuracy, sqrt(comparisonLoc.DistanceSquaredFrom(loc)));
+	//			}
+
+				if (comparisonLoc.accuracy>loc.accuracy) {	//the new one is more accurate, overwrite the previous
+					lodInfo.pathPlotLocations.back().accuracy = loc.accuracy;
+					lodInfo.pathPlotLocations.back().latitude = (float)loc.latitude;
+					lodInfo.pathPlotLocations.back().longitude = (float)loc.longitude;
+				}
+
+
+			}
+			else if ((fabsf(comparisonLoc.longitude - loc.longitude) > precisiontarget) || (fabsf(comparisonLoc.latitude - loc.latitude) > precisiontarget) ||
 				(loc.timestamp - comparisonLoc.timestamp > 60 * 60 * 24)) {
 				comparisonLoc.latitude = loc.latitude;
 				comparisonLoc.longitude = loc.longitude;
 				comparisonLoc.timestamp = loc.timestamp;
+				comparisonLoc.accuracy = loc.accuracy;
 				number++;
 
 				lodInfo.pathPlotLocations.emplace_back((float)loc.latitude, (float)loc.longitude, loc.correctedTimestamp, loc.accuracy);
-				//each lod just comes after
+				//each lod just comes after the next
+
+				//TODO: need to not have the same timepoint in these.
 			}
 			else { //if the points are similar in position and time, then use the best accuracy.
 				//we need to alter the last thing in the array. currentloc.accuracy = std::min(currentloc.accuracy, loc.accuracy);

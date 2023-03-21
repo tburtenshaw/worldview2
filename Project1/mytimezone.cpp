@@ -57,7 +57,7 @@ std::string MyTimeZone::FormatUnixTime(unsigned long unixtime, int flags)
     year = std::to_string(corrected.tm_year + 1900);
     
     delim = "-";
-    if (flags & FormatFlags::TEXT_MONTH) {
+    if (flags & FormatFlags::MONTH_SHORT) {
         mon = monthnames[corrected.tm_mon];
         delim = " ";
     }

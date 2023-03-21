@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <numeric>
+#include <unordered_map>
 
 void WorldCoord::SetFromWindowXY(float x, float y, NSWE nswe, RectDimension window)
 {
@@ -42,7 +43,7 @@ LocationHistory::~LocationHistory()
 
 
 PathPlotLocation::PathPlotLocation()
-	:longitude(0.0f), latitude(0.0f), timestamp(0), detaillevel(0.0f),accuracy(0)
+	:longitude(-1000.0f), latitude(-1000.0f), timestamp(0), detaillevel(0.0f),accuracy(10000)
 {
 
 }
@@ -55,7 +56,16 @@ PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_) : 
 PathPlotLocation::PathPlotLocation(float lat_, float lon_, unsigned long ts_, int accuracy_) : latitude(lat_), longitude(lon_), timestamp(ts_), detaillevel(0.0f),accuracy(accuracy_)
 {
 
-	return (this->latitude-other.latitude)* (this->latitude - other.latitude) + (this->longitude - other.latitude)
+}
+
+float PathPlotLocation::DistanceSquaredFrom(const PathPlotLocation& other)
+{
+	return ((this->latitude - other.latitude) * (this->latitude - other.latitude) + (this->longitude - other.longitude) * (this->longitude - other.longitude));
+}
+
+float PathPlotLocation::DistanceSquaredFrom(const Location& other)
+{
+	return ((this->latitude - other.latitude) * (this->latitude - other.latitude) + (this->longitude - other.longitude) * (this->longitude - other.longitude));
 }
 
 
@@ -263,6 +273,50 @@ void LocationHistory::GenerateStatsOnLoad()
 	stats.latestTimestamp = locations.back().correctedTimestamp;
 
 	AccuracyHistogram();
+
+
+	std::unordered_map<std::string, int> freqSource;
+	for (auto& loc : locations) {
+		freqSource[loc.source]++;
+	}
+	for (const auto& pair : freqSource) {
+		std::cout << pair.first << ": " << pair.second << std::endl;
+	}
+
+	std::unordered_map<int, int> freqFrequencyMHZ;
+	for (auto& loc : locations) {
+		freqFrequencyMHZ[loc.frequencyMhz]++;
+	}
+	for (const auto& pair : freqFrequencyMHZ) {
+		std::cout << pair.first << ": " << pair.second << std::endl;
+	}
+
+
+	std::unordered_map<std::string, int> freqPlatformType;
+	for (auto& loc : locations) {
+		freqPlatformType[loc.platformType]++;
+	}
+	for (const auto& pair : freqPlatformType) {
+		std::cout << pair.first << ": " << pair.second << std::endl;
+	}
+
+
+	std::unordered_map<std::string, int> freqType;
+	for (auto& loc : locations) {
+		freqType[loc.type]++;
+	}
+	for (const auto& pair : freqType) {
+		std::cout << pair.first << ": " << pair.second << std::endl;
+	}
+
+	std::unordered_map<std::string, int> freqDeviceTag;
+	for (auto& loc : locations) {
+		freqDeviceTag[loc.deviceTag]++;
+	}
+	for (const auto& pair : freqDeviceTag) {
+		std::cout << pair.first << ": " << pair.second << std::endl;
+	}
+
 
 
 	stats.fastestVelocity = 0;

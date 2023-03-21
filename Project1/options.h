@@ -1,7 +1,8 @@
 #pragma once
 class GlobalOptions {
 private:
-
+	//date formatting
+	int dateOrder;
 public:
 	GlobalOptions();
 
@@ -46,6 +47,10 @@ public:
 	float heatmapMaxTarget;
 	float debug;
 
+	int GetDateCustomFormat();	//this includes all formatting types (order, and day length etc), I have custom in there as there's a windows function with the same name
+	int GetDateOrder();
+	void SetDateOrder(int dOrder);
+	
 	void SetHeatmapMaxValue(float maxVal, float delaySeconds = 0.0f);
 	float GetHeatmapMaxValue() const;
 

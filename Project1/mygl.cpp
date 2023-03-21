@@ -327,8 +327,8 @@ void PathLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE*
 	//Use lookup table to skip some
 	GLint first = 0;
 	GLsizei count = 0;
-
-	lodInfo.LookupFirstAndCount(globalOptions.earliestTimeToShow, globalOptions.latestTimeToShow, lod, &first, &count);
+	//Path has its own optimisations, so should use LOD 0
+	lodInfo.LookupFirstAndCount(globalOptions.earliestTimeToShow, globalOptions.latestTimeToShow, 0, &first, &count);
 	
 	glDrawArrays(GL_LINE_STRIP, first, count);
 

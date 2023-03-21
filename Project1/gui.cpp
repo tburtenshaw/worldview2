@@ -154,13 +154,62 @@ void Gui::InfoWindow(LocationHistory* lh, MainViewport* vp)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), vp->viewNSWE.north, vp->viewNSWE.south, vp->viewNSWE.west, vp->viewNSWE.east);
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::DMY).c_str());
-	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::TEXT_MONTH).c_str());
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), globalOptions.GetDateCustomFormat()).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | MyTimeZone::FormatFlags::MONTH_SHORT| globalOptions.GetDateCustomFormat()).c_str());
 
 	//Gui::ShowRegionInfo(vp->regions[0], globalOptions);
 
 	ImGui::End();
 
+}
+
+void Gui::SettingsWindow()
+{
+	ImGui::Begin("Display settings");
+	ImGui::Text("Date order");
+
+	constexpr long demoTime = 1618285680;	//13th, so not ambiguous
+
+	static int e = 0;
+	std::string dmy = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY) | MyTimeZone::FormatFlags::DMY);
+	std::string mdy = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY) | MyTimeZone::FormatFlags::MDY);
+	std::string ymd = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY));
+
+	if (globalOptions.GetDateCustomFormat() & MyTimeZone::FormatFlags::DMY) {
+		e = MyTimeZone::FormatFlags::DMY;
+	}
+	else if (globalOptions.GetDateCustomFormat() & MyTimeZone::FormatFlags::MDY) {
+		e = MyTimeZone::FormatFlags::MDY;
+	}
+	else
+		e = MyTimeZone::FormatFlags::YMD;
+
+	ImGui::RadioButton(dmy.c_str(), &e, MyTimeZone::FormatFlags::DMY);
+	ImGui::RadioButton(mdy.c_str(), &e, MyTimeZone::FormatFlags::MDY);
+	ImGui::RadioButton(ymd.c_str(), &e, MyTimeZone::FormatFlags::YMD);
+	globalOptions.SetDateOrder(e);
+
+	ImGui::Text("Month");
+	std::string month_num = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::MONTH_SHORT ));
+	std::string month_short = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::MONTH_SHORT) | MyTimeZone::FormatFlags::MONTH_SHORT);
+//	std::string month_long = MyTimeZone::FormatUnixTime(demoTime, (globalOptions.GetDateCustomFormat() & ~MyTimeZone::FormatFlags::DMY & ~MyTimeZone::FormatFlags::MDY));
+
+	if (globalOptions.GetDateCustomFormat() & MyTimeZone::FormatFlags::MONTH_SHORT) {
+		e = MyTimeZone::FormatFlags::MONTH_SHORT;
+	}
+	else {
+		e = MyTimeZone::FormatFlags::MONTH_NUM;
+	}
+
+	ImGui::RadioButton(month_num.c_str(), &e, MyTimeZone::FormatFlags::MONTH_NUM);
+	ImGui::RadioButton(month_short.c_str(), &e, MyTimeZone::FormatFlags::MONTH_SHORT);
+//	ImGui::RadioButton(ymd.c_str(), &e, MyTimeZone::FormatFlags::YMD);
+	//globalOptions.SetDateOrder(e);
+
+
+
+
+	ImGui::End();
 }
 
 void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
@@ -188,8 +237,13 @@ void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
 
 	ImGui::ShowDemoWindow();
 	//ImGui::ShowStyleEditor();
+	Gui::SettingsWindow();
 
-	ImGui::Begin("Location display");
+
+
+
+
+	ImGui::Begin("Time selection");
 	Gui::DateSelect(lh);
 	ImGui::End();
 

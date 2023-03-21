@@ -6,6 +6,8 @@
 #include "header.h"
 #include "loadjson.h"
 #include "heatmap.h"
+#include <unordered_map>
+
 
 int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location>& loc) {
 
@@ -253,9 +255,13 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 	switch (firstlong[0]) {
 		
 	case 0x656d6974:
+		//printf("%i\n", jsr->hierarchydepth);
+		jsr->location.hierarchy = jsr->hierarchydepth;
+
 		if (!strcmp(jsr->name, "timestampMs")) {	//the old version had the milliseconds
 			//printf("TS %s ", jsr->buffer);
 			jsr->location.timestamp = fast_strtotimestamp(jsr->buffer);
+	
 			//printf("TS %i ", jsr->location.timestamp);
 			return 1;
 		}
@@ -286,6 +292,7 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 		break;
 	case 0x75636361:	//ucca (accu, backwards)
 		if (!strcmp(jsr->name, "accuracy")) {
+			//if (jsr->hierarchydepth>2)	printf("%i %s=%s (prev %i)\n", jsr->hierarchydepth,  jsr->name, jsr->buffer,jsr->location.accuracy);
 			jsr->location.accuracy = fast_strtol(jsr->buffer);
 			return 1;
 		}
@@ -315,26 +322,48 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 			return 1;
 		}
 		break;
-	case 0x72756f73:
-		//source
+	case 0x72756f73: //ruos (source)
+		if ((firstlong[1] & 0x00ff'ffff) == 0x00006563) {	//\0ec
+			jsr->location.source = std::string(jsr->buffer, strlen(jsr->buffer));
+		}
+		break;
 	case 0x69766564:
-		//deviceTag
+		//deviceTag //deviceDesignatio //deviceTimestamp
+		if (!strcmp(jsr->name, "deviceTag")) {
+			jsr->location.deviceTag = std::string(jsr->buffer, strlen(jsr->buffer));
+		}
+		//else
+			//printf("%x %x %i %s=%s\n", firstlong[0], firstlong[1], jsr->hierarchydepth, jsr->name, jsr->buffer);
+		break;
 	case 0x65707974:
 		//type
+		if ((firstlong[1] & 0x00'00ff) == 0x00) {	//still need to check the next char is 0 (could have been a longer string starting in "type"
+			jsr->location.type = std::string(jsr->buffer, strlen(jsr->buffer));
+			
+		}
 	case 0x666e6f63:
 		//confidence
 	case 0x56746e69:
 		//intVal
-	case 0x65727473:
+	case 0x65727473: 
 		//strength
+		break;
 	case 0x0063616d:
 		//mac
+		printf("%x %x %i %s=%s\n", firstlong[0], firstlong[1], jsr->hierarchydepth, jsr->name, jsr->buffer);
 	case 0x6d726f66:
 		//formFactor
+		break;
 	case 0x656d616e:
 		//name
+		break;
 	case 0x74616c70:
+		if (!strcmp(jsr->name, "platformType")) {
+			jsr->location.platformType = std::string(jsr->buffer, strlen(jsr->buffer));
+		}
+		return 1;
 		//platformType
+		
 	case 0x74746162:
 		//batteryCharging
 	case 0x76726573:
@@ -345,15 +374,18 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 		//osLevel
 	case 0x63616c70:
 		//placeId
+		break;
 	case 0x71657266:
 		//frequencyMhz
-		//printf("%x %s=%s\n", firstlong[0], jsr->name, jsr->buffer);
+		if (!strcmp(jsr->name, "frequencyMhz")) {
+			jsr->location.frequencyMhz = fast_strtol(jsr->buffer);
+		}
 		return 1;
 		break;
 	break;
 	}
 
-	//printf("%i %x %s=%s\n", jsr->hierarchydepth, firstlong[0], jsr->name, jsr->buffer);
+	
 
 	return 0; //return 0 if we didn't use anything
 }
