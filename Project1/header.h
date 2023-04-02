@@ -37,6 +37,10 @@ struct vec4f {
 	float x, y, z, w;
 };
 
+struct UVpair {
+	vec2f uv0;
+	vec2f uv1;
+};
 
 struct XY {
 	double x;

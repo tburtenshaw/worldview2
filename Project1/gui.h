@@ -19,7 +19,7 @@ namespace Gui {
 	void ShowLoadingWindow(LocationHistory* lh);
 	
 	void MakeGUI(LocationHistory* lh, MainViewport * vp);
-	bool ToolbarButton(GuiAtlas atlas, enum class Icon icon);
+	bool ToolbarButton(enum class Icon icon);
 	
 	void DebugWindow(LocationHistory* lh, MainViewport* vp);
 	//void OptionsWindow

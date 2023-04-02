@@ -1,5 +1,7 @@
 
 #include "guiatlas.h"
+#include "header.h"
+#include "spectrum.h"
 
 void GuiAtlas::FillAtlas() {
     
@@ -2105,29 +2107,99 @@ void GuiAtlas::FillAtlas() {
 	AddIconToAtlas(Icon::points, "Points", RectDimension(32, 32), (void*)pointsData);
 }
 
-void GuiAtlas::AddIconToAtlas(enum class Icon icon, std::string name, RectDimension size, void* data)
+void GuiAtlas::CreateSpectrumPreview()
 {
-    float widthInAtlas = size.width / (float)this->width;
-    float heightInAtlas = size.height / (float)this->height;
+	constexpr int spectrumWidth = 512;
+	constexpr int spectrumHeight = 32;
+
+	RectDimension size = RectDimension(spectrumWidth, spectrumHeight);
+
+	spectrumUV = GetNextUvAndAdvance(size);
+
+	//entry.emplace(Icon::spectrum, AtlasEntry("Spectrum", size, reservedUV.uv0 , reservedUV.uv1));
+
+	RGBA spectrumRGBA[spectrumHeight][spectrumWidth];
+	RGBA c1 = { 255, 0, 0, 255 }; // red
+	RGBA c2 = { 0, 0, 255, 255 }; // blue
+
+	for (float f = 0.0f; f < 1.2f; f += 0.1f) {
+		Spectrum_Handler::GetPointFromSpectrum(0,f);
+	}
 
 
-    //check if too long for "line"
-    if (currentUVx + widthInAtlas > 1.0) {
-        currentUVx = 0;
-        currentUVy += currentUVheight;
-        currentUVheight = heightInAtlas;
-    }
-    //Do this with lines, so the current line will use the height of the
-    if (heightInAtlas > currentUVheight)    currentUVheight = heightInAtlas;
+	for (int i = 0; i < 512; i++) {
+		float t = i / 511.0f;
+		spectrumRGBA[0][i]= Spectrum_Handler::GetPointFromSpectrum(0, t);
+	}
 
-    entry.emplace(icon, AtlasEntry(name, size, { currentUVx,currentUVy }, { currentUVx + widthInAtlas,currentUVy + heightInAtlas }));
+	
+	 c1 = RGBA( 0, 255, 0, 255 ); // green
+	 c2 = RGBA(0, 0, 255, 255 ); // blue
 
-    //actually draw to the atlas texture
+
+	for (int i = 0; i < 512; i++) {
+		float t = i / 511.0f;
+		spectrumRGBA[1][i].r = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.r) + t * static_cast<float>(c2.r));
+		spectrumRGBA[1][i].g = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.g) + t * static_cast<float>(c2.g));
+		spectrumRGBA[1][i].b = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.b) + t * static_cast<float>(c2.b));
+		spectrumRGBA[1][i].a = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.a) + t * static_cast<float>(c2.a));
+	}
+
+
+	c1 = RGBA(125, 0, 0, 0); 
+	c2 = RGBA(255, 255, 55, 255); 
+
+
+	for (int i = 0; i < 512; i++) {
+		float t = i / 511.0f;
+		spectrumRGBA[2][i].r = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.r) + t * static_cast<float>(c2.r));
+		spectrumRGBA[2][i].g = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.g) + t * static_cast<float>(c2.g));
+		spectrumRGBA[2][i].b = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.b) + t * static_cast<float>(c2.b));
+		spectrumRGBA[2][i].a = static_cast<unsigned char>((1 - t) * static_cast<float>(c1.a) + t * static_cast<float>(c2.a));
+	}
+
+
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, spectrumUV.uv0.x * (float)this->width, spectrumUV.uv0.y * (float)this->height, size.width, size.height, GL_RGBA, GL_UNSIGNED_BYTE, spectrumRGBA);
+
+
+
+}
+
+void GuiAtlas::AddIconToAtlas(Icon icon, std::string name, RectDimension size, void* data)
+{
+    
+	UVpair reservedUV = GetNextUvAndAdvance(size);
+
+    entry.emplace(icon, AtlasEntry(name, size, reservedUV.uv0, reservedUV.uv1 ));
+
+    //draw to the atlas texture
     glBindTexture(GL_TEXTURE_2D, textureId);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, currentUVx * (float)this->width, currentUVy * (float)this->height, size.width, size.height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, reservedUV.uv0.x * (float)this->width, reservedUV.uv0.y * (float)this->height, size.width, size.height, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    currentUVx += widthInAtlas; //move the position across.
 
+}
+
+UVpair GuiAtlas::GetNextUvAndAdvance(RectDimension size)
+{
+	float widthInAtlas = size.width / (float)this->width;
+	float heightInAtlas = size.height / (float)this->height;
+
+
+	//check if too long for "line"
+	if (currentUVx + widthInAtlas > 1.0) {
+		currentUVx = 0;
+		currentUVy += currentUVheight;
+		currentUVheight = heightInAtlas;
+	}
+	//Do this with lines, so the current line will use the height of the
+	if (heightInAtlas > currentUVheight)    currentUVheight = heightInAtlas;
+
+	UVpair reservedUV = { {currentUVx,currentUVy },{currentUVx + widthInAtlas,currentUVy + heightInAtlas } };
+
+	currentUVx += widthInAtlas; //move the position along.
+	
+	return reservedUV;
 }
 
 const AtlasEntry& GuiAtlas::GetEntry(Icon icon) const {
@@ -2139,6 +2211,15 @@ const AtlasEntry& GuiAtlas::GetEntry(Icon icon) const {
 		return entry.begin()->second;	//dunno if this will help
 	}
 }
+
+UVpair GuiAtlas::GetSpectrumUV(int number)
+{
+	UVpair spectUV;
+	spectUV = { {spectrumUV.uv0.x,spectrumUV.uv0.y +((float)number+ 0.5f)/(this)->height}, {spectrumUV.uv1.x,spectrumUV.uv0.y + ((float)number + 0.5f)/(this)->height}};
+
+	return spectUV;
+}
+
 
 void GuiAtlas::Initialise()
 {
@@ -2155,6 +2236,7 @@ void GuiAtlas::Initialise()
     glBindTexture(GL_TEXTURE_2D, 0);
 
 	FillAtlas();
+	CreateSpectrumPreview();
  
 }
 

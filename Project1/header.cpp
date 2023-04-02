@@ -325,14 +325,16 @@ void LocationHistory::GenerateStatsOnLoad()
 	}
 	for (const auto& pair : freqMac) {
 
-		for (int i = 0; i < 6; i++) {
-			std::cout << std::setfill('0') << std::setw(2) << std::hex << ((pair.first >> (i * 8)) & 0xff);
-			if (i < 5) {
-				std::cout << ':';
+		if (pair.second > 2) {
+			for (int i = 0; i < 6; i++) {
+				std::cout << std::setfill('0') << std::setw(2) << std::hex << ((pair.first >> (i * 8)) & 0xff);
+				if (i < 5) {
+					std::cout << ':';
+				}
 			}
+
+			std::cout << ": " << std::dec << pair.second << std::endl;
 		}
-		
-		std::cout << ": " << std::dec << pair.second << std::endl;
 	}
 
 

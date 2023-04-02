@@ -64,6 +64,11 @@ void Gui::DebugWindow(LocationHistory* lh,  MainViewport* vp)	{
 
 	static int textureToView = 0;
 	ImGui::InputInt("Texture", &textureToView);
+	GLint maxTextureUnits;
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
+
+	if (textureToView < 0) { textureToView = maxTextureUnits - 1; }
+
 
 	int w, h;
 	glBindTexture(GL_TEXTURE_2D, (GLuint)textureToView);
@@ -121,13 +126,13 @@ void Gui::ToolbarWindow(LocationHistory* lh)
 		MouseActions::mouseMode = MouseMode::RegionSelect;
 	}
 
-	ToolbarButton(guiAtlas, Icon::open);
-	ToolbarButton(guiAtlas, Icon::save);
-	ToolbarButton(guiAtlas, Icon::close);
-	if (ToolbarButton(guiAtlas, Icon::heatmap)) {
+	ToolbarButton(Icon::open);
+	ToolbarButton(Icon::save);
+	ToolbarButton(Icon::close);
+	if (ToolbarButton(Icon::heatmap)) {
 		globalOptions.ShowHeatmap();
 	}
-	if (ToolbarButton(guiAtlas, Icon::points)) {
+	if (ToolbarButton(Icon::points)) {
 		globalOptions.ShowPoints();
 	}
 
@@ -262,10 +267,10 @@ void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
 	return;
 }
 
-bool Gui::ToolbarButton(GuiAtlas atlas, enum class Icon icon) {
+bool Gui::ToolbarButton(enum class Icon icon) {
 	
-	const AtlasEntry& entry = atlas.GetEntry(icon);
-	bool b = ImGui::ImageButton(entry.GetName().c_str(), (void*)atlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
+	const AtlasEntry& entry = guiAtlas.GetEntry(icon);
+	bool b = ImGui::ImageButton(entry.GetName().c_str(), (void*)guiAtlas.GetTextureId(), entry.GetSize(), entry.GetUV0(), entry.GetUV1());
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 	{
 		ImGui::SetTooltip(entry.GetName().c_str());
@@ -396,6 +401,12 @@ void Gui::HeatmapOptions()
 	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
 	ImGui::Combo("Palette", &globalOptions.palette, palettenames, IM_ARRAYSIZE(palettenames));
 
+
+	//const AtlasEntry& entry = guiAtlas.GetEntry(Icon::spectrum);
+	RectDimension displaySize(256, 32);
+	UVpair spectrumUV = guiAtlas.GetSpectrumUV(globalOptions.palette);
+	
+	ImGui::Image((void*)guiAtlas.GetTextureId(), displaySize, spectrumUV.uv0, spectrumUV.uv1);
 
 	if (globalOptions.gaussianblur != oldBlur) {
 		oldBlur = globalOptions.gaussianblur;
