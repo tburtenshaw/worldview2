@@ -18,6 +18,10 @@ uniform vec2 atlasadd[8];
 uniform float maxheatmapvalue;
 uniform int palette;
 
+uniform vec4 palettearray[16];
+uniform int palettesize;
+
+
 out vec4 frag_colour;
 
 vec3 inferno(float t) {
@@ -63,12 +67,25 @@ vec3 turbo(float t) {
 
 }
 
+vec4 EvenSpacedLinearPoints(float t)	{
+	int n=int(t*float(palettesize-1));
+    float samplePlace=fract(t*float(palettesize-1));
+   
+    return mix(palettearray[n],palettearray[n+1],samplePlace);
+}
+
 vec4 FloatToColour(float vraw, float mraw)	{
 	
 	if (vraw>0.0)	{
 		vec4 c;
 		float r=log(vraw+1.0)/log(mraw+1.0); //value/max
+		
+		c= EvenSpacedLinearPoints(r);
+
 		float a=smoothstep(0.0,0.05,r);
+
+		return c*vec4(1.0,1.0,1.0,a);
+
 		if (palette==1)	{
 			c=vec4(inferno(r),a);
 		}

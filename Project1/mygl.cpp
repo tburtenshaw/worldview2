@@ -5,6 +5,7 @@
 #include "regions.h"
 #include "palettes.h"
 #include "atlas.h"
+#include "spectrum.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -397,7 +398,10 @@ void BackgroundLayer::SetupShaders()
 	shader.LoadUniformLocation(&uniformAtlasNSWE, "atlasnswe");
 	shader.LoadUniformLocation(&uniformAtlasMult, "atlasmult");
 	shader.LoadUniformLocation(&uniformAtlasAdd, "atlasadd");
-
+	
+	//for the palette
+	shader.LoadUniformLocation(&uniformPaletteArray, "palettearray");
+	shader.LoadUniformLocation(&uniformPaletteSize, "palettesize");
 
 }
 
@@ -432,12 +436,29 @@ void BackgroundLayer::Draw(MainViewport* vp)
 	shader.SetUniform(uniformResolution, vp->windowDimensions.width, vp->windowDimensions.height);
 	shader.SetUniform(uniformDegreeSpan, vp->viewNSWE.width(), vp->viewNSWE.height());
 
-	DisplayIfGLError("before new uniforms", false);
+	
 	shader.SetUniform(uniformAtlasCount, numberOfAtlasDraws);
 
 	glUniform2fv(uniformAtlasMult, numberOfAtlasDraws, (float*)highresMult);
 	glUniform2fv(uniformAtlasAdd, numberOfAtlasDraws, (float*)highresAdd);
 	glUniform4fv(uniformAtlasNSWE, numberOfAtlasDraws, (float*)highresNSWE);
+	
+	DisplayIfGLError("before new uniforms", false);
+	int palSize = Spectrum_Handler::GetSpectrumSize(globalOptions.heatmapPaletteIndex);
+	glUniform1i(uniformPaletteSize, palSize);
+	
+	vec4f colours[16] = { 0.f };
+	for (int i = 0; i < palSize; i++)	{
+		RGBA col = Spectrum_Handler::GetPointFromSpectrum(globalOptions.heatmapPaletteIndex, (float)i / (float)(palSize-1));
+		colours[i].x = col.r/255.f;
+		colours[i].y = col.g / 255.f;
+		colours[i].z = col.b / 255.f;
+		colours[i].w = col.a / 255.f;
+
+		//printf("%i %i %i %i",colours[i].x,)
+	}
+	glUniform4fv(uniformPaletteArray, palSize, (float*)colours);
+
 	DisplayIfGLError("after new uniforms", false);
 
 

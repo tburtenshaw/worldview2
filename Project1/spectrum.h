@@ -27,6 +27,7 @@ public:
 
 	RGBA GetColourAtDistance(float dist) const;
 	std::string GetSpectrumName() const;
+	int GetSpectrumSize() const;
 
 
 	static Spectrum CreateOptimalEvenSpacedSpectrumFromGradient(std::string name, const std::vector<RGBA>& gradient,int maxPoints = 16, float relTarget = 0.1f, float absTarget = 0.002);
@@ -70,5 +71,6 @@ public:
 	static RGBA GetPointFromSpectrum(int n, float dist);
 	static size_t GetNumberOfSpectrums();
 	static std::string GetSpectrumName(int n);
+	static int GetSpectrumSize(int n);
 	static std::vector<std::string> ListSpectrums();
 };

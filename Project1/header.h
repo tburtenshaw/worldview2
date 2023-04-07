@@ -100,7 +100,7 @@ public:
 		: r(_r), g(_g), b(_b), a(_a) {}
 
 	//ints
-	RGBA(int _r, int _g, int _b, int _a) :
+	RGBA(int _r, int _g, int _b, int _a =255) :
 		r(static_cast<unsigned char>(_r)),
 		g(static_cast<unsigned char>(_g)),
 		b(static_cast<unsigned char>(_b)),

@@ -45,7 +45,6 @@ private:
 	void LoadBackgroundImageToTexture();
 public:
 	unsigned int worldTexture;	//the background NASA map
-	//unsigned int highresTexture; //used for the higher res insert
 	unsigned int heatmapTexture;
 
 	unsigned int worldTextureLocation;	//the location of this uniform
@@ -67,13 +66,21 @@ public:
 	unsigned int uniformAtlasMult;
 	unsigned int uniformAtlasAdd;
 
+	unsigned int uniformPaletteArray;
+	unsigned int uniformPaletteSize;
+
 	void Setup();
 	void SetupShaders();
 	void SetupTextures();
 	void Draw(MainViewport *vp);
 
 	BackgroundLayer()
-		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0) {}
+		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0),
+		highres(), atlas(),
+		uniformNswe(0), uniformDegreeSpan(0), uniformResolution(0), uniformMaxHeatmapValue(0), uniformPaletteNumber(0),
+		uniformAtlasCount(0), uniformAtlasNSWE(0), uniformAtlasMult(0), uniformAtlasAdd(0),
+		uniformPaletteArray(0), uniformPaletteSize(0) {}
+		
 
 };
 

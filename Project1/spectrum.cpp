@@ -27,6 +27,12 @@ std::string Spectrum_Handler::GetSpectrumName(int n)
     return spectrums[n].GetSpectrumName();
 }
 
+int Spectrum_Handler::GetSpectrumSize(int n)
+{
+    if (n > spectrums.size()) return 0;
+    return spectrums[n].GetSpectrumSize();
+}
+
 std::vector<std::string> Spectrum_Handler::ListSpectrums()
 {
     std::vector<std::string> spectrumNames;
@@ -83,6 +89,11 @@ RGBA Spectrum::GetColourAtDistance(float dist) const
 std::string Spectrum::GetSpectrumName() const
 {
     return name;
+}
+
+int Spectrum::GetSpectrumSize() const
+{
+    return colourPoints.size();
 }
 
 void Spectrum::FillColourPointsFromGradient(const std::vector<RGBA>& gradient, int maxPoints)
