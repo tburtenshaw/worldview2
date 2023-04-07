@@ -25,7 +25,7 @@ GlobalOptions::GlobalOptions()
 	colourby = 1;
 
 	minimumaccuracy = 24;
-	palette = 1;
+	heatmapPaletteIndex = 1;
 	gaussianblur = 0.0f;
 	heatmapmaxvalue = 500.f;
 

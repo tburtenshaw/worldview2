@@ -41,7 +41,7 @@ public:
 	float minutestravelbetweenhighlights;
 
 	//heatmap
-	int palette; //viridis = 1, inferno = 2
+	int heatmapPaletteIndex; //viridis = 1, inferno = 2
 	int minimumaccuracy;
 	float gaussianblur;
 	float heatmapmaxvalue;

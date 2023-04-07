@@ -446,7 +446,7 @@ void BackgroundLayer::Draw(MainViewport* vp)
 
 
 	shader.SetUniform(uniformMaxHeatmapValue, globalOptions.heatmapmaxvalue);
-	shader.SetUniform(uniformPaletteNumber, globalOptions.palette);
+	shader.SetUniform(uniformPaletteNumber, globalOptions.heatmapPaletteIndex);
 
 	//std::cout << "wt:" << worldTexture << ", hrt:" << highresTexture << ", atlastex:" << atlas.getTexture() << ", hmT " << heatmapTexture << "\n";
 
@@ -828,7 +828,7 @@ bool HeatmapLayer::NeedsRedraw(const NSWE& currentNSWE, const RectDimension& win
 		(optionsWhenDrawn.latestTimeToShow != globalOptions.latestTimeToShow) ||
 		(optionsWhenDrawn.gaussianblur != globalOptions.gaussianblur) ||
 		(optionsWhenDrawn.minimumaccuracy != globalOptions.minimumaccuracy)||
-		(optionsWhenDrawn.palette != globalOptions.palette) ||
+		(optionsWhenDrawn.heatmapPaletteIndex != globalOptions.heatmapPaletteIndex) ||
 		(optionsWhenDrawn.debug != globalOptions.debug)
 		)
 		return true;

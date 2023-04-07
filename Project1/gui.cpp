@@ -20,6 +20,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
 #include "guiatlas.h"
+#include "spectrum.h"
+#include <iostream>
 
 
 // Defined in winconsole.cpp
@@ -389,8 +391,6 @@ void Gui::PointsOptions(LocationHistory* lh)
 
 void Gui::HeatmapOptions()
 {
-	static float oldBlur = 0;
-	static int oldMinimumaccuracy = 0;
 
 	//ImGui::Checkbox("Show heatmap", &globalOptions.showHeatmap);
 	ImGui::SliderFloat("Gaussian blur", &globalOptions.gaussianblur, 0.0f, 25.0f, "%.1f");
@@ -398,24 +398,37 @@ void Gui::HeatmapOptions()
 	ImGui::SliderInt("Minimum accuracy", &globalOptions.minimumaccuracy, 0, 200, "%d");
 	ImGui::SliderFloat("Debug", &globalOptions.debug, 0.0f, 1.0f, "%.1f");
 
-	const char* palettenames[] = { "Viridis", "Inferno", "Turbo" };
-	ImGui::Combo("Palette", &globalOptions.palette, palettenames, IM_ARRAYSIZE(palettenames));
-
+	//const char* palettenames[] = { "Viridis", "Inferno", "Turbo","Test"};
+	std::vector<std::string> spectrumNames = Spectrum_Handler::ListSpectrums();
+	
+	ImGui::Combo("Palette", &globalOptions.heatmapPaletteIndex,
+		[](void* data, int idx, const char** out_text) {
+			auto& names = *static_cast<std::vector<std::string>*>(data);
+	*out_text = names[idx].c_str();
+	return true;
+		}, &spectrumNames, static_cast<int>(spectrumNames.size()));
+	
+	
 
 	//const AtlasEntry& entry = guiAtlas.GetEntry(Icon::spectrum);
 	RectDimension displaySize(256, 32);
-	UVpair spectrumUV = guiAtlas.GetSpectrumUV(globalOptions.palette);
+	UVpair spectrumUV = guiAtlas.GetSpectrumUV(globalOptions.heatmapPaletteIndex);
 	
+	if (ImGui::ArrowButton("##rotpalleft", ImGuiDir_Left)) {
+		globalOptions.heatmapPaletteIndex--;
+		if (globalOptions.heatmapPaletteIndex < 0) { globalOptions.heatmapPaletteIndex = Spectrum_Handler::GetNumberOfSpectrums()-1; }
+	}
+	ImGui::SameLine();
+	//ImGui::Text("%s", Spectrum_Handler::GetSpectrumName(globalOptions.heatmapPaletteIndex));
+	//ImGui::SameLine();
 	ImGui::Image((void*)guiAtlas.GetTextureId(), displaySize, spectrumUV.uv0, spectrumUV.uv1);
+	ImGui::SameLine();
+	if (ImGui::ArrowButton("##rotpalright", ImGuiDir_Right)) {
+		globalOptions.heatmapPaletteIndex++;
+		if (globalOptions.heatmapPaletteIndex >= Spectrum_Handler::GetNumberOfSpectrums()) { globalOptions.heatmapPaletteIndex = 0; }
+	}
 
-	if (globalOptions.gaussianblur != oldBlur) {
-		oldBlur = globalOptions.gaussianblur;
-		//lh->heatmap->MakeDirty();
-	}
-	if (globalOptions.minimumaccuracy != oldMinimumaccuracy) {
-		oldMinimumaccuracy = globalOptions.minimumaccuracy;
-		//lh->heatmap->MakeDirty();
-	}
+
 }
 
 void Gui::DateSelect(LocationHistory* lh)

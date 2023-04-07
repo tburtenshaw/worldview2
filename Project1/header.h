@@ -90,6 +90,36 @@ public:
 	unsigned char g;
 	unsigned char b;
 	unsigned char a;
+	
+	//RGBA(float _r, float _g, float _b, float _a);
+	//RGBA(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a);
+	RGBA() : r(0), g(0), b(0), a(255) {}
+
+	// constructor that accepts unsigned char values
+	RGBA(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a = 255)
+		: r(_r), g(_g), b(_b), a(_a) {}
+
+	//ints
+	RGBA(int _r, int _g, int _b, int _a) :
+		r(static_cast<unsigned char>(_r)),
+		g(static_cast<unsigned char>(_g)),
+		b(static_cast<unsigned char>(_b)),
+		a(static_cast<unsigned char>(_a)) {}
+
+	// constructor that accepts float values
+	RGBA(float _r, float _g, float _b, float _a = 1.0f)
+		: r(static_cast<unsigned char>(_r * 255.0f)),
+		g(static_cast<unsigned char>(_g * 255.0f)),
+		b(static_cast<unsigned char>(_b * 255.0f)),
+		a(static_cast<unsigned char>(_a * 255.0f)) {}
+
+	// doubles
+	RGBA(double _r, double _g, double _b, double _a = 1.0)
+		: r(static_cast<unsigned char>(_r * 255.0)),
+		g(static_cast<unsigned char>(_g * 255.0)),
+		b(static_cast<unsigned char>(_b * 255.0)),
+		a(static_cast<unsigned char>(_a * 255.0)) {}
+
 
 	void operator=(const RGBA other) {
 		r = other.r;
@@ -107,6 +137,23 @@ public:
 
 	ImVec4 AsImVec4() const {
 		return { (float)r / 255.0f, (float)g / 255.0f ,(float)b / 255.0f ,(float)a / 255.0f };
+	}
+
+	static RGBA Lerp(const RGBA& c1, const RGBA& c2, float t) {
+		t = std::clamp(t, 0.0f, 1.0f);
+		return {
+			static_cast<unsigned char>(c1.r + t * (c2.r - c1.r)),
+			static_cast<unsigned char>(c1.g + t * (c2.g - c1.g)),
+			static_cast<unsigned char>(c1.b + t * (c2.b - c1.b)),
+			static_cast<unsigned char>(c1.a + t * (c2.a - c1.a))
+		};
+	}
+
+	static float EuclideanRGBADistanceSquared(const RGBA& c1, const RGBA& c2) {
+		return (static_cast<float>(c1.r) - static_cast<float>(c2.r)) / 255.0f * (static_cast<float>(c1.r) - static_cast<float>(c2.r)) / 255.0f
+			+ (static_cast<float>(c1.g) - static_cast<float>(c2.g)) / 255.0f * (static_cast<float>(c1.g) - static_cast<float>(c2.g)) / 255.0f
+			+ (static_cast<float>(c1.b) - static_cast<float>(c2.b)) / 255.0f * (static_cast<float>(c1.b) - static_cast<float>(c2.b)) / 255.0f
+			+ (static_cast<float>(c1.a) - static_cast<float>(c2.a)) / 255.0f * (static_cast<float>(c1.a) - static_cast<float>(c2.a)) / 255.0f;
 	}
 
 };
