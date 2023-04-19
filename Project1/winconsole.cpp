@@ -119,7 +119,7 @@ int LocationHistory::OpenAndReadLocationFile()
 
 	//generate local timestamps
 	for (auto& loc : locations) {
-		loc.correctedTimestamp = MyTimeZone::FixToLocalTime(loc.timestamp);
+		loc.correctedTimestamp = MyTimeZone::AsLocalTime(loc.timestamp);
 	}
 
 	//copy the array to a more compact one for sending to GPU

@@ -325,7 +325,7 @@ void LocationHistory::GenerateStatsOnLoad()
 	}
 	for (const auto& pair : freqMac) {
 
-		if (pair.second > 20) {
+		if (pair.second > 2000) {
 			for (int i = 0; i < 6; i++) {
 				std::cout << std::setfill('0') << std::setw(2) << std::hex << ((pair.first >> (i * 8)) & 0xff);
 				if (i < 5) {

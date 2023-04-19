@@ -66,22 +66,6 @@ RGBA Spectrum::GetColourAtDistance(float dist) const
     //lerp between the two points
     float p = (dist - firstCP.distance) / (secondCP.distance - firstCP.distance);
 
-    /*
-
-    RGBA returnColour{};
-
-    returnColour.r = static_cast<unsigned char>((1.0f - p) * static_cast<float>(secondCP.colour.r) +
-        p * static_cast<float>(firstCP.colour.r));
-    returnColour.g = static_cast<unsigned char>((1.0f - p) * static_cast<float>(secondCP.colour.g) +
-        p * static_cast<float>(firstCP.colour.g));
-    returnColour.b = static_cast<unsigned char>((1.0f - p) * static_cast<float>(secondCP.colour.b) +
-        p * static_cast<float>(firstCP.colour.b));
-    returnColour.a = static_cast<unsigned char>((1.0f - p) * static_cast<float>(secondCP.colour.a) +
-        p * static_cast<float>(firstCP.colour.a));
-
-
-    return returnColour;
-    */
     return RGBA::Lerp(firstCP.colour, secondCP.colour, p);
 
 }

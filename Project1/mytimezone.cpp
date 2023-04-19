@@ -2,7 +2,8 @@
 #include <ctime>
 #include <string>
 
-unsigned long MyTimeZone::FixToLocalTime(unsigned long unixtime)
+
+unsigned long MyTimeZone::AsLocalTime(unsigned long unixtime)
 {
 	return unixtime+tz_offset_second(unixtime);
 }
@@ -104,6 +105,19 @@ unsigned long MyTimeZone::GetYearFromTimestamp(unsigned long unixtime)
     
     return yearcalc;
 }
+
+int MyTimeZone::GetDayOfWeek(unsigned long unixtime)
+{
+    return ((unixtime / secondsperday) + 4) % 7;
+}
+
+int MyTimeZone::GetDaySince2010(unsigned long unixtime)
+{
+     unsigned long u = (unixtime - 1262304000) / secondsperday;
+
+    return u;
+}
+
 
 std::string MyTimeZone::DisplayBestTimeUnits(unsigned long seconds)
 {

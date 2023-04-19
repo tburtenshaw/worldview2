@@ -161,8 +161,8 @@ void Gui::InfoWindow(LocationHistory* lh, MainViewport* vp)
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), vp->viewNSWE.north, vp->viewNSWE.south, vp->viewNSWE.west, vp->viewNSWE.east);
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME |globalOptions.dateFormat.GetDateCustomFormat()).c_str());
-	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::FixToLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | globalOptions.dateFormat.GetDateCustomFormat()).c_str());
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME |globalOptions.dateFormat.GetDateCustomFormat()).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | globalOptions.dateFormat.GetDateCustomFormat()).c_str());
 
 	//Gui::ShowRegionInfo(vp->regions[0], globalOptions);
 
@@ -243,11 +243,8 @@ void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
 	}
 
 	ImGui::ShowDemoWindow();
-	//ImGui::ShowStyleEditor();
+
 	Gui::SettingsWindow();
-
-
-
 
 
 	ImGui::Begin("Time selection");
@@ -504,8 +501,11 @@ void Gui::DateSelect(LocationHistory* lh)
 
 	globalOptions.earliestTimeToShow = mktime(&correctedTime);
 
-	ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
-	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &globalOptions.earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
+	//ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
+
+	std::string earliestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.earliestTimeToShow), globalOptions.dateFormat.GetDateCustomFormat()).c_str();
+
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &globalOptions.earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, earliestTimeString.c_str());
 
 	t = globalOptions.latestTimeToShow;
 	gmtime_s(&correctedTime, &t);
@@ -513,8 +513,10 @@ void Gui::DateSelect(LocationHistory* lh)
 	latestMonth = correctedTime.tm_mon + 1;
 	latestYear = correctedTime.tm_year + 1900;
 
-	ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
-	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &globalOptions.latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, "%u");
+	std::string latestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.latestTimeToShow),  globalOptions.dateFormat.GetDateCustomFormat()).c_str();
+
+	//ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &globalOptions.latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, latestTimeString.c_str());
 
 }
 

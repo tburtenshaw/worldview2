@@ -10,16 +10,13 @@ class LocationHistory;
 class Region {
 private:
 	void AddHoursOfDay(unsigned long startt, unsigned long endt);
-	
-	int GetDayOfWeek(unsigned long unixtime);
-	int GetDaySince2010(unsigned long unixtime);
 	void AddDaysOfWeek(unsigned long startt, unsigned long endt);
 
 	unsigned long totalsecondsinregion;
 	void CalculateStats(unsigned long startofstay, unsigned long endofstay);
 	static int numberOfNextRegion;
 public:
-	Region() :Region(-10, 10, -10, 10) {};	//I think this is called delegating
+	Region() :Region(-10, 10, -10, 10) {};
 	Region(float n, float s, float w, float e);
 	~Region();
 

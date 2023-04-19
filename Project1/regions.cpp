@@ -6,7 +6,6 @@
 #include "regions.h"
 #include "mytimezone.h"
 
-const int secondsperday = 60 * 60 * 24;
 int Region::numberOfNextRegion = 0;
 
 
@@ -104,7 +103,7 @@ void Region::Populate(LocationHistory* lh)
 				
 				//printf("%i-%i=%i\n", endofstay, startofstay, endofstay - startofstay);
 				if (endofstay > startofstay) {
-					CalculateStats(FixToLocalTime(startofstay), FixToLocalTime(endofstay));
+					CalculateStats(AsLocalTime(startofstay), AsLocalTime(endofstay));
 
 				}
 			}
@@ -112,7 +111,7 @@ void Region::Populate(LocationHistory* lh)
 	}
 	if (instay == true) {//if we're still in, we'll end at the last point
 		endofstay = lh->locations.back().timestamp;
-		CalculateStats(FixToLocalTime(startofstay), FixToLocalTime(endofstay));
+		CalculateStats(AsLocalTime(startofstay), AsLocalTime(endofstay));
 		//printf("out %i %i %i\n",startofstay,endofstay);
 	}
 
@@ -154,7 +153,7 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 		if (daynumbersince2010[i] > minimumsecondstobeincludedinday) {	//at least fifteen minutes
 			numberofdays++;
 			if (inrun == 0) {
-				list.push_back(MyTimeZone::FormatUnixTime(i * secondsperday + 1262304000,MyTimeZone::FormatFlags::DEFAULT));
+				list.push_back(MyTimeZone::FormatUnixTime(i * MyTimeZone::secondsperday + 1262304000,MyTimeZone::FormatFlags::DEFAULT));
 				inrun = i;
 			}
 		}
@@ -165,7 +164,7 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 					std::string last;
 					last = list.back();
 
-					list.back() = last + " to " + MyTimeZone::FormatUnixTime((i - 1) * secondsperday + 1262304000, MyTimeZone::FormatFlags::DEFAULT);
+					list.back() = last + " to " + MyTimeZone::FormatUnixTime((i - 1) * MyTimeZone::secondsperday + 1262304000, MyTimeZone::FormatFlags::DEFAULT);
 					//list.push_back(" to " + MyTimeZone::FormatUnixTime((i - 1) * secondsperday + 1262304000));
 				}
 				inrun = 0;
@@ -174,7 +173,7 @@ void Region::FillVectorWithDates(std::vector<std::string>& list)
 
 	}
 	if ((inrun < latestday) && (inrun > 0)) {
-		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday)*secondsperday + 1262304000, MyTimeZone::FormatFlags::DEFAULT));
+		list.push_back(" to " + MyTimeZone::FormatUnixTime((latestday)*MyTimeZone::secondsperday + 1262304000, MyTimeZone::FormatFlags::DEFAULT));
 	}
 }
 
@@ -214,21 +213,7 @@ void Region::AddHoursOfDay(unsigned long startt, unsigned long endt) //this need
 	return;
 }
 
-int Region::GetDayOfWeek(unsigned long unixtime)
-{
-	return ((unixtime / secondsperday) + 4) % 7;
-}
 
-int Region::GetDaySince2010(unsigned long unixtime)
-{
-	unsigned long u;
-	u = (unixtime - 1262304000) / secondsperday;
-	if (u >= MAX_DAY_NUMBER) {
-		u = 0;
-	}
-
-	return u;
-}
 
 void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 {
@@ -240,14 +225,14 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 
 	if (endt <= startt)	return;	//don't count negatives or zeros
 
-	currentdayofweek = GetDayOfWeek(startt);
+	currentdayofweek = MyTimeZone::GetDayOfWeek(startt);
 
 	//first, if both the end and start time are the same day
-	if (endt - startt <= secondsperday) {
-		enddayofweek = GetDayOfWeek(endt);
+	if (endt - startt <= MyTimeZone::secondsperday) {
+		enddayofweek = MyTimeZone::GetDayOfWeek(endt);
 		if (enddayofweek == currentdayofweek) {
 			dayofweeks[currentdayofweek] += endt - startt;	//all the seconds go there
-			daynumbersince2010[GetDaySince2010(endt)] += endt - startt;
+			daynumbersince2010[MyTimeZone::GetDaySince2010(endt)] += endt - startt;
 			return;
 		}
 	}
@@ -256,31 +241,31 @@ void Region::AddDaysOfWeek(unsigned long startt, unsigned long endt)
 	unsigned long notintheweek;
 	unsigned long lastwholeday;
 
-	firstwholeday = (startt / secondsperday) * secondsperday;
-	notintheweek = (startt % secondsperday);
-	if (notintheweek > 0) { firstwholeday += secondsperday; }
+	firstwholeday = (startt / MyTimeZone::secondsperday) * MyTimeZone::secondsperday;
+	notintheweek = (startt % MyTimeZone::secondsperday);
+	if (notintheweek > 0) { firstwholeday += MyTimeZone::secondsperday; }
 
-	firstpartofweek = secondsperday - (notintheweek);
+	firstpartofweek = MyTimeZone::secondsperday - (notintheweek);
 
-	if (firstpartofweek == secondsperday) {
+	if (firstpartofweek == MyTimeZone::secondsperday) {
 		firstpartofweek = 0;
 	}
 
 	dayofweeks[currentdayofweek] += firstpartofweek;
-	daynumbersince2010[GetDaySince2010(startt)] += firstpartofweek;
+	daynumbersince2010[MyTimeZone::GetDaySince2010(startt)] += firstpartofweek;
 
 	//now we'll get the last part of the week
-	lastwholeday = (endt / secondsperday) * secondsperday;
-	currentdayofweek = GetDayOfWeek(lastwholeday) ;
+	lastwholeday = (endt / MyTimeZone::secondsperday) * MyTimeZone::secondsperday;
+	currentdayofweek = MyTimeZone::GetDayOfWeek(lastwholeday) ;
 	dayofweeks[currentdayofweek] += endt - lastwholeday;
-	daynumbersince2010[GetDaySince2010(lastwholeday)] += endt - lastwholeday;
+	daynumbersince2010[MyTimeZone::GetDaySince2010(lastwholeday)] += endt - lastwholeday;
 
 
 	//now the middle part
-	for (t = firstwholeday; t < lastwholeday; t += secondsperday) {
-		currentdayofweek = GetDayOfWeek(t);
-		dayofweeks[currentdayofweek] += secondsperday;
-		daynumbersince2010[GetDaySince2010(t)] += secondsperday;
+	for (t = firstwholeday; t < lastwholeday; t += MyTimeZone::secondsperday) {
+		currentdayofweek = MyTimeZone::GetDayOfWeek(t);
+		dayofweeks[currentdayofweek] += MyTimeZone::secondsperday;
+		daynumbersince2010[MyTimeZone::GetDaySince2010(t)] += MyTimeZone::secondsperday;
 	}
 	return;
 }

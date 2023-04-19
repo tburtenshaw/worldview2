@@ -6,6 +6,8 @@
 
 namespace MyTimeZone {
 
+	constexpr int secondsperday = 60 * 60 * 24;
+
 	namespace FormatFlags {
 		const int	DEFAULT = 0;
 		const int	SHOW_TIME = (1 << 0);
@@ -35,12 +37,17 @@ namespace MyTimeZone {
 
 	};
 
-	unsigned long FixToLocalTime(unsigned long unixtime);
+	unsigned long AsLocalTime(unsigned long unixtime);
 	long tz_offset_second(time_t t);
 	unsigned long AdjustBasedOnLongitude(unsigned long unixtime, float longitude);
 	std::string FormatUnixTime(unsigned long unixtime, int flags);
 
 	unsigned long GetYearFromTimestamp(unsigned long unixtime);
+
+	int GetDayOfWeek(unsigned long unixtime);
+	int GetDaySince2010(unsigned long unixtime);
+
+
 
 	std::string DisplayBestTimeUnits(unsigned long seconds);
 	
