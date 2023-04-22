@@ -335,6 +335,7 @@ void PathLayer::Draw(LODInfo& lodInfo, int lod, float width, float height, NSWE*
 
 }
 
+/*
 void BackgroundLayer::LoadBackgroundImageToTexture()
 {
 	int width, height, nrChannels;
@@ -357,6 +358,43 @@ void BackgroundLayer::LoadBackgroundImageToTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	stbi_image_free(data);
 }
+*/
+
+void BackgroundLayer::LoadBackgroundImageToTexture(const char* filename) {
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load(filename, &width, &height, &nrChannels, 0);
+	if (data) {
+		// Delete the existing texture, if any
+		if (glIsTexture(worldTexture)) {
+			glDeleteTextures(1, &worldTexture);
+		}
+		glGenTextures(1, &worldTexture);
+		glBindTexture(GL_TEXTURE_2D, worldTexture);
+		if (nrChannels == 3) {
+			// Image does not have alpha channel
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		}
+		else if (nrChannels == 4) {
+			// Image has alpha channel
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+		else {
+			// Handle unsupported image format
+			std::cout << "Unsupported image format: " << filename << std::endl;
+			stbi_image_free(data);
+			return;
+		}
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		stbi_image_free(data);
+	}
+	else {
+		// Handle error loading image
+		std::cout << "Failed to load image: " << filename << std::endl;
+	}
+}
+
 
 void BackgroundLayer::Setup()
 {
@@ -407,7 +445,7 @@ void BackgroundLayer::SetupShaders()
 
 void BackgroundLayer::SetupTextures()
 {
-	LoadBackgroundImageToTexture();
+	LoadBackgroundImageToTexture("d:\world.200409.3x4096x2048.png");
 }
 
 void BackgroundLayer::Draw(MainViewport* vp)

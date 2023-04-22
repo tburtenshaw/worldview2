@@ -42,7 +42,7 @@ public:
 
 class BackgroundLayer : public GLRenderLayer {
 private:
-	void LoadBackgroundImageToTexture();
+	
 public:
 	unsigned int worldTexture;	//the background NASA map
 	unsigned int heatmapTexture;
@@ -73,6 +73,7 @@ public:
 	void SetupShaders();
 	void SetupTextures();
 	void Draw(MainViewport *vp);
+	void LoadBackgroundImageToTexture(const char* filename);
 
 	BackgroundLayer()
 		:worldTexture(0), heatmapTexture(0), worldTextureLocation(0), highresTextureLocation(0), heatmapTextureLocation(0),

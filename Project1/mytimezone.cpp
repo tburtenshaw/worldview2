@@ -1,6 +1,7 @@
 #include "mytimezone.h"
 #include <ctime>
 #include <string>
+#include <chrono>
 
 
 unsigned long MyTimeZone::AsLocalTime(unsigned long unixtime)
@@ -116,6 +117,31 @@ int MyTimeZone::GetDaySince2010(unsigned long unixtime)
      unsigned long u = (unixtime - 1262304000) / secondsperday;
 
     return u;
+}
+
+time_t MyTimeZone::DateWithThisTime(time_t date, int h, int m, int s)
+{
+    struct std::tm correctedTime;
+
+    localtime_s(&correctedTime, &date);
+    
+    correctedTime.tm_hour = 0;
+    correctedTime.tm_min = 0;
+    correctedTime.tm_sec = 0;
+
+    return mktime(&correctedTime);
+}
+
+time_t MyTimeZone::AdvanceByDays(time_t date, int daysToAdvance)
+{
+ 
+    auto tp = std::chrono::system_clock::from_time_t(date);
+
+    auto days = std::chrono::days(daysToAdvance);
+    tp += days;
+
+    // Convert back to unsigned long
+    return std::chrono::system_clock::to_time_t(tp);
 }
 
 

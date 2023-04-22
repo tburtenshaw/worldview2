@@ -219,6 +219,14 @@ void Gui::SettingsWindow()
 	ImGui::End();
 }
 
+void Gui::ChooseBackgroundWindow()
+{
+	ImGui::Begin("Background image");
+	ImGui::Text("filename");
+	ImGui::Button("...##Change Filename");
+	ImGui::End();
+}
+
 void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
 {
 	Gui::DebugWindow(lh, vp);
@@ -245,6 +253,7 @@ void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
 	ImGui::ShowDemoWindow();
 
 	Gui::SettingsWindow();
+	Gui::ChooseBackgroundWindow();
 
 
 	ImGui::Begin("Time selection");
@@ -430,93 +439,50 @@ void Gui::HeatmapOptions()
 
 void Gui::DateSelect(LocationHistory* lh)
 {
-	time_t t;
-	struct std::tm correctedTime;
 
-	static int earliestDayOfMonth = 0;
-	static int earliestMonth = 0;
-	static int earliestYear = 0;
-
-	static int latestDayOfMonth = 0;
-	static int latestMonth = 0;
-	static int latestYear = 0;
-
-	//convert from the unixtime time_t to a tm struct
-	t = globalOptions.earliestTimeToShow;
-	localtime_s(&correctedTime, &t);
-	earliestDayOfMonth = correctedTime.tm_mday;
-	earliestMonth = correctedTime.tm_mon + 1;
-	earliestYear = correctedTime.tm_year + 1900;
-
-	if (ImGui::DragInt("Day", &earliestDayOfMonth, 0.4f)) {
-		correctedTime.tm_mday = earliestDayOfMonth;
-		globalOptions.earliestTimeToShow = mktime(&correctedTime);
-	}
-
-	if (ImGui::DragInt("Month", &earliestMonth, 0.1f)) {
-		correctedTime.tm_mon = earliestMonth - 1;
-		//correctedTime.tm_mday = earliestDayOfMonth;
-		correctedTime.tm_isdst = -1;
-		globalOptions.earliestTimeToShow = mktime(&correctedTime);
-
-		if (correctedTime.tm_mday != earliestDayOfMonth) {
-			printf("different day ctm:%i em:%i ed:%i ctd:%i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
-
-			//changing the month will often change the day, only allow if mday>28
-			if (correctedTime.tm_mday <= 128) {
-				correctedTime.tm_mon = earliestMonth - 1;
-				correctedTime.tm_mday = earliestDayOfMonth;
-				globalOptions.earliestTimeToShow = mktime(&correctedTime);
-			}
-
-			printf("After: ctm: % i em : % i ed : % i ctd : % i\n", correctedTime.tm_mon + 1, earliestMonth, earliestDayOfMonth, correctedTime.tm_mday);
-		}
-	}
-
-	if (ImGui::DragInt("Year", &earliestYear, 0.05f, MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp), ImGuiSliderFlags_AlwaysClamp)) {
-		correctedTime.tm_year = earliestYear - 1900;
-		globalOptions.earliestTimeToShow = mktime(&correctedTime);
-	}
-
-	if (globalOptions.earliestTimeToShow > lh->stats.latestTimestamp) {
-		globalOptions.earliestTimeToShow = lh->stats.latestTimestamp;
-	}
-
-	if (globalOptions.earliestTimeToShow < lh->stats.earliestTimestamp) {
-		globalOptions.earliestTimeToShow = lh->stats.earliestTimestamp;
-	}
-
-	//ensure the earliest time is always H=0, min=0,sec=0
-	//also update the static date display variables
-	t = globalOptions.earliestTimeToShow;
-	localtime_s(&correctedTime, &t);
-
-	earliestDayOfMonth = correctedTime.tm_mday;
-	earliestMonth = correctedTime.tm_mon + 1;
-	earliestYear = correctedTime.tm_year + 1900;
-
-	correctedTime.tm_hour = 0;
-	correctedTime.tm_min = 0;
-	correctedTime.tm_sec = 0;
-
-	globalOptions.earliestTimeToShow = mktime(&correctedTime);
-
-	//ImGui::Text("%i %i %i", earliestDayOfMonth, earliestMonth, earliestYear);
 
 	std::string earliestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.earliestTimeToShow), globalOptions.dateFormat.GetDateCustomFormat()).c_str();
 
 	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &globalOptions.earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, earliestTimeString.c_str());
 
-	t = globalOptions.latestTimeToShow;
-	gmtime_s(&correctedTime, &t);
-	latestDayOfMonth = correctedTime.tm_mday;
-	latestMonth = correctedTime.tm_mon + 1;
-	latestYear = correctedTime.tm_year + 1900;
-
 	std::string latestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.latestTimeToShow),  globalOptions.dateFormat.GetDateCustomFormat()).c_str();
 
-	//ImGui::Text("%i %i %i", latestDayOfMonth, latestMonth, latestYear);
 	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &globalOptions.latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, latestTimeString.c_str());
+
+	//Advance by a day
+	ImGui::PushButtonRepeat(true);
+	int advance = 1;
+	if (ImGui::GetIO().KeyCtrl) { advance = 7; }
+	if (ImGui::ArrowButton("##minusday", ImGuiDir_Left)) {
+		globalOptions.earliestTimeToShow = MyTimeZone::AdvanceByDays(globalOptions.earliestTimeToShow, -advance);
+	}
+	ImGui::SameLine();
+	if (ImGui::ArrowButton("##plusday", ImGuiDir_Right)) {
+		globalOptions.earliestTimeToShow = MyTimeZone::AdvanceByDays(globalOptions.earliestTimeToShow, advance);
+	}
+	ImGui::PopButtonRepeat();
+
+
+	//ensure the earliest time is always H=0, min=0,sec=0, latest 1 to midnight
+	globalOptions.earliestTimeToShow = MyTimeZone::DateWithThisTime(globalOptions.earliestTimeToShow, 0, 0, 0);
+	globalOptions.latestTimeToShow = MyTimeZone::DateWithThisTime(globalOptions.latestTimeToShow, 23, 59, 59);
+
+
+	//constrain to the possible points, earliest
+	if (globalOptions.earliestTimeToShow > MyTimeZone::AsLocalTime(lh->stats.latestTimestamp)) {
+		globalOptions.earliestTimeToShow = MyTimeZone::AsLocalTime((lh->stats.latestTimestamp));
+	}
+	if (globalOptions.earliestTimeToShow < MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp)) {
+		globalOptions.earliestTimeToShow = MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp);
+	}
+	//then latest
+	if (globalOptions.latestTimeToShow > MyTimeZone::AsLocalTime(lh->stats.latestTimestamp)) {
+		globalOptions.latestTimeToShow = MyTimeZone::AsLocalTime((lh->stats.latestTimestamp));
+	}
+	if (globalOptions.latestTimeToShow < MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp)) {
+		globalOptions.latestTimeToShow = MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp);
+	}
+
 
 }
 

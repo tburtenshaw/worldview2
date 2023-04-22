@@ -47,6 +47,8 @@ namespace MyTimeZone {
 	int GetDayOfWeek(unsigned long unixtime);
 	int GetDaySince2010(unsigned long unixtime);
 
+	time_t DateWithThisTime(time_t date, int h=0, int m=0, int s=0);
+	time_t AdvanceByDays(time_t date, int days = 1);
 
 
 	std::string DisplayBestTimeUnits(unsigned long seconds);
