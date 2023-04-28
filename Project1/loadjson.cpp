@@ -1,15 +1,31 @@
 #include <iostream>
-#include <tchar.h>
+//#include <tchar.h>
 #include <Windows.h>
 #include <chrono>
 
 #include "header.h"
 #include "loadjson.h"
-#include "heatmap.h"
-#include <unordered_map>
+#include <filesystem>
 
+struct json_reader_state {
+	int hierarchydepth;	//counts the level of { }s
+	bool escaped;
+	bool readingvalue; //i.e. we're not reading a name
+	bool readingstring;
+	bool readingnumber;
+	int distancealongbuffer;
+	char buffer[maxJsonString];	//what both numbers and strings are read into
+	int arraydepth;	//counts the [ ]s
 
-int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location>& loc) {
+	char name[maxJsonString];
+	//char value[MAX_JSON_STRING]; //this can just stay as the buffer
+	int locationsdepth;
+
+	Location location;
+
+};
+
+int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, json_reader_state* jsr, std::vector<Location>& loc) {
 
 	for (unsigned long i = 0; i < buffersize; i++) {
 		char c = buffer[i];
@@ -202,7 +218,7 @@ long fast_strtol(char* str)
 	return val;
 }
 
-long fast_strto64(char* str)
+long long fast_strto64(char* str)
 {
 	unsigned long long val = 0;
 
@@ -255,7 +271,7 @@ long timestampToLong(char* str)
 	return unixtimefromyear+ unixtimefromday+ unixtimefrommonth + leapday+ hour*3600+minute*60+second_floored;
 }
 
-int AssignValueToName(JSON_READER_STATE* jsr)
+int AssignValueToName(json_reader_state* jsr)
 {
 //	printf("%s=%s\t", jsr->name, jsr->buffer);
 
@@ -404,9 +420,61 @@ int AssignValueToName(JSON_READER_STATE* jsr)
 }
 
 
-int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
+void FileLoader::SetFullyLoaded(bool tf)
 {
-	JSON_READER_STATE jrs;
+	fullyLoaded = tf;
+}
+
+bool FileLoader::IsFileChosen() const
+{
+	return fileChosen;
+}
+
+bool FileLoader::IsFullyLoaded() const
+{
+	return fullyLoaded;
+}
+
+bool FileLoader::IsLoadingFile() const
+{
+	return loadingFile;
+}
+
+bool FileLoader::IsError() const
+{
+	return errorState;
+}
+
+std::string FileLoader::GetFilename() const
+{
+	int requiredSize = WideCharToMultiByte(CP_UTF8, 0, loadedLocationFilename.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	if (requiredSize == 0) return "";
+
+	std::string result(requiredSize, 0);
+	int actualSize = WideCharToMultiByte(CP_UTF8, 0, loadedLocationFilename.c_str(), -1, &result[0], requiredSize, nullptr, nullptr);
+	if (actualSize == 0) return "";
+
+	return result;
+}
+
+unsigned long FileLoader::GetFileSize() const
+{
+	return filesize;
+}
+
+unsigned long FileLoader::GetTotalBytesRead() const
+{
+	return totalbytesread;
+}
+
+float FileLoader::GetSecondsToLoad() const
+{
+	return secondsToLoad;
+}
+
+bool FileLoader::LoadJsonFile(LocationHistory * lh, void* jsonfile)
+{
+	json_reader_state jrs;
 	memset(&jrs, 0, sizeof(jrs));
 
 	constexpr int readBufferSize = 8192;	//seems most efficient buffer size (diminshing returns increasing this, plus can have on stack this size)
@@ -414,8 +482,8 @@ int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	lh->totalbytesread = 0;
-	lh->locations.reserve(lh->filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
+	totalbytesread = 0;
+	lh->locations.reserve(filesize / 512);	//there will be more locations than this as it seems that each location uses much less than 512 bytes (258-294 in my testing)
 
 
 	unsigned long readbytes = 1;
@@ -423,10 +491,10 @@ int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 		bool rf = ReadFile(jsonfile, buffer, readBufferSize - 1, &readbytes, NULL);
 		if (rf == false) {
 			printf("Failed reading the file.\n");
-			return 1;
+			return false;
 		}
 		int result = ProcessJsonBuffer(buffer, readbytes, &jrs, lh->locations);
-		lh->totalbytesread += readbytes;
+		totalbytesread += readbytes;
 		if (result) {
 			break;
 		}
@@ -436,13 +504,13 @@ int LoadJsonFile(LocationHistory * lh, HANDLE jsonfile)
 		
 	auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
 	std::cout <<"Time to load: " << duration.count() << "ms.\n";
-	lh->secondsToLoad = static_cast<float>(duration.count())/1000.f;
+	secondsToLoad = static_cast<float>(duration.count())/1000.f;
 
 	return 0;
 }
 
 
-int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
+bool FileLoader::LoadWVFormat(LocationHistory* lh, void* WVFfile)
 {
 	DWORD bytesRead;
 	DWORD numberOfLocations;
@@ -451,9 +519,9 @@ int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
 
 	constexpr DWORD locLimit = 0x04000000;	//largest number of locations we'll allow
 
-	LARGE_INTEGER filesize;
-	GetFileSizeEx(WVFfile, &filesize);
-	lh->filesize = (unsigned long)filesize.QuadPart;
+	LARGE_INTEGER largeFileSize;
+	GetFileSizeEx(WVFfile, &largeFileSize);
+	filesize = (unsigned long)largeFileSize.QuadPart;
 
 	bool fileRead = ReadFile(WVFfile, &magic, 4, &bytesRead, NULL);
 	printf("Magic: %i\n", magic);
@@ -461,14 +529,14 @@ int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
 		printf("Couldn't read magic number.\n");
 		return 1;
 	}
-	lh->totalbytesread += bytesRead;
+	totalbytesread += bytesRead;
 
 	fileRead = ReadFile(WVFfile, &numberOfLocations, 4, &bytesRead, NULL);
-	if (!fileRead || (numberOfLocations > locLimit) || (bytesRead != 4) || (numberOfLocations * sizeof(WVFormat) != lh->filesize - 8)) {
+	if (!fileRead || (numberOfLocations > locLimit) || (bytesRead != 4) || (numberOfLocations * sizeof(WVFormat) != filesize - 8)) {
 		printf("Location number likely incorrect.\n");
 		return 1;
 	}
-	lh->totalbytesread += bytesRead;
+	totalbytesread += bytesRead;
 
 	constexpr unsigned int entriesToRead = 1024;
 	WVFormat entry[entriesToRead];
@@ -476,7 +544,7 @@ int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
 
 	lh->locations.reserve(numberOfLocations);
 
-	DWORD bytesStillToRead = lh->filesize - 8;
+	DWORD bytesStillToRead = filesize - 8;
 
 	while (bytesStillToRead) {
 		bool fileRead = ReadFile(WVFfile, entry, sizeof(entry), &bytesRead, NULL);
@@ -489,15 +557,74 @@ int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile)
 				newLocation.longitude = entry[i].lon;
 				newLocation.latitude = entry[i].lat;
 				lh->locations.emplace_back(newLocation);
-				lh->totalbytesread += bytesRead;
+				totalbytesread += bytesRead;
 			}
 		}
 		else
 		{
 			printf("Error reading entries.");
-			return 2;
+			return false;
 		}
 	}
 
-	return 0;
+	return true;
+}
+
+bool FileLoader::OpenFile(LocationHistory &lh, std::wstring filename)
+{
+	HANDLE locationFileHandle;
+
+	if (loadingFile) {	//we don't want to load if we're already loading something
+		return false;
+	}
+	loadedLocationFilename = filename;
+
+	locationFileHandle = CreateFile(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+
+	if (locationFileHandle == INVALID_HANDLE_VALUE) {
+		fileChosen = false;
+		loadingFile = false;
+		fullyLoaded = false;
+		errorState = true;
+		return false;
+	}
+
+	lh.EmptyLocationInfo();	//close any existing file
+	loadingFile = true;
+	fileChosen = true;
+	errorState = false;
+
+	LARGE_INTEGER LIfilesize;
+	GetFileSizeEx(locationFileHandle, &LIfilesize);
+	filesize = LIfilesize.QuadPart;
+	printf("File size: %i\n", filesize);
+
+	std::string extension = std::filesystem::path(filename).extension().string();
+	if (extension == ".json") {
+		LoadJsonFile(&lh, locationFileHandle);
+	}
+	else if (extension == ".wvf") {
+		LoadWVFormat(&lh, locationFileHandle);
+	}
+	CloseHandle(locationFileHandle);
+	
+	fileChosen = true;
+	fullyLoaded = false;
+	loadingFile = false;
+
+	return true;
+}
+
+bool FileLoader::CloseFile()
+{
+	if (loadingFile) return false;	//we can't close while we're loading something (at least not at the moment)
+	
+	fileChosen = false;
+	fullyLoaded = true;	//we're loaded with nothing
+	loadingFile = false;
+
+	filesize = 0;
+	loadedLocationFilename = L"";
+
+	return true;
 }

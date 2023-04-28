@@ -6,12 +6,14 @@
 #include "palettes.h"
 #include "atlas.h"
 #include "spectrum.h"
+#include "filemanager.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <array>
 #include <stb_image.h>
 #include <iostream>
+
 
 
 // Defined in winconsole.cpp
@@ -370,6 +372,17 @@ void BackgroundLayer::LoadBackgroundImageToTexture(const char* filename) {
 		}
 		glGenTextures(1, &worldTexture);
 		glBindTexture(GL_TEXTURE_2D, worldTexture);
+
+		int maxSize;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
+		if (width > maxSize || height > maxSize) {
+			std::cout << "Image dimensions are too large for GPU texture.";
+			std::cout << "Filename:" << filename << ". " << width << "x" << height << " is greater than " << maxSize << "." << std::endl;
+			stbi_image_free(data);
+			return;
+		}
+
+
 		if (nrChannels == 3) {
 			// Image does not have alpha channel
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -445,7 +458,7 @@ void BackgroundLayer::SetupShaders()
 
 void BackgroundLayer::SetupTextures()
 {
-	LoadBackgroundImageToTexture("d:\world.200409.3x4096x2048.png");
+	LoadBackgroundImageToTexture(FileManager::GetBackgroundImageFilename().c_str());
 }
 
 void BackgroundLayer::Draw(MainViewport* vp)
@@ -482,12 +495,12 @@ void BackgroundLayer::Draw(MainViewport* vp)
 	glUniform4fv(uniformAtlasNSWE, numberOfAtlasDraws, (float*)highresNSWE);
 	
 	DisplayIfGLError("before new uniforms", false);
-	int palSize = Spectrum_Handler::GetSpectrumSize(globalOptions.heatmapPaletteIndex);
+	int palSize = SpectrumHandler::GetSpectrumSize(globalOptions.heatmapPaletteIndex);
 	glUniform1i(uniformPaletteSize, palSize);
 	
 	vec4f colours[16] = { 0.f };
 	for (int i = 0; i < palSize; i++)	{
-		RGBA col = Spectrum_Handler::GetPointFromSpectrum(globalOptions.heatmapPaletteIndex, (float)i / (float)(palSize-1));
+		RGBA col = SpectrumHandler::GetPointFromSpectrum(globalOptions.heatmapPaletteIndex, (float)i / (float)(palSize-1));
 		colours[i].x = col.r/255.f;
 		colours[i].y = col.g / 255.f;
 		colours[i].z = col.b / 255.f;
@@ -865,7 +878,11 @@ void HeatmapLayer::GaussianBlur(float blurSigma, float width, float height)
 
 float HeatmapLayer::ReadPixelsAndFindMax(int width, int height)
 {
-	float* data = (float*)malloc(sizeof(float) * width * height);
+	//float* data = (float*)malloc(sizeof(float) * width * height);
+	float* data = new float[width * height];
+
+	printf("%i %i\n", width, height);
+
 	if (!data) return 1.0f;
 
 	glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, data);
@@ -875,7 +892,9 @@ float HeatmapLayer::ReadPixelsAndFindMax(int width, int height)
 	{
 		if (data[i] > maxVal) maxVal = data[i];
 	}
-	free(data);
+	
+	delete[] data;
+	//free(data);
 	return maxVal;
 
 }

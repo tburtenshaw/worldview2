@@ -1,15 +1,13 @@
 #pragma once
 
-//#include "heatmap.h"
 #include "nswe.h"
 #include <string>
 #include <vector>
 #include <imgui.h>
 #include "input.h"
 #include "processlocations.h"
-
-//#define READ_BUFFER_SIZE 1024*256
-//#define MAX_JSON_STRING 1024
+#include "statistics.h"
+#include "loadjson.h"
 
 //forward declarations
 //class NSWE;
@@ -26,6 +24,8 @@ class Region;
 class RGBA;
 class DisplayRegion;
 
+class FileLoader;
+class Statistics;
 
 struct vec2f {
 	float x, y;
@@ -179,7 +179,7 @@ struct Location {	//all the detail we can get. We process this to a leaner versi
 	int frequencyMhz;
 	unsigned long long mac;
 
-	unsigned long correctedTimestamp;
+	unsigned long correctedTimestamp;	//corrected for daily savings/local
 
 	bool operator< (Location const& rhs) {	//compares (i.e. sorts) just by timestamp
 		return timestamp < rhs.timestamp;
@@ -218,22 +218,30 @@ public:
 
 class LocationHistory {
 private:
-
+	bool initialised;
+	FileLoader fileLoader;
+	Statistics stats;
 public:
-	void GenerateStatsOnLoad();
-	void AccuracyHistogram();
-
-	std::wstring filename;
-	unsigned long filesize;
-	float secondsToLoad;
-
 	std::vector<Location> locations;	//this holds the raw data from the json file, double precision
 
 	LODInfo lodInfo;
+	void SetInitialised(bool tf);
+	bool IsInitialised() const;
+	bool IsLoadingFile() const;
+	bool ShouldLoadFile() const;
+	bool LoadedNotInitialised() const;
+	bool IsFullyLoaded() const;
+
+	std::string GetFilename() const;
+	unsigned long GetNumberOfLocations() const;
+	unsigned long GetFileSize() const;
+	unsigned long GetFileSizeMB() const;
+	unsigned long GetTotalBytesRead() const;
+	float GetSecondsToLoad() const;
 
 
-	int OpenAndReadLocationFile();
-	int CloseLocationFile();
+	int OpenAndReadLocationFile(std::wstring filename);
+	int EmptyLocationInfo();
 	void GenerateLocationLODs();
 	void OptimiseForPaths();
 	
@@ -242,36 +250,7 @@ public:
 	~LocationHistory();
 
 	NSWE FindBestView();
-
-//should be in another class re file loading
-	bool isFileChosen;
-	bool isFullyLoaded;
-	bool isLoadingFile;
-	bool isInitialised;
-	unsigned long totalbytesread;
-
-
-	class Statistics {	//contains less necessary data calculated either when loading LH, or later
-	public:
-		unsigned long numberOfLocations;
-		unsigned long earliestTimestamp;
-		unsigned long latestTimestamp;
-		Statistics() :numberOfLocations(0), earliestTimestamp(0), latestTimestamp(0) {}
-
-	private:
-		//histogram of accuracy
-		static constexpr int accuracyBinSize = 5;
-		static constexpr int accuracyBins = 21; //last is 100+
-		int histoAccuracy[accuracyBins] = { 0 };
-
-		static constexpr int velocityBins = 320;
-		int histoVelocity[velocityBins] = {0};
-		int fastestVelocity = 0;
-
-
-		friend class LocationHistory;
-	} stats;
-
+	const Statistics& GetStatistics() const;
 };
 
 
@@ -285,10 +264,13 @@ void size_callback(GLFWwindow* window, int windowNewWidth, int windowNewHeight);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-int StartGLProgram(LocationHistory* lh);
+int StartGLProgram();
 void DisplayIfGLError(const char* message, bool alwaysshow);
 
 
-int SaveWVFormat(LocationHistory* lh, std::wstring);
+void ReloadBackgroundImage();
+int GetBackgroundImageTexture();
+
+int SaveWVFormat(LocationHistory& lh, std::wstring);
 
 

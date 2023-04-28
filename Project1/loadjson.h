@@ -1,29 +1,56 @@
 #pragma once
 #include <vector>
-using namespace std;
+//#include "header.h"
+class LocationHistory;
+
 
 constexpr int maxJsonString = 1024;
 
-typedef struct json_reader_state {
-	int hierarchydepth;	//counts the level of { }s
-	bool escaped;
-	bool readingvalue; //i.e. we're not reading a name
-	bool readingstring;
-	bool readingnumber;
-	int distancealongbuffer;
-	char buffer[maxJsonString];	//what both numbers and strings are read into
-	int arraydepth;	//counts the [ ]s
+struct json_reader_state;	//forward dec - see the cpp file
 
-	char name[maxJsonString];
-	//char value[MAX_JSON_STRING]; //this can just stay as the buffer
-	int locationsdepth;
+int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, json_reader_state* jsr, std::vector<Location> &loc);
+int AssignValueToName(json_reader_state* jsr);
 
-	Location location;
+class FileLoader {
+public:
+	// Constructor
+	FileLoader()
+		: loadedLocationFilename(L""),      // Initialize std::wstring to empty string
+		filesize(0),       
+		secondsToLoad(0.0f), 
+		fileChosen(false), 
+		fullyLoaded(false),
+		loadingFile(false),
+		errorState(false),
+		totalbytesread(0)
+	{	}
 
-} JSON_READER_STATE;
+	void SetFullyLoaded(bool tf);	//should rename and move to LH, as this means it's been sorted, LODs generated etc.
+	bool IsFileChosen() const;
+	bool IsFullyLoaded() const;
+	bool IsLoadingFile() const;
+	bool IsError() const;
 
-int ProcessJsonBuffer(const char* buffer, const unsigned long buffersize, JSON_READER_STATE* jsr, vector<Location> &loc);
-int AssignValueToName(JSON_READER_STATE* jsr);
+	std::string GetFilename() const;
+	unsigned long GetFileSize() const;
+	unsigned long GetTotalBytesRead() const;
+	float GetSecondsToLoad() const;
+	
+	bool LoadJsonFile(LocationHistory* lh, void* jsonfile);
+	bool LoadWVFormat(LocationHistory* lh, void* WVFfile);
+	
+	bool OpenFile(LocationHistory &lh, std::wstring filename);
+	bool CloseFile();
+private:
+	std::wstring loadedLocationFilename;
+	unsigned long filesize;
+	float secondsToLoad;
 
-int LoadJsonFile(LocationHistory* lh, HANDLE jsonfile);
-int LoadWVFormat(LocationHistory* lh, HANDLE WVFfile);
+
+	bool fileChosen;
+	bool fullyLoaded;
+	bool loadingFile;
+	bool errorState;
+
+	unsigned long totalbytesread;
+};

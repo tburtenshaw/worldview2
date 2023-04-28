@@ -1,12 +1,12 @@
 #include "spectrum.h"
 #include <iostream>
 
-void Spectrum_Handler::AddSpectrum(Spectrum s)
+void SpectrumHandler::AddSpectrum(Spectrum s)
 {
     spectrums.push_back(s);
 }
 
-RGBA Spectrum_Handler::GetPointFromSpectrum(int n, float dist)
+RGBA SpectrumHandler::GetPointFromSpectrum(size_t n, float dist)
 {
 	if (n> spectrums.size())
 			return RGBA(0,0,0,0);
@@ -16,24 +16,24 @@ RGBA Spectrum_Handler::GetPointFromSpectrum(int n, float dist)
 
 }
 
-size_t Spectrum_Handler::GetNumberOfSpectrums()
+size_t SpectrumHandler::GetNumberOfSpectrums()
 {
     return spectrums.size();
 }
 
-std::string Spectrum_Handler::GetSpectrumName(int n)
+std::string SpectrumHandler::GetSpectrumName(size_t n)
 {
     if (n > spectrums.size()) return "Out of bounds";
     return spectrums[n].GetSpectrumName();
 }
 
-int Spectrum_Handler::GetSpectrumSize(int n)
+int SpectrumHandler::GetSpectrumSize(size_t n)
 {
     if (n > spectrums.size()) return 0;
     return spectrums[n].GetSpectrumSize();
 }
 
-std::vector<std::string> Spectrum_Handler::ListSpectrums()
+std::vector<std::string> SpectrumHandler::ListSpectrums()
 {
     std::vector<std::string> spectrumNames;
 

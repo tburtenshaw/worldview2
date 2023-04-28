@@ -2,8 +2,6 @@
 #include "header.h"
 
 class Spectrum {
-
-	//friend class Spectrum_Handler;
 private:
 	struct ColourPoint {
 		RGBA colour;
@@ -34,7 +32,7 @@ public:
 	
 };
 
-class Spectrum_Handler {
+class SpectrumHandler {
 private:
 	static inline std::vector <Spectrum> spectrums
 	{
@@ -68,9 +66,9 @@ private:
 	};
 public:
 	static void AddSpectrum(Spectrum s);
-	static RGBA GetPointFromSpectrum(int n, float dist);
+	static RGBA GetPointFromSpectrum(size_t n, float dist);
 	static size_t GetNumberOfSpectrums();
-	static std::string GetSpectrumName(int n);
-	static int GetSpectrumSize(int n);
+	static std::string GetSpectrumName(size_t n);
+	static int GetSpectrumSize(size_t n);
 	static std::vector<std::string> ListSpectrums();
 };

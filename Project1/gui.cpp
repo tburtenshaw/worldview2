@@ -8,6 +8,7 @@
 #include "input.h"
 #include "heatmap.h"
 #include "palettes.h"
+#include "statistics.h"
 #include <string>
 #include <vector>
 #include <ctime>
@@ -22,24 +23,23 @@
 #include "guiatlas.h"
 #include "spectrum.h"
 #include <iostream>
+#include "filemanager.h"
 
 
 // Defined in winconsole.cpp
 extern GlobalOptions globalOptions;
 
-void Gui::ShowLoadingWindow(LocationHistory* lh)
+void Gui::ShowLoadingWindow(LocationHistory& lh)
 {
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
 	ImGui::SetNextWindowPos(ImVec2(200.0f, 300.0f));
 	ImGui::Begin("Loading Location History", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-	float p = (float)lh->totalbytesread / (float)lh->filesize;
-	if (lh->totalbytesread < lh->filesize) {
-		char displayfilename[260];
-		size_t i;
-		wcstombs_s(&i, displayfilename, 260, lh->filename.c_str(), 259);
+	float p = (float)lh.GetTotalBytesRead() / (float)lh.GetFileSize();
+	if (lh.GetTotalBytesRead() < lh.GetFileSize()) {
 
-		ImGui::Text("File name: %s", displayfilename);
-		ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh->totalbytesread / 0x100000, (float)lh->filesize / 0x100000);
+		std::string displayFilename = lh.GetFilename();
+		ImGui::Text("File name: %s", displayFilename.c_str());
+		ImGui::Text("Processed %.1f MB (of %.1f MB)", (float)lh.GetTotalBytesRead() / 0x100000, (float)lh.GetFileSizeMB());
 	}
 	else {
 		ImGui::Text("Initialising...");
@@ -48,11 +48,11 @@ void Gui::ShowLoadingWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::DebugWindow(LocationHistory* lh,  MainViewport* vp)	{
+void Gui::DebugWindow(const LocationHistory &lh,  MainViewport* vp)	{
 	//Debug
 	ImGui::Begin("Debug");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Time to load: %.3f seconds. (%.1f MB/sec)", lh->secondsToLoad, (float)(lh->filesize/1024/1024)/lh->secondsToLoad);
+	ImGui::Text("Time to load: %.3f seconds. (%.1f MB/sec)", lh.GetSecondsToLoad(), (float)(lh.GetFileSizeMB()) / lh.GetSecondsToLoad());
 
 
 	std::string sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
@@ -61,7 +61,7 @@ void Gui::DebugWindow(LocationHistory* lh,  MainViewport* vp)	{
 	ImGui::Text(sCoords.c_str(), MouseActions::longlatMouse.longitude, MouseActions::longlatMouse.latitude);
 	ImGui::Text("DPMP: %f. PPD: %f. LOD: %i", 1000000.0f * vp->viewNSWE.width() / vp->windowDimensions.width,
 		vp->windowDimensions.width / vp->viewNSWE.width(),
-		lh->lodInfo.LodFromDPP(vp->DegreesPerPixel()));
+		lh.lodInfo.LodFromDPP(vp->DegreesPerPixel()));
 
 
 	static int textureToView = 0;
@@ -82,21 +82,20 @@ void Gui::DebugWindow(LocationHistory* lh,  MainViewport* vp)	{
 	ImGui::End();
 }
 
-void Gui::ToolbarWindow(LocationHistory* lh)
+void Gui::ToolbarWindow(LocationHistory& lh)
 {
 	ImGui::Begin("Toolbar");
 	if (ImGui::Button("Open")) {
-		if (ChooseFileToOpen(lh)) {
-			lh->isFileChosen = true;
-			lh->isFullyLoaded = false;
-			lh->isInitialised = false;
-			lh->isLoadingFile = false;
+		std::wstring filename = ChooseFileToOpen();
+		if (!filename.empty()) {
+			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, &lh, filename);
+			loadingthread.detach();
+			
 		}
-		//lh->heatmap->MakeDirty();
 	}
 
-	bool disabled = false;
-	if (lh->isLoadingFile == true || lh->isInitialised == false) {
+	bool disabled = false;	//as it's loading in a background thread, have to save state now
+	if (lh.IsLoadingFile() == true|| lh.IsInitialised() == false) {
 		disabled = true;
 	}
 
@@ -104,15 +103,14 @@ void Gui::ToolbarWindow(LocationHistory* lh)
 		ImGui::BeginDisabled();
 
 	if (ImGui::Button("Close")) {
-		lh->CloseLocationFile();
-		lh->filename = L"";
+		lh.EmptyLocationInfo();
 	}
 	if (disabled)
 		ImGui::EndDisabled();
 
 	if (ImGui::Button("Save")) {
-		if (lh->isFullyLoaded == true) {
-			std::wstring filename = ChooseFileToSave(lh);
+		if (lh.IsFullyLoaded()) {
+			std::wstring filename = ChooseFileToSave();
 			if (filename.size() > 0) {
 				SaveWVFormat(lh, filename);
 			}
@@ -142,27 +140,26 @@ void Gui::ToolbarWindow(LocationHistory* lh)
 	ImGui::End();
 }
 
-void Gui::InfoWindow(LocationHistory* lh, MainViewport* vp)
+void Gui::InfoWindow(LocationHistory& lh, MainViewport* vp)
 {
 	std::string sigfigs;	//this holds the string template (e.g. %.4f) that is best to display a unit at the current zoom
 	std::string sCoords;
 	sigfigs = Gui::BestSigFigsFormat(vp->DegreesPerPixel());
 
 	ImGui::Begin("Map information");
-	char displayfilename[260];
-	size_t i;
-	wcstombs_s(&i, displayfilename, 260, lh->filename.c_str(), 259);
+	std::string displayFilename = lh.GetFilename();
 
-	ImGui::Text("File name: %s", displayfilename);
-	ImGui::Text("File size: %i", lh->filesize);
 
-	ImGui::Text("Number of points: %i", lh->locations.size());
+	ImGui::Text("File name: %s", displayFilename.c_str());
+	ImGui::Text("File size: %i", lh.GetFileSize());
+
+	ImGui::Text("Number of points: %i", lh.GetNumberOfLocations());
 
 	sCoords = "N:" + sigfigs + ", S:" + sigfigs + ", W:" + sigfigs + ", E:" + sigfigs;
 	ImGui::Text(sCoords.c_str(), vp->viewNSWE.north, vp->viewNSWE.south, vp->viewNSWE.west, vp->viewNSWE.east);
 
-	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME |globalOptions.dateFormat.GetDateCustomFormat()).c_str());
-	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(lh->stats.latestTimestamp), MyTimeZone::FormatFlags::SHOW_TIME | globalOptions.dateFormat.GetDateCustomFormat()).c_str());
+	ImGui::Text("Earliest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(lh.GetStatistics().GetEarliestTimestamp()), MyTimeZone::FormatFlags::SHOW_TIME | globalOptions.dateFormat.GetDateCustomFormat()).c_str());
+	ImGui::Text("Latest: %s", MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(lh.GetStatistics().GetLatestTimestamp()), MyTimeZone::FormatFlags::SHOW_TIME | globalOptions.dateFormat.GetDateCustomFormat()).c_str());
 
 	//Gui::ShowRegionInfo(vp->regions[0], globalOptions);
 
@@ -222,12 +219,36 @@ void Gui::SettingsWindow()
 void Gui::ChooseBackgroundWindow()
 {
 	ImGui::Begin("Background image");
-	ImGui::Text("filename");
-	ImGui::Button("...##Change Filename");
+	ImGui::Text(FileManager::GetBackgroundImageFilename().c_str());
+	ImGui::SameLine();
+	if (ImGui::Button("...##Change Filename")) {
+		std::wstring filename=ChooseImageFile();
+
+		if (!filename.empty()) {
+			FileManager::SetBackgroundImageFilename(filename);
+			ReloadBackgroundImage();
+		}
+	}
+	
+	int w, h;
+	glBindTexture(GL_TEXTURE_2D, (GLuint)GetBackgroundImageTexture());
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+	int x = ImGui::GetWindowContentRegionMax().x;
+
+	if (h > w/2) {	//if the aspect ratio is narrower than 2:1
+		x = x / ((2 * w)/h);
+	}
+
+	ImGui::Image((void*)GetBackgroundImageTexture(), ImVec2(x, x * h / w));
+	ImGui::Text("%i x %i pixels.", w, h);
+	if (w != h * 2) {
+		ImGui::Text("Warning: the image aspect ratio should be 2:1.", w, h);
+	}
 	ImGui::End();
 }
 
-void Gui::MakeGUI(LocationHistory* lh, MainViewport *vp)
+void Gui::MakeGUI(LocationHistory& lh, MainViewport *vp)
 {
 	Gui::DebugWindow(lh, vp);
 	Gui::InfoWindow(lh, vp);
@@ -287,7 +308,7 @@ bool Gui::ToolbarButton(enum class Icon icon) {
 	return b;
 }
 
-void Gui::PointsOptions(LocationHistory* lh)
+void Gui::PointsOptions(LocationHistory& lh)
 {
 	ImGui::SliderFloat("Point size", &globalOptions.pointdiameter, 0.0f, 10.0f, "%.1f pixels");
 	ImGui::SliderFloat("Opacity", &globalOptions.pointalpha, 0.0f, 1.0f, "%.2f");
@@ -316,7 +337,7 @@ void Gui::PointsOptions(LocationHistory* lh)
 	if (globalOptions.colourby == 4) {
 		globalOptions.indexPaletteYear = Palette_Handler::MatchingPalette(globalOptions.indexPaletteYear, Palette::YEAR);
 		int n = 0;
-		for (int year = MyTimeZone::GetYearFromTimestamp(lh->stats.earliestTimestamp); (year < MyTimeZone::GetYearFromTimestamp(lh->stats.latestTimestamp) + 1) && (n < 24); year++) {
+		for (int year = MyTimeZone::GetYearFromTimestamp(lh.GetStatistics().GetEarliestTimestamp()); (year < MyTimeZone::GetYearFromTimestamp(lh.GetStatistics().GetLatestTimestamp()) + 1) && (n < 24); year++) {
 			color[n] = Palette_Handler::PaletteColorImVec4(globalOptions.indexPaletteYear, year);
 
 			std::string text = "Year ";
@@ -405,7 +426,7 @@ void Gui::HeatmapOptions()
 	ImGui::SliderFloat("Debug", &globalOptions.debug, 0.0f, 1.0f, "%.1f");
 
 	//const char* palettenames[] = { "Viridis", "Inferno", "Turbo","Test"};
-	std::vector<std::string> spectrumNames = Spectrum_Handler::ListSpectrums();
+	std::vector<std::string> spectrumNames = SpectrumHandler::ListSpectrums();
 	
 	ImGui::Combo("Palette", &globalOptions.heatmapPaletteIndex,
 		[](void* data, int idx, const char** out_text) {
@@ -422,7 +443,7 @@ void Gui::HeatmapOptions()
 	
 	if (ImGui::ArrowButton("##rotpalleft", ImGuiDir_Left)) {
 		globalOptions.heatmapPaletteIndex--;
-		if (globalOptions.heatmapPaletteIndex < 0) { globalOptions.heatmapPaletteIndex = Spectrum_Handler::GetNumberOfSpectrums()-1; }
+		if (globalOptions.heatmapPaletteIndex < 0) { globalOptions.heatmapPaletteIndex = SpectrumHandler::GetNumberOfSpectrums()-1; }
 	}
 	ImGui::SameLine();
 	//ImGui::Text("%s", Spectrum_Handler::GetSpectrumName(globalOptions.heatmapPaletteIndex));
@@ -431,23 +452,22 @@ void Gui::HeatmapOptions()
 	ImGui::SameLine();
 	if (ImGui::ArrowButton("##rotpalright", ImGuiDir_Right)) {
 		globalOptions.heatmapPaletteIndex++;
-		if (globalOptions.heatmapPaletteIndex >= Spectrum_Handler::GetNumberOfSpectrums()) { globalOptions.heatmapPaletteIndex = 0; }
+		if (globalOptions.heatmapPaletteIndex >= SpectrumHandler::GetNumberOfSpectrums()) { globalOptions.heatmapPaletteIndex = 0; }
 	}
 
 
 }
 
-void Gui::DateSelect(LocationHistory* lh)
+void Gui::DateSelect(LocationHistory& lh)
 {
-
-
 	std::string earliestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.earliestTimeToShow), globalOptions.dateFormat.GetDateCustomFormat()).c_str();
+	std::string latestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.latestTimeToShow), globalOptions.dateFormat.GetDateCustomFormat()).c_str();
 
-	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &globalOptions.earliestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, earliestTimeString.c_str());
+	unsigned long earlytime = lh.GetStatistics().GetEarliestTimestamp();
+	unsigned long latetime= lh.GetStatistics().GetLatestTimestamp();
 
-	std::string latestTimeString = MyTimeZone::FormatUnixTime(MyTimeZone::AsLocalTime(globalOptions.latestTimeToShow),  globalOptions.dateFormat.GetDateCustomFormat()).c_str();
-
-	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &globalOptions.latestTimeToShow, &lh->stats.earliestTimestamp, &lh->stats.latestTimestamp, latestTimeString.c_str());
+	ImGui::SliderScalar("Earliest date", ImGuiDataType_U32, &globalOptions.earliestTimeToShow, &earlytime, &latetime, earliestTimeString.c_str());
+	ImGui::SliderScalar("Latest date", ImGuiDataType_U32, &globalOptions.latestTimeToShow, &earlytime, &latetime, latestTimeString.c_str());
 
 	//Advance by a day
 	ImGui::PushButtonRepeat(true);
@@ -467,20 +487,19 @@ void Gui::DateSelect(LocationHistory* lh)
 	globalOptions.earliestTimeToShow = MyTimeZone::DateWithThisTime(globalOptions.earliestTimeToShow, 0, 0, 0);
 	globalOptions.latestTimeToShow = MyTimeZone::DateWithThisTime(globalOptions.latestTimeToShow, 23, 59, 59);
 
-
 	//constrain to the possible points, earliest
-	if (globalOptions.earliestTimeToShow > MyTimeZone::AsLocalTime(lh->stats.latestTimestamp)) {
-		globalOptions.earliestTimeToShow = MyTimeZone::AsLocalTime((lh->stats.latestTimestamp));
+	if (globalOptions.earliestTimeToShow > MyTimeZone::AsLocalTime(lh.GetStatistics().GetLatestTimestamp())) {
+		globalOptions.earliestTimeToShow = MyTimeZone::AsLocalTime(lh.GetStatistics().GetLatestTimestamp());
 	}
-	if (globalOptions.earliestTimeToShow < MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp)) {
-		globalOptions.earliestTimeToShow = MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp);
+	if (globalOptions.earliestTimeToShow < MyTimeZone::AsLocalTime(lh.GetStatistics().GetEarliestTimestamp())) {
+		globalOptions.earliestTimeToShow = MyTimeZone::AsLocalTime(lh.GetStatistics().GetEarliestTimestamp());
 	}
 	//then latest
-	if (globalOptions.latestTimeToShow > MyTimeZone::AsLocalTime(lh->stats.latestTimestamp)) {
-		globalOptions.latestTimeToShow = MyTimeZone::AsLocalTime((lh->stats.latestTimestamp));
+	if (globalOptions.latestTimeToShow > MyTimeZone::AsLocalTime(lh.GetStatistics().GetLatestTimestamp())) {
+		globalOptions.latestTimeToShow = MyTimeZone::AsLocalTime(lh.GetStatistics().GetLatestTimestamp());
 	}
-	if (globalOptions.latestTimeToShow < MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp)) {
-		globalOptions.latestTimeToShow = MyTimeZone::AsLocalTime(lh->stats.earliestTimestamp);
+	if (globalOptions.latestTimeToShow < MyTimeZone::AsLocalTime(lh.GetStatistics().GetEarliestTimestamp())) {
+		globalOptions.latestTimeToShow = MyTimeZone::AsLocalTime(lh.GetStatistics().GetEarliestTimestamp());
 	}
 
 
@@ -656,7 +675,7 @@ const char* Gui::BestSigFigsFormat(const double dpp)
 	return "%.5f";
 }
 
-bool Gui::ChooseFileToOpen(LocationHistory* lh)
+std::wstring Gui::ChooseFileToOpen()
 {
 	OPENFILENAME ofn;
 	wchar_t filename[MAX_PATH];
@@ -681,17 +700,51 @@ bool Gui::ChooseFileToOpen(LocationHistory* lh)
 	result = GetOpenFileName(&ofn);
 
 	if (result) {
-		wprintf(L"Filename: %s\n", filename);
-		lh->filename = filename;
-		return true;
+		return filename;
 	}
 	else
 	{
-		return false;
+		return std::wstring();
 	}
 }
 
-std::wstring Gui::ChooseFileToSave(LocationHistory* lh)
+std::wstring Gui::ChooseImageFile()
+{
+	OPENFILENAME ofn;
+	wchar_t filename[MAX_PATH];
+
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hInstance = GetModuleHandle(NULL);
+	ofn.hwndOwner = GetActiveWindow();
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = sizeof(filename);
+	ofn.lpstrTitle = L"Choose Image";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrDefExt = L"png";
+
+	MultiByteToWideChar(CP_UTF8, 0, "*.png", -1, filename, MAX_PATH);
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_EXPLORER;
+	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0PNG Files (*.png)\0*.png\0\0";
+
+	bool result;
+	result = GetSaveFileName(&ofn);
+
+	if (result) {
+		//int len = WideCharToMultiByte(CP_UTF8, 0, filename, -1, nullptr, 0, nullptr, nullptr);
+		//std::string result(len, '\0');
+		//WideCharToMultiByte(CP_UTF8, 0, filename, -1, &result[0], len, nullptr, nullptr);
+		return filename;
+	}
+	else
+	{
+		return std::wstring();
+	}
+	
+}
+
+std::wstring Gui::ChooseFileToSave()
 {
 	OPENFILENAME ofn;
 	wchar_t filename[MAX_PATH];

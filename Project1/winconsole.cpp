@@ -34,8 +34,9 @@
 #include <string>
 #include "mytimezone.h"
 #include "guiatlas.h"
+#include "filemanager.h"
 
-LocationHistory* pLocationHistory;
+LocationHistory locationHistory;
 
 MainViewport mainView = { 1200,800 };
 
@@ -54,16 +55,11 @@ GuiAtlas guiAtlas = { 512,512 };
 //Global instance of Options which is accessible to everything including "options.h"
 GlobalOptions globalOptions;
 
-int LocationHistory::CloseLocationFile()	//closes the file, empties the arrays, resets names/counts
+int LocationHistory::EmptyLocationInfo()	//closes the file, empties the arrays, resets names/counts
 {
-	if (isLoadingFile) {
-		return 2;
-	}
 
-	isFileChosen = false;
-	isFullyLoaded = true;	//we're loaded with nothing
-	isInitialised = false;
-	isLoadingFile = false;
+	fileLoader.CloseFile();
+	
 
 	if (!locations.empty()) {
 		locations.clear();
@@ -72,47 +68,79 @@ int LocationHistory::CloseLocationFile()	//closes the file, empties the arrays, 
 		lodInfo.pathPlotLocations.clear();
 	}
 
-	//lh->filename = L"";	//can't do this, as it's where the file to load is stored.
-	filesize = 0;
+	initialised = false;
 	
 	return 0;
 }
 
-int LocationHistory::OpenAndReadLocationFile()
+bool LocationHistory::IsInitialised() const
 {
-	HANDLE hLocationFile;
+	return initialised;
+}
 
-	if (isLoadingFile) {	//we don't want to load if we're already loading something
-		return 2;
+void LocationHistory::SetInitialised(bool tf)
+{
+	initialised = tf;
+}
+
+bool LocationHistory::IsLoadingFile() const
+{
+	return fileLoader.IsLoadingFile();
+}
+
+bool LocationHistory::ShouldLoadFile() const
+{
+	if (fileLoader.IsFileChosen() && fileLoader.IsLoadingFile()) {
+		return true;
 	}
+	return false;
+}
 
-	hLocationFile = CreateFile(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+bool LocationHistory::LoadedNotInitialised() const
+{
+	if ((!IsInitialised()) && (fileLoader.IsFullyLoaded()) && (!fileLoader.IsLoadingFile())) { return true; }
+	return false;
+}
 
-	if (hLocationFile == INVALID_HANDLE_VALUE) {
-		isFileChosen = false;
-		isLoadingFile = false;
-		isFullyLoaded = false;
-		return 1;
-	}
+bool LocationHistory::IsFullyLoaded() const
+{
+	return fileLoader.IsFullyLoaded();
+}
 
-	CloseLocationFile();	//close any existing file
-	isLoadingFile = true;
-	isFileChosen = true;
-	isInitialised = false;
+std::string LocationHistory::GetFilename() const
+{
+	return fileLoader.GetFilename();
+}
 
-	LARGE_INTEGER LIfilesize;
-	GetFileSizeEx(hLocationFile, &LIfilesize);
-	filesize = LIfilesize.QuadPart;
-	printf("File size: %i\n", filesize);
+unsigned long LocationHistory::GetNumberOfLocations() const
+{
+	return locations.size();
+}
 
-	std::string extension = std::filesystem::path(filename).extension().string();
-	if (extension == ".json") {
-		LoadJsonFile(this, hLocationFile);
-	}
-	else if (extension == ".wvf") {
-		LoadWVFormat(this, hLocationFile);
-	}
-	CloseHandle(hLocationFile);
+unsigned long LocationHistory::GetFileSize() const
+{
+	return fileLoader.GetFileSize();;
+}
+
+unsigned long LocationHistory::GetFileSizeMB() const
+{
+	return fileLoader.GetFileSize()/0x10'0000;
+}
+
+unsigned long LocationHistory::GetTotalBytesRead() const
+{
+	return fileLoader.GetTotalBytesRead();
+}
+
+float LocationHistory::GetSecondsToLoad() const
+{
+	return fileLoader.GetSecondsToLoad();
+}
+
+int LocationHistory::OpenAndReadLocationFile(std::wstring filename)
+{
+	if (!fileLoader.OpenFile(*this,filename))	return 0;
+
 
 	//sort by GMT timestamp
 	std::sort(locations.begin(), locations.end());	//stable_sort might be better, as doesn't muck around if the same size
@@ -126,26 +154,18 @@ int LocationHistory::OpenAndReadLocationFile()
 	GenerateLocationLODs();
 
 	//Statistics, including count, earliest/latest etc.
-	GenerateStatsOnLoad();
-
-
+	stats.GenerateStatsOnLoad(locations);
 
 	//adjust view, options based on loaded.
-	globalOptions.earliestTimeToShow = stats.earliestTimestamp;
-	globalOptions.latestTimeToShow = stats.latestTimestamp;
+	globalOptions.earliestTimeToShow = stats.GetEarliestTimestamp();
+	globalOptions.latestTimeToShow = stats.GetLatestTimestamp();
 
 	mainView.viewNSWE.target=FindBestView();
 	mainView.viewNSWE.target.makeratio((double)mainView.windowDimensions.height / (double)mainView.windowDimensions.width);
 
-
-	//Plan: to have five levels of detail (5 LoDs) from [0] to [4]. These are used just for plotting.
-	//0 is detail <10 degrees per million pixels, then 1 is <100 DPMP etc.
-	//All get reset if 24 hours passes.
-
-	isLoadingFile = false;
-	isFullyLoaded = true;
-	isInitialised = false;
-	isFileChosen = false;
+	initialised = false;
+	fileLoader.SetFullyLoaded(true);
+	printf("loaded, not init\n");
 	return 0;
 }
 
@@ -153,7 +173,7 @@ int LocationHistory::OpenAndReadLocationFile()
 
 
 
-int SaveWVFormat(LocationHistory* lh, std::wstring filename)
+int SaveWVFormat(LocationHistory& lh, std::wstring filename)
 {
 	HANDLE hFile;
 	DWORD numberOfLocations;
@@ -162,13 +182,13 @@ int SaveWVFormat(LocationHistory* lh, std::wstring filename)
 	static const char* const magic = "WVF1";
 
 	//copy whole thing at once.
-	numberOfLocations = lh->locations.size();
+	numberOfLocations = lh.locations.size();
 	WVFormat* flatArray = new WVFormat[numberOfLocations];
 
 	for (DWORD i = 0; i < numberOfLocations; i++) {
-		flatArray[i].timestamp = lh->locations[i].timestamp;
-		flatArray[i].lon = lh->locations[i].longitude;
-		flatArray[i].lat = lh->locations[i].latitude;
+		flatArray[i].timestamp = lh.locations[i].timestamp;
+		flatArray[i].lon = lh.locations[i].longitude;
+		flatArray[i].lat = lh.locations[i].latitude;
 	}
 
 	hFile = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -184,7 +204,7 @@ int SaveWVFormat(LocationHistory* lh, std::wstring filename)
 
 
 
-int StartGLProgram(LocationHistory* lh)
+int StartGLProgram()
 {
 	// start GL context and O/S window using the GLFW helper library
 	if (!glfwInit()) {
@@ -283,7 +303,7 @@ int StartGLProgram(LocationHistory* lh)
 	//MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
 		if (!io.WantCaptureMouse) {	//if Imgui doesn't want the mouse
-			Input::ManageMouseMoveClickAndDrag(window, lh, &mainView);
+			Input::ManageMouseMoveClickAndDrag(window, &locationHistory, &mainView);
 		}
 
 		globalOptions.seconds = (float)glfwGetTime();
@@ -291,16 +311,12 @@ int StartGLProgram(LocationHistory* lh)
 		//get the view moving towards the target
 		mainView.viewNSWE.moveTowards(globalOptions.seconds);
 
-		if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
-			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, pLocationHistory);
-			loadingthread.detach();
-		}
 
-		if ((lh->isInitialised == false) && (lh->isFullyLoaded) && (lh->isLoadingFile == false)) {
+		if (locationHistory.LoadedNotInitialised())	{
 			printf("Initialising things that need file to be fully loaded\n");
 			DisplayIfGLError("before GLRenderLayer::CreateLocationVBO(lh->lodInfo);", false);
 
-			GLRenderLayer::CreateLocationVBO(lh->lodInfo);
+			GLRenderLayer::CreateLocationVBO(locationHistory.lodInfo);
 			DisplayIfGLError("after GLRenderLayer::CreateLocationVBO(lh->lodInfo);", false);
 
 
@@ -309,18 +325,18 @@ int StartGLProgram(LocationHistory* lh)
 			heatmapLayer.SetupVertices();
 
 			DisplayIfGLError("after *SetupVertices", false);
-
-			lh->isInitialised = true;
+			locationHistory.SetInitialised(true);
+			printf("inited");
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		int currentLod= lh->lodInfo.LodFromDPP(mainView.viewNSWE.width() / mainView.windowDimensions.width);
+		int currentLod= locationHistory.lodInfo.LodFromDPP(mainView.viewNSWE.width() / mainView.windowDimensions.width);
 
 
 		//Heatmap rendering to FBO
-		if (lh->isInitialised && lh->isFullyLoaded && globalOptions.showHeatmap) {
-			heatmapLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions, mainView.viewNSWE);
+		if (locationHistory.IsInitialised() && globalOptions.showHeatmap) {
+			heatmapLayer.Draw(locationHistory.lodInfo, currentLod, mainView.windowDimensions, mainView.viewNSWE);
 		}
 
 
@@ -334,18 +350,14 @@ int StartGLProgram(LocationHistory* lh)
 		backgroundLayer.Draw(&mainView);
 
 		//We only draw the points if everything is loaded and initialised.
-		if (lh->isInitialised && lh->isFullyLoaded) {
-			//if (mainView.viewNSWE.isDirty()) {
-//				mainView.regions[0]->SetNSWE(&mainView.viewNSWE.target);
-				//mainView.regions[0]->Populate(lh);
-			//}
+		if (locationHistory.IsInitialised()) {
 
 			if (globalOptions.showPaths) {
-				pathLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);
+				pathLayer.Draw(locationHistory.lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);
 			}
 
 			if (globalOptions.showPoints) {
-				pointsLayer.Draw(lh->lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
+				pointsLayer.Draw(locationHistory.lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
 			}
 
 			regionsLayer.UpdateFromRegionsData(mainView.regions);
@@ -366,11 +378,12 @@ int StartGLProgram(LocationHistory* lh)
 		fboInfo.Draw(mainView.windowDimensions.width, mainView.windowDimensions.height);
 		DisplayIfGLError("after fboInfo.Draw(lh->windowDimensions.width, lh->windowDimensions.height);", false);
 
-		if (lh->isLoadingFile == false) {
-			Gui::MakeGUI(lh, &mainView);	//make the ImGui stuff
+		if (locationHistory.IsLoadingFile()) {
+			Gui::ShowLoadingWindow(locationHistory);
 		}
-		else if (lh->isLoadingFile == true) {
-			Gui::ShowLoadingWindow(lh);
+		else
+		{
+			Gui::MakeGUI(locationHistory, &mainView);	//make the ImGui stuff
 		}
 
 		ImGui::Render();
@@ -433,16 +446,16 @@ void DisplayIfGLError(const char* message, bool alwaysshow)
 
 int main(int argc, char** argv)
 {
-	LocationHistory locationHistory;
-	pLocationHistory = &locationHistory;
-
-	pLocationHistory->isFileChosen = true;
-	if (pLocationHistory->isFileChosen && !pLocationHistory->isLoadingFile) {
-		std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, &locationHistory);
-		loadingthread.detach();
-	}
-
-	StartGLProgram(pLocationHistory);
-
+	StartGLProgram();
 	return 0;
+}
+
+void ReloadBackgroundImage()
+{
+	backgroundLayer.LoadBackgroundImageToTexture(FileManager::GetBackgroundImageFilename().c_str());
+}
+
+int GetBackgroundImageTexture()
+{
+	return backgroundLayer.worldTexture;
 }

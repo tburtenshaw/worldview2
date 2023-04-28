@@ -158,6 +158,12 @@ public:
 
 class HeatmapLayer : public GLRenderLayer {
 public:
+	HeatmapLayer() : texture(0), fboToDrawHeatmap(0), fboBlur(0), blurTexture(0),
+		uniformNswe(0), uniformDegreeSpan(0), uniformDegreeMidpoint(0),
+		uniformResolution(0), uniformEarliestTimeToShow(0), uniformLatestTimeToShow(0),
+		uniformMinimumAccuracy(0), maxvalUniformSquareSize(0), maxvalTextureLocation(0),
+		maxvalTexture{ 0 } {}
+
 	void Setup(int width, int height);
 	void SetupVertices();
 	void Draw(const LODInfo& lodInfo, int lod, const RectDimension windowSize, const NSWE &nswe);

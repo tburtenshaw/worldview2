@@ -195,7 +195,7 @@ void LODInfo::LookupFirstAndCount(const unsigned long starttime, const unsigned 
 
 }
 
-int LODInfo::LodFromDPP(const double dpp)
+int LODInfo::LodFromDPP(const double dpp) const
 {
 	for (int i = 0; i < numberOfLODs-1; i++) {
 		if (dpp < lodPrecision[i+1]) {

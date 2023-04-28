@@ -1,5 +1,5 @@
 #pragma once
-#include "header.h"
+//#include "header.h"
 struct PathPlotLocation;
 
 struct TimeLookup {
@@ -26,7 +26,7 @@ public:
 
 	void CreateTimeLookupTables();
 	void LookupFirstAndCount(const unsigned long starttime, const unsigned long endtime, const int lod, GLint* first, GLsizei* count) const;
-	int LodFromDPP(const double dpp);
+	int LodFromDPP(const double dpp) const;
 };
 
 

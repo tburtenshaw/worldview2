@@ -123,8 +123,8 @@ void Region::Populate(LocationHistory* lh)
 //	printf("d: %i, sec: %i\n", i, dayofweeks[i]);
 //}
 
-	unsigned int e = GetDaySince2010(lh->stats.earliestTimestamp);
-	unsigned int l = GetDaySince2010(lh->stats.latestTimestamp);
+	unsigned int e = GetDaySince2010(lh->GetStatistics().GetEarliestTimestamp());
+	unsigned int l = GetDaySince2010(lh->GetStatistics().GetLatestTimestamp());
 
 	earliestday = MAX_DAY_NUMBER;
 
