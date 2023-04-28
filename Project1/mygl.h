@@ -162,7 +162,9 @@ public:
 		uniformNswe(0), uniformDegreeSpan(0), uniformDegreeMidpoint(0),
 		uniformResolution(0), uniformEarliestTimeToShow(0), uniformLatestTimeToShow(0),
 		uniformMinimumAccuracy(0), maxvalUniformSquareSize(0), maxvalTextureLocation(0),
-		maxvalTexture{ 0 } {}
+		maxvalTexture{ 0 } {
+		readpixelBuffer = std::make_unique<float[]>(READPIXEL_BUFFER_SIZE);
+	}
 
 	void Setup(int width, int height);
 	void SetupVertices();
@@ -219,4 +221,12 @@ private:
 	unsigned int maxvalTextureLocation;
 	//texture
 	unsigned int maxvalTexture[2];
+
+
+
+	static const int READPIXEL_BUFFER_SIZE = 64 * 64;	//quite generous, I'm reducing by 4, even at 3 passes of 4k this should be enough
+	std::unique_ptr<float[]> readpixelBuffer;
+
+
+
 };

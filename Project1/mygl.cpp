@@ -878,23 +878,19 @@ void HeatmapLayer::GaussianBlur(float blurSigma, float width, float height)
 
 float HeatmapLayer::ReadPixelsAndFindMax(int width, int height)
 {
-	//float* data = (float*)malloc(sizeof(float) * width * height);
-	float* data = new float[width * height];
+	if (width * height > READPIXEL_BUFFER_SIZE) {
+		return 1.0f;
+	}
 
-	printf("%i %i\n", width, height);
+	glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, readpixelBuffer.get());
 
-	if (!data) return 1.0f;
-
-	glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, data);
-
-	float maxVal = data[0];
+	float maxVal = readpixelBuffer[0];
 	for (int i = 1; i < width * height; i++)
 	{
-		if (data[i] > maxVal) maxVal = data[i];
+		if (readpixelBuffer[i] > maxVal) maxVal = readpixelBuffer[i];
 	}
 	
-	delete[] data;
-	//free(data);
+
 	return maxVal;
 
 }
