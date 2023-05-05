@@ -88,14 +88,6 @@ bool LocationHistory::IsLoadingFile() const
 	return fileLoader.IsLoadingFile();
 }
 
-bool LocationHistory::ShouldLoadFile() const
-{
-	if (fileLoader.IsFileChosen() && fileLoader.IsLoadingFile()) {
-		return true;
-	}
-	return false;
-}
-
 bool LocationHistory::LoadedNotInitialised() const
 {
 	if ((!IsInitialised()) && (fileLoader.IsFullyLoaded()) && (!fileLoader.IsLoadingFile())) { return true; }
@@ -137,6 +129,19 @@ float LocationHistory::GetSecondsToLoad() const
 	return fileLoader.GetSecondsToLoad();
 }
 
+void LocationHistory::CreateLoadingThread(std::wstring filename)
+{
+	loaderThread = std::thread(&LocationHistory::OpenAndReadLocationFile, this, filename);
+	//loaderThread.detach();
+}
+
+void LocationHistory::JoinLoaderThread()
+{
+	if (loaderThread.joinable()) {
+		loaderThread.join();
+	}
+}
+
 int LocationHistory::OpenAndReadLocationFile(std::wstring filename)
 {
 	if (!fileLoader.OpenFile(*this,filename))	return 0;
@@ -165,6 +170,7 @@ int LocationHistory::OpenAndReadLocationFile(std::wstring filename)
 
 	initialised = false;
 	fileLoader.SetFullyLoaded(true);
+
 	printf("loaded, not init\n");
 	return 0;
 }
@@ -327,6 +333,7 @@ int StartGLProgram()
 			DisplayIfGLError("after *SetupVertices", false);
 			locationHistory.SetInitialised(true);
 			printf("inited");
+			locationHistory.JoinLoaderThread();
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -351,7 +358,7 @@ int StartGLProgram()
 
 		//We only draw the points if everything is loaded and initialised.
 		if (locationHistory.IsInitialised()) {
-
+			
 			if (globalOptions.showPaths) {
 				pathLayer.Draw(locationHistory.lodInfo, currentLod, mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE, globalOptions.linewidth, globalOptions.seconds, globalOptions.cycleSeconds);
 			}
@@ -363,6 +370,8 @@ int StartGLProgram()
 			regionsLayer.UpdateFromRegionsData(mainView.regions);
 			regionsLayer.Draw(mainView.windowDimensions.width, mainView.windowDimensions.height, &mainView.viewNSWE);
 
+
+			//locationHistory.CalculateStatistics([](const Location& location) {return mainView.viewNSWE.containsPoint(location.latitude,location.longitude) && location.correctedTimestamp>=globalOptions.earliestTimeToShow && location.correctedTimestamp <= globalOptions.latestTimeToShow; });
 		}
 
 		//Start the ImGui Frame

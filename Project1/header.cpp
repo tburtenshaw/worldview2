@@ -261,6 +261,12 @@ const Statistics& LocationHistory::GetStatistics() const
 	return stats;
 }
 
+void LocationHistory::CalculateStatistics(std::function<bool(const Location&)> filter)
+{
+	stats.GenerateStatistics(locations,filter);
+}
+
+
 
 double MainViewport::DegreesPerPixel()
 {

@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <functional>
 //#include "header.h"
 
 struct Location;
@@ -11,7 +12,14 @@ public:
 	unsigned long GetEarliestTimestamp() const;
 	unsigned long GetLatestTimestamp() const;
 
+	int GetAccuracyBins() const;
+	const int* GetHistoAccuracy() const {
+		return histoAccuracy;
+	}
+
+
 	void GenerateStatsOnLoad(const std::vector<Location> &locations);
+	void GenerateStatistics(const std::vector<Location>& locations, std::function<bool(const Location&)> filter);
 
 private:
 	unsigned long numberOfLocations;
@@ -23,6 +31,7 @@ private:
 	static constexpr int accuracyBins = 21; //last is 100+
 	int histoAccuracy[accuracyBins] = { 0 };
 
+	//velocity
 	static constexpr int velocityBins = 320;
 	int histoVelocity[velocityBins] = { 0 };
 	int fastestVelocity = 0;

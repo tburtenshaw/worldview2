@@ -422,17 +422,12 @@ int AssignValueToName(json_reader_state* jsr)
 
 void FileLoader::SetFullyLoaded(bool tf)
 {
-	fullyLoaded = tf;
-}
-
-bool FileLoader::IsFileChosen() const
-{
-	return fileChosen;
+	fullyLoaded.store(tf);
 }
 
 bool FileLoader::IsFullyLoaded() const
 {
-	return fullyLoaded;
+	return fullyLoaded.load();
 }
 
 bool FileLoader::IsLoadingFile() const
@@ -582,16 +577,14 @@ bool FileLoader::OpenFile(LocationHistory &lh, std::wstring filename)
 	locationFileHandle = CreateFile(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 
 	if (locationFileHandle == INVALID_HANDLE_VALUE) {
-		fileChosen = false;
 		loadingFile = false;
-		fullyLoaded = false;
+		SetFullyLoaded(false);
 		errorState = true;
 		return false;
 	}
 
 	lh.EmptyLocationInfo();	//close any existing file
 	loadingFile = true;
-	fileChosen = true;
 	errorState = false;
 
 	LARGE_INTEGER LIfilesize;
@@ -608,8 +601,7 @@ bool FileLoader::OpenFile(LocationHistory &lh, std::wstring filename)
 	}
 	CloseHandle(locationFileHandle);
 	
-	fileChosen = true;
-	fullyLoaded = false;
+	SetFullyLoaded(false);
 	loadingFile = false;
 
 	return true;
@@ -619,8 +611,7 @@ bool FileLoader::CloseFile()
 {
 	if (loadingFile) return false;	//we can't close while we're loading something (at least not at the moment)
 	
-	fileChosen = false;
-	fullyLoaded = true;	//we're loaded with nothing
+	SetFullyLoaded(true);	//loaded with nothing
 	loadingFile = false;
 
 	filesize = 0;

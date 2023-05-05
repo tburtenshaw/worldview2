@@ -33,7 +33,7 @@ void Gui::ShowLoadingWindow(LocationHistory& lh)
 {
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 140.0f));
 	ImGui::SetNextWindowPos(ImVec2(200.0f, 300.0f));
-	ImGui::Begin("Loading Location History", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+	ImGui::Begin("Loading Location History", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 	float p = (float)lh.GetTotalBytesRead() / (float)lh.GetFileSize();
 	if (lh.GetTotalBytesRead() < lh.GetFileSize()) {
 
@@ -85,11 +85,10 @@ void Gui::DebugWindow(const LocationHistory &lh,  MainViewport* vp)	{
 void Gui::ToolbarWindow(LocationHistory& lh)
 {
 	ImGui::Begin("Toolbar");
-	if (ImGui::Button("Open")) {
+	if (ToolbarButton(Icon::open)) {
 		std::wstring filename = ChooseFileToOpen();
 		if (!filename.empty()) {
-			std::thread loadingthread(&LocationHistory::OpenAndReadLocationFile, &lh, filename);
-			loadingthread.detach();
+			lh.CreateLoadingThread(filename);
 			
 		}
 	}
@@ -102,13 +101,13 @@ void Gui::ToolbarWindow(LocationHistory& lh)
 	if (disabled)
 		ImGui::BeginDisabled();
 
-	if (ImGui::Button("Close")) {
+	if (ToolbarButton(Icon::close)) {
 		lh.EmptyLocationInfo();
 	}
 	if (disabled)
 		ImGui::EndDisabled();
 
-	if (ImGui::Button("Save")) {
+	if (ToolbarButton(Icon::save)) {
 		if (lh.IsFullyLoaded()) {
 			std::wstring filename = ChooseFileToSave();
 			if (filename.size() > 0) {
@@ -126,9 +125,8 @@ void Gui::ToolbarWindow(LocationHistory& lh)
 		MouseActions::mouseMode = MouseMode::RegionSelect;
 	}
 
-	ToolbarButton(Icon::open);
-	ToolbarButton(Icon::save);
-	ToolbarButton(Icon::close);
+	
+	
 	if (ToolbarButton(Icon::heatmap)) {
 		globalOptions.ShowHeatmap();
 	}
@@ -216,6 +214,29 @@ void Gui::SettingsWindow()
 	ImGui::End();
 }
 
+void Gui::StatisticsWindow(LocationHistory& lh)
+{
+	ImGui::Begin("Statistics");
+	
+	if (ImGui::TreeNode("Accuracy")) {
+		const int numDataPoints = lh.GetStatistics().GetAccuracyBins();
+		const ImVec2 graphSize(400, 300);
+
+		// Define a lambda function that returns the value at the given index
+		auto getterFunc = [](void* data, int idx) -> float {
+			const int* dataArray = static_cast<const int*>(data);
+			return static_cast<float>(dataArray[idx]);
+		};
+
+		// Plot the histogram using the getter function and Stats object
+		ImGui::PlotHistogram("Accuracy Histogram", getterFunc, (void*)lh.GetStatistics().GetHistoAccuracy(), numDataPoints, 0, nullptr, 0.0f, 1000000.0f, graphSize);
+	}
+
+
+	ImGui::End();
+
+}
+
 void Gui::ChooseBackgroundWindow()
 {
 	ImGui::Begin("Background image");
@@ -292,6 +313,7 @@ void Gui::MakeGUI(LocationHistory& lh, MainViewport *vp)
 
 
 	Gui::ToolbarWindow(lh);
+	Gui::StatisticsWindow(lh);
 
 	return;
 }

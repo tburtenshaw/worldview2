@@ -26,6 +26,7 @@ namespace Gui {
 	void ToolbarWindow(LocationHistory& lh);
 	void InfoWindow(LocationHistory& lh, MainViewport* vp);
 	void SettingsWindow();
+	void StatisticsWindow(LocationHistory& lh);
 	void ChooseBackgroundWindow();
 
 	void PointsOptions(LocationHistory& lh);

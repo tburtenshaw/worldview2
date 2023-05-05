@@ -19,6 +19,12 @@ unsigned long Statistics::GetLatestTimestamp() const
 	return latestTimestamp;
 }
 
+int Statistics::GetAccuracyBins() const
+{
+	return accuracyBins;
+}
+
+
 void Statistics::AccuracyHistogram(const std::vector<Location>& locations)
 {
 
@@ -37,7 +43,7 @@ void Statistics::GenerateStatsOnLoad(const std::vector<Location>& locations)
 	numberOfLocations = locations.size();
 	earliestTimestamp = locations.front().correctedTimestamp;
 	latestTimestamp = locations.back().correctedTimestamp;
-	return;
+	
 
 	AccuracyHistogram(locations);
 
@@ -120,5 +126,22 @@ void Statistics::GenerateStatsOnLoad(const std::vector<Location>& locations)
 		}
 	}
 
+
+}
+
+void Statistics::GenerateStatistics(const std::vector<Location>& locations, std::function<bool(const Location&)> filter)
+{
+	std::unordered_map<std::string, int> sourceFrequency;
+	for (const auto& location : locations)
+	{
+		if (filter(location))
+		{
+			sourceFrequency[location.source]++;
+		}
+	}
+	for (const auto& [source, frequency] : sourceFrequency)
+	{
+		std::cout << source << ": " << frequency << std::endl;
+	}
 
 }

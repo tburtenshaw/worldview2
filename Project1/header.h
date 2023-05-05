@@ -219,6 +219,7 @@ public:
 class LocationHistory {
 private:
 	bool initialised;
+	std::thread loaderThread;
 	FileLoader fileLoader;
 	Statistics stats;
 public:
@@ -228,7 +229,6 @@ public:
 	void SetInitialised(bool tf);
 	bool IsInitialised() const;
 	bool IsLoadingFile() const;
-	bool ShouldLoadFile() const;
 	bool LoadedNotInitialised() const;
 	bool IsFullyLoaded() const;
 
@@ -240,6 +240,8 @@ public:
 	float GetSecondsToLoad() const;
 
 
+	void CreateLoadingThread(std::wstring filename);
+	void JoinLoaderThread();
 	int OpenAndReadLocationFile(std::wstring filename);
 	int EmptyLocationInfo();
 	void GenerateLocationLODs();
@@ -251,6 +253,7 @@ public:
 
 	NSWE FindBestView();
 	const Statistics& GetStatistics() const;
+	void CalculateStatistics(std::function<bool(const Location&)> filter = [](const Location&) { return true; });
 };
 
 

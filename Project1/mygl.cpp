@@ -889,10 +889,8 @@ float HeatmapLayer::ReadPixelsAndFindMax(int width, int height)
 	{
 		if (readpixelBuffer[i] > maxVal) maxVal = readpixelBuffer[i];
 	}
-	
 
 	return maxVal;
-
 }
 
 bool HeatmapLayer::NeedsRedraw(const NSWE& currentNSWE, const RectDimension& windowDims)

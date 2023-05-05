@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <thread>
 //#include "header.h"
 class LocationHistory;
 
@@ -18,7 +19,6 @@ public:
 		: loadedLocationFilename(L""),      // Initialize std::wstring to empty string
 		filesize(0),       
 		secondsToLoad(0.0f), 
-		fileChosen(false), 
 		fullyLoaded(false),
 		loadingFile(false),
 		errorState(false),
@@ -26,7 +26,6 @@ public:
 	{	}
 
 	void SetFullyLoaded(bool tf);	//should rename and move to LH, as this means it's been sorted, LODs generated etc.
-	bool IsFileChosen() const;
 	bool IsFullyLoaded() const;
 	bool IsLoadingFile() const;
 	bool IsError() const;
@@ -47,10 +46,10 @@ private:
 	float secondsToLoad;
 
 
-	bool fileChosen;
-	bool fullyLoaded;
-	bool loadingFile;
-	bool errorState;
+	
+	std::atomic<bool> fullyLoaded;
+	std::atomic<bool> loadingFile;
+	std::atomic<bool> errorState;
 
-	unsigned long totalbytesread;
+	std::atomic<unsigned long> totalbytesread;
 };
